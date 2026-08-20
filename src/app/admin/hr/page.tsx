@@ -93,13 +93,14 @@ export default function AdminHrPage() {
   };
 
   const pendingLoas = loas.filter((l) => l.status === "Pending");
-  const activeLoas = loas.filter((l) => l.status === "Active");
-  const otherLoas = loas.filter((l) => l.status !== "Pending" && l.status !== "Active");
+  const activeLoas = loas.filter((l) => l.status === "Active" || l.status === "Approved");
+  const otherLoas = loas.filter((l) => l.status !== "Pending" && l.status !== "Active" && l.status !== "Approved");
 
   const statusColor = (status: string) => {
     switch (status) {
       case "Pending": return "bg-yellow-500/10 text-yellow-400";
       case "Active":
+      case "Approved":
       case "Approved": return "bg-green-500/10 text-green-400";
       case "Declined":
       case "Rejected": return "bg-red-500/10 text-red-400";
