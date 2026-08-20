@@ -9,7 +9,7 @@ export default function UniformPage() {
             ← Back to Roster
           </Link>
           <span className="font-[family-name:var(--font-oswald)] text-white font-semibold text-sm">
-            LSMD
+EMS
           </span>
         </div>
       </header>
@@ -19,7 +19,7 @@ export default function UniformPage() {
           EMS Uniform Guide
         </h1>
         <p className="text-gray-500 text-sm mb-10">
-          Standard uniform components and rank texture colors for all LSMD personnel
+          Standard uniform components and rank texture colors for all EMS personnel
         </p>
 
         <div className="grid sm:grid-cols-2 gap-6 mb-12">

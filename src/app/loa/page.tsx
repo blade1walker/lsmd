@@ -97,7 +97,7 @@ export default function LOARequestPage() {
             ← Back to Roster
           </Link>
           <span className="font-[family-name:var(--font-oswald)] text-white font-semibold text-sm">
-            LSMD
+            EMS
           </span>
         </div>
       </header>

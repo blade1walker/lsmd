@@ -20,7 +20,7 @@ export function Footer() {
               </div>
             </div>
             <p className="text-gray-500 text-sm max-w-sm">
-              Official Personnel Roster of the Los Santos Medical Department.
+              Official Personnel Roster of the Emergency Medical Services.
               Part of the Nexus Universe GTA V Roleplay community.
             </p>
           </div>

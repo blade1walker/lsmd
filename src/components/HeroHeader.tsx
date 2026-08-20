@@ -31,7 +31,7 @@ export function HeroHeader() {
           </h1>
 
           <p className="text-gray-400 text-lg sm:text-xl max-w-2xl mx-auto mb-10">
-            Official Personnel Roster of the Los Santos Medical Department
+            Official Personnel Roster of the Emergency Medical Services
             <br />
             <span className="text-gray-500">Nexus Universe RP</span>
           </p>
@@ -59,7 +59,7 @@ export function HeroHeader() {
               href="/onboarding"
               className="px-8 py-3 bg-[#eab308]/20 hover:bg-[#eab308]/30 text-[#eab308] border border-[#eab308]/30 font-semibold rounded-lg transition-all hover:scale-105 text-sm"
             >
-              Join LSMD
+              Join EMS
             </a>
             <a
               href="/sop"
@@ -72,7 +72,7 @@ export function HeroHeader() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mt-16 max-w-3xl mx-auto">
             <div className="text-center">
               <div className="text-3xl font-bold text-white font-[family-name:var(--font-oswald)]">
-                LSMD
+                EMS
               </div>
               <div className="text-sm text-gray-500 mt-1">Department</div>
             </div>

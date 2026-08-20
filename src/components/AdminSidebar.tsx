@@ -68,7 +68,7 @@ export default function AdminSidebar() {
           </div>
           <div>
             <div className="font-[family-name:var(--font-oswald)] text-white font-semibold text-sm tracking-wide">
-              LSMD ADMIN
+              EMS ADMIN
             </div>
             <div className="text-gray-500 text-xs">Nexus Universe</div>
           </div>

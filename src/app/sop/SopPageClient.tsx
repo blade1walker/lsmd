@@ -19,7 +19,7 @@ export function SopPageClient({ content }: SopPageClientProps) {
             Standard Operating Procedures
           </h1>
           <p className="text-gray-500 text-sm mt-2">
-            Los Santos Medical Department - Official SOP Document
+            Emergency Medical Services - Official SOP Document
           </p>
         </div>
 

@@ -60,7 +60,7 @@ export default function OnboardingPage() {
             ← Back to Roster
           </Link>
           <span className="font-[family-name:var(--font-oswald)] text-white font-semibold text-sm">
-            LSMD
+            EMS
           </span>
         </div>
       </header>
@@ -69,11 +69,11 @@ export default function OnboardingPage() {
         <div className="flex items-center gap-2 mb-2">
           <UserPlus className="w-5 h-5 text-[#eab308]" />
           <h1 className="font-[family-name:var(--font-oswald)] text-2xl font-bold text-white uppercase">
-            Join LSMD
+            Join EMS
           </h1>
         </div>
         <p className="text-gray-500 text-sm mb-8">
-          Fill in your details to apply for the Los Santos Medical Department. An admin will review and assign your rank.
+          Fill in your details to apply for the Emergency Medical Services. An admin will review and assign your rank.
         </p>
 
         <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl p-6 space-y-4">

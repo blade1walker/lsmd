@@ -31,7 +31,7 @@ export function RadioCodesPageClient({ codes }: RadioCodesPageClientProps) {
             Radio Codes
           </h1>
           <p className="text-gray-500 text-sm mt-2">
-            Los Santos Medical Department - Official Radio Codes Reference
+            Emergency Medical Services - Official Radio Codes Reference
           </p>
         </div>
 

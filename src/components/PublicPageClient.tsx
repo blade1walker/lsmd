@@ -133,14 +133,14 @@ export function PublicPageClient({ sections }: PublicPageClientProps) {
               </div>
             ))}
 
-            {/* Join LSMD CTA */}
+            {/* Join EMS CTA */}
             <a
               href="/onboarding"
               className="block mt-12 rounded-xl border border-[#eab308]/30 bg-[#eab308]/5 hover:bg-[#eab308]/10 transition-all group"
             >
               <div className="flex items-center justify-between p-6">
                 <h3 className="font-[family-name:var(--font-oswald)] text-2xl font-bold text-[#eab308] uppercase tracking-wider group-hover:scale-105 transition-transform origin-left">
-                  Join LSMD
+Join EMS
                 </h3>
                 <div className="text-[#eab308] text-2xl group-hover:translate-x-1 transition-transform">
                   →

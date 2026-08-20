@@ -82,7 +82,7 @@ export async function PATCH(
         data: {
           name: request.name,
           rank: assignedRank,
-          dept: "LSMD",
+          dept: "EMS",
           activity: "Active",
           discordId: request.discordId,
           stateId: request.stateId,

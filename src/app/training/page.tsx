@@ -55,7 +55,7 @@ export default function TrainingPage() {
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center">
                 <span className="font-[family-name:var(--font-oswald)] text-white font-bold text-xs">N</span>
               </div>
-              <span className="font-[family-name:var(--font-oswald)] text-white font-semibold text-sm">LSMD</span>
+              <span className="font-[family-name:var(--font-oswald)] text-white font-semibold text-sm">EMS</span>
             </Link>
           </div>
           <nav className="flex items-center gap-4">

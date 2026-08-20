@@ -22,9 +22,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LSMD Roster - Nexus Universe",
+  title: "EMS Roster - Nexus Universe",
   description:
-    "Official Personnel Roster of the Los Santos Medical Department - Nexus Universe RP",
+    "Official Personnel Roster of the Emergency Medical Services - Nexus Universe RP",
 };
 
 export default function RootLayout({
