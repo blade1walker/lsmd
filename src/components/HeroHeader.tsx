@@ -44,6 +44,12 @@ export function HeroHeader() {
               View Full Roster
             </a>
             <a
+              href="/loa"
+              className="px-8 py-3 bg-white/5 hover:bg-white/10 text-white border border-white/10 font-semibold rounded-lg transition-all hover:scale-105 text-sm"
+            >
+              Request LOA
+            </a>
+            <a
               href="/sop"
               className="px-8 py-3 bg-white/5 hover:bg-white/10 text-white border border-white/10 font-semibold rounded-lg transition-all hover:scale-105 text-sm"
             >
