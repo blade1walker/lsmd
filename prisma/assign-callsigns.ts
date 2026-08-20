@@ -7,46 +7,51 @@ const prisma = (() => {
   return new PrismaClient({ adapter });
 })();
 
-const HIGH_COMMAND = ["Director of EMS", "Chief of EMS", "Deputy Chief of EMS", "Assistant Chief"];
-const COMMAND = ["Division Chief", "EMS Captain", "Lieutenant"];
-
-function getCallSignRange(rank: string): { start: number; end: number } {
-  if (HIGH_COMMAND.includes(rank)) return { start: 900, end: 903 };
-  if (COMMAND.includes(rank)) return { start: 904, end: 911 };
-  return { start: 912, end: 998 };
-}
+const RANK_CALLSIGN: Record<string, { fixed?: number; start: number; end: number }> = {
+  "Director of Medicine": { fixed: 999 },
+  "Director of EMS": { fixed: 900 },
+  "Chief of EMS": { fixed: 911 },
+  "Deputy Chief of EMS": { fixed: 912 },
+  "Assistant Chief": { fixed: 913 },
+  "Division Chief": { fixed: 914 },
+  "EMS Captain": { fixed: 915 },
+  "Lieutenant": { start: 920, end: 929 },
+  "Senior Paramedic": { start: 930, end: 949 },
+  "Paramedic": { start: 950, end: 969 },
+  "EMT": { start: 970, end: 979 },
+  "EMR": { start: 980, end: 989 },
+  "Medical Intern": { start: 990, end: 998 },
+};
 
 async function main() {
   const members = await prisma.member.findMany({ orderBy: [{ rank: "asc" }, { name: "asc" }] });
-
-  const taken = new Set(["911", "999"]);
   const counters: Record<string, number> = {};
 
   for (const m of members) {
-    const range = getCallSignRange(m.rank);
-    const prefix = `${range.start}-${range.end}`;
-    if (!(prefix in counters)) counters[prefix] = range.start;
-
-    let callsign: string | null = null;
-    while (counters[prefix] <= range.end) {
-      const cs = String(counters[prefix]);
-      counters[prefix]++;
-      if (!taken.has(cs)) {
-        callsign = cs;
-        break;
-      }
+    const range = RANK_CALLSIGN[m.rank];
+    if (!range) {
+      console.log(`  ${m.name} (${m.rank}) → no call sign range defined, skipping`);
+      continue;
     }
 
-    if (callsign) {
-      await prisma.member.update({
-        where: { id: m.id },
-        data: { callSign: callsign },
-      });
-      console.log(`  ${m.name} (${m.rank}) → ${callsign}`);
+    let callsign: string;
+    if (range.fixed) {
+      callsign = String(range.fixed);
     } else {
-      console.log(`  ${m.name} (${m.rank}) → no available call sign in range!`);
+      const key = `${range.start}-${range.end}`;
+      if (!(key in counters)) counters[key] = range.start;
+      callsign = String(counters[key]);
+      counters[key]++;
     }
+
+    await prisma.member.update({
+      where: { id: m.id },
+      data: { callSign: callsign },
+    });
+    console.log(`  ${m.name} (${m.rank}) → ${callsign}`);
   }
+
+  console.log("\nDone!");
 }
 
 main()
