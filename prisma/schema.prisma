@@ -1,0 +1,269 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Section {
+  id        String   @id @default(cuid())
+  name      String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  members   Member[]
+}
+
+model Member {
+  id             String   @id @default(cuid())
+  order          Int      @default(0)
+  name           String
+  dept           String   @default("LSMD")
+  rank           String
+  position       String?
+  callSign       String?
+  activity       String   @default("Active")
+  ptd            Boolean  @default(false)
+  hr             Boolean  @default(false)
+  asd            Boolean  @default(false)
+  bike           Boolean  @default(false)
+  speedUnit      Boolean  @default(false)
+  timezone       String?
+  dateOfJoining  DateTime?
+  lastPromotion  DateTime?
+  discordId      String?
+  ftoRole        String?
+  tempRank       String?
+  category       String?
+  sectionId      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  section            Section?            @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+  clockEntries       ClockEntry[]
+  trainingRecord     TrainingRecord?
+  loas               LOA[]
+  inactivityRequests InactivityRequest[]
+  removalRequests    RemovalRequest[]
+  ftoSignOffRecords  FTOSignOffRecord[]
+}
+
+model ClockEntry {
+  id          String   @id @default(cuid())
+  memberId    String
+  clockInAt   DateTime @default(now())
+  clockOutAt  DateTime?
+  durationSec Int?
+  member      Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+}
+
+model SopContent {
+  id        String   @id @default("sop-main")
+  content   String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TrainingRecord {
+  id       String @id @default(cuid())
+  memberId String @unique
+
+  cadetPhase1COC           Boolean @default(false)
+  cadetPhase1COCCby        String?
+  cadetPhase1PCRS          Boolean @default(false)
+  cadetPhase1PCRSby        String?
+  cadetPhase1UoF           Boolean @default(false)
+  cadetPhase1UoFby         String?
+  cadetPhase1Situation     Boolean @default(false)
+  cadetPhase1Situationby   String?
+
+  cadetPhase2Legal            Boolean @default(false)
+  cadetPhase2Legalby          String?
+  cadetPhase2Constitution     Boolean @default(false)
+  cadetPhase2Constitutionby   String?
+  cadetPhase2Radio            Boolean @default(false)
+  cadetPhase2Radioby          String?
+  cadetPhase2Report           Boolean @default(false)
+  cadetPhase2Reportby         String?
+
+  cadetPhase3Negotiation      Boolean @default(false)
+  cadetPhase3Negotiationby    String?
+  cadetPhase3Hostage          Boolean @default(false)
+  cadetPhase3Hostageby        String?
+  cadetPhase3Traffic          Boolean @default(false)
+  cadetPhase3Trafficby        String?
+  cadetPhase3Ticket           Boolean @default(false)
+  cadetPhase3Ticketby         String?
+  cadetPhase3Pursuit          Boolean @default(false)
+  cadetPhase3Pursuitby        String?
+
+  probationaryReportNumber        String  @default("")
+  probationaryTrafficStops        Int     @default(0)
+  probationaryMDTReports          Int     @default(0)
+  probationaryNegotiation         Boolean @default(false)
+  probationaryNegotiationby       String?
+  probationaryCommunication       Boolean @default(false)
+  probationaryCommunicationby     String?
+  probationaryRecommendation      Boolean @default(false)
+  probationaryRecommendationby    String?
+  probationaryTheory              Boolean @default(false)
+  probationaryTheoryby            String?
+  probationaryPractical           Boolean @default(false)
+  probationaryPracticalby         String?
+  probationaryStatus              String  @default("")
+
+  phase2Signoff   Boolean    @default(false)
+  phase2SignedBy  String?
+  phase2SignedAt  DateTime?
+  phase3Signoff   Boolean    @default(false)
+  phase3SignedBy  String?
+  phase3SignedAt  DateTime?
+
+  member  Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  remarks Remark[]
+}
+
+model LOA {
+  id        String   @id @default(cuid())
+  memberId  String
+  reason    String
+  startDate DateTime
+  endDate   DateTime
+  status    String   @default("Active")
+  notes     String?
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+}
+
+model InactivityRequest {
+  id          String   @id @default(cuid())
+  memberId    String
+  submittedBy String
+  reason      String
+  status      String   @default("Pending")
+  adminNote   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  member      Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+}
+
+model PromotionNotification {
+  id         String   @id @default(cuid())
+  memberId   String?
+  memberName String
+  callSign   String?
+  fromRank   String
+  toRank     String
+  promotedBy String
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
+model AdminRole {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  permissions String[]
+  adminUsers  AdminUser[]
+}
+
+model TempRankTemplate {
+  id    String @id @default(cuid())
+  name  String @unique
+  order Int    @default(0)
+}
+
+model CategoryTemplate {
+  id    String @id @default(cuid())
+  name  String @unique
+  color String @default("#eab308")
+  order Int    @default(0)
+}
+
+model AdminUser {
+  id          String    @id @default(cuid())
+  discordId   String    @unique
+  discordName String
+  roleId      String?
+  role        AdminRole? @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model RemovalRequest {
+  id              String   @id @default(cuid())
+  memberId        String
+  memberName      String
+  memberRank      String
+  requestedBy     String
+  reason          String
+  status          String   @default("Pending")
+  reviewedBy      String?
+  reviewNote      String?
+  isPTDCase       Boolean  @default(false)
+  ptdReviewStatus String?
+  ptdReviewedBy   String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  member          Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+}
+
+model RadioCode {
+  id          String   @id @default(cuid())
+  code        String
+  description String
+  section     String   @default("ten")
+  order       Int      @default(0)
+  highlighted Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SignOffDefinition {
+  id            String           @id @default(cuid())
+  name          String
+  order         Int              @default(0)
+  status        String           @default("Active")
+  pendingName   String?
+  pendingAction String?
+  createdBy     String?
+  approvedBy    String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  records       FTOSignOffRecord[]
+}
+
+model FTOSignOffRecord {
+  id                  String            @id @default(cuid())
+  ftoMemberId         String
+  signOffDefinitionId String
+  completedAt         DateTime          @default(now())
+  completedBy         String?
+  notes               String?
+  ftoMember           Member            @relation(fields: [ftoMemberId], references: [id], onDelete: Cascade)
+  signOffDefinition   SignOffDefinition @relation(fields: [signOffDefinitionId], references: [id], onDelete: Cascade)
+}
+
+model Remark {
+  id               String         @id @default(cuid())
+  trainingRecordId String
+  authorCallSign   String?
+  authorRole       String?
+  content          String
+  createdAt        DateTime       @default(now())
+  trainingRecord   TrainingRecord @relation(fields: [trainingRecordId], references: [id], onDelete: Cascade)
+}
+
+model DeletionLog {
+  id          String   @id @default(cuid())
+  entityType  String
+  entityId    String
+  entityLabel String
+  data        Json
+  deletedBy   String
+  deletedAt   DateTime @default(now())
+  expiresAt   DateTime
+}

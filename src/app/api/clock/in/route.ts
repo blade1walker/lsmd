@@ -1,0 +1,32 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const { memberId } = body;
+
+    const existingEntry = await prisma.clockEntry.findFirst({
+      where: {
+        memberId,
+        clockOutAt: null,
+      },
+    });
+
+    if (existingEntry) {
+      return NextResponse.json({ error: "Already clocked in" }, { status: 400 });
+    }
+
+    const entry = await prisma.clockEntry.create({
+      data: {
+        memberId,
+        clockInAt: new Date(),
+      },
+    });
+
+    return NextResponse.json(entry, { status: 201 });
+  } catch (error) {
+    console.error("Error clocking in:", error);
+    return NextResponse.json({ error: "Failed to clock in" }, { status: 500 });
+  }
+}

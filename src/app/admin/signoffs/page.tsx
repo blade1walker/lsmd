@@ -1,0 +1,235 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { Plus, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+interface SignOffDefinition {
+  id: string;
+  name: string;
+  order: number;
+  status: string;
+}
+
+interface FTOSignOffRecord {
+  id: string;
+  ftoMemberId: string;
+  signOffDefinitionId: string;
+  completedAt: string;
+  completedBy: string | null;
+  notes: string | null;
+  ftoMember: {
+    name: string;
+    callSign: string;
+  };
+  signOffDefinition: {
+    name: string;
+  };
+}
+
+export default function AdminSignoffsPage() {
+  const [definitions, setDefinitions] = useState<SignOffDefinition[]>([]);
+  const [records, setRecords] = useState<FTOSignOffRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newDefinition, setNewDefinition] = useState("");
+  const [activeTab, setActiveTab] = useState<"definitions" | "records">("definitions");
+
+  const fetchData = async () => {
+    try {
+      const [defRes, recRes] = await Promise.all([
+        fetch("/api/signoffs"),
+        fetch("/api/signoffs/records"),
+      ]);
+      setDefinitions(await defRes.json());
+      setRecords(await recRes.json());
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleAddDefinition = async () => {
+    if (!newDefinition) return;
+    try {
+      await fetch("/api/signoffs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newDefinition,
+          order: definitions.length,
+        }),
+      });
+      setNewDefinition("");
+      fetchData();
+    } catch (error) {
+      console.error("Error adding definition:", error);
+    }
+  };
+
+  const handleDeleteDefinition = async (id: string) => {
+    try {
+      await fetch(`/api/signoffs/${id}`, { method: "DELETE" });
+      fetchData();
+    } catch (error) {
+      console.error("Error deleting definition:", error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-500">Loading sign-offs...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="mb-8">
+        <h1 className="font-[family-name:var(--font-oswald)] text-2xl font-bold text-white uppercase">
+          FTO Sign-offs
+        </h1>
+        <p className="text-gray-500 text-sm mt-1">
+          Manage sign-off definitions and completion records
+        </p>
+      </div>
+
+      <div className="flex gap-2 mb-6">
+        <Button
+          variant={activeTab === "definitions" ? "default" : "outline"}
+          onClick={() => setActiveTab("definitions")}
+          className={
+            activeTab === "definitions"
+              ? "bg-[#eab308] text-black"
+              : "border-[#1e1e1e] text-gray-400"
+          }
+        >
+          Definitions
+        </Button>
+        <Button
+          variant={activeTab === "records" ? "default" : "outline"}
+          onClick={() => setActiveTab("records")}
+          className={
+            activeTab === "records"
+              ? "bg-[#eab308] text-black"
+              : "border-[#1e1e1e] text-gray-400"
+          }
+        >
+          Records
+        </Button>
+      </div>
+
+      {activeTab === "definitions" && (
+        <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl p-6">
+          <div className="flex gap-2 mb-6">
+            <Input
+              value={newDefinition}
+              onChange={(e) => setNewDefinition(e.target.value)}
+              placeholder="New sign-off type..."
+              className="bg-[#0a0a0a] border-[#1e1e1e]"
+              onKeyDown={(e) => e.key === "Enter" && handleAddDefinition()}
+            />
+            <Button
+              onClick={handleAddDefinition}
+              disabled={!newDefinition}
+              className="bg-[#eab308] text-black hover:bg-[#ca8a04]"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add
+            </Button>
+          </div>
+
+          <div className="space-y-2">
+            {definitions.map((def) => (
+              <div
+                key={def.id}
+                className="flex items-center justify-between p-3 bg-[#0a0a0a] rounded-lg"
+              >
+                <div>
+                  <span className="text-white text-sm">{def.name}</span>
+                  <span className="ml-2 text-xs text-gray-500">
+                    ({def.status})
+                  </span>
+                </div>
+                <button
+                  onClick={() => handleDeleteDefinition(def.id)}
+                  className="p-1 text-gray-600 hover:text-red-400"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {activeTab === "records" && (
+        <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-[#1e1e1e]">
+                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">
+                    FTO
+                  </th>
+                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">
+                    Sign-off Type
+                  </th>
+                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">
+                    Completed By
+                  </th>
+                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">
+                    Date
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {records.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={4}
+                      className="px-6 py-8 text-center text-gray-500"
+                    >
+                      No sign-off records
+                    </td>
+                  </tr>
+                ) : (
+                  records.map((record) => (
+                    <tr
+                      key={record.id}
+                      className="border-b border-[#1e1e1e] hover:bg-white/5"
+                    >
+                      <td className="py-3 px-4">
+                        <div className="text-white text-sm">
+                          {record.ftoMember.name}
+                        </div>
+                        <div className="text-xs text-gray-500 font-[family-name:var(--font-mono)]">
+                          {record.ftoMember.callSign}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-sm text-gray-400">
+                        {record.signOffDefinition.name}
+                      </td>
+                      <td className="py-3 px-4 text-sm text-gray-400">
+                        {record.completedBy ?? "N/A"}
+                      </td>
+                      <td className="py-3 px-4 text-sm text-gray-400">
+                        {new Date(record.completedAt).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
