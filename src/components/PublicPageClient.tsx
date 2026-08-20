@@ -132,6 +132,26 @@ export function PublicPageClient({ sections }: PublicPageClientProps) {
                 )}
               </div>
             ))}
+
+            {/* Join LSMD CTA */}
+            <a
+              href="/onboarding"
+              className="block mt-12 p-8 rounded-xl border-2 border-[#eab308]/40 bg-[#eab308]/5 hover:bg-[#eab308]/10 hover:border-[#eab308]/60 transition-all group"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-[family-name:var(--font-oswald)] text-2xl font-bold text-[#eab308] uppercase tracking-wider group-hover:scale-105 transition-transform origin-left">
+                    Join LSMD
+                  </h3>
+                  <p className="text-gray-400 mt-1 text-sm">
+                    Ready to serve Los Santos? Submit your onboarding application today.
+                  </p>
+                </div>
+                <div className="text-[#eab308] text-3xl group-hover:translate-x-1 transition-transform">
+                  →
+                </div>
+              </div>
+            </a>
           </div>
         )}
       </main>
