@@ -4,36 +4,27 @@ import { prisma } from "@/lib/prisma";
 export async function GET() {
   try {
     const sections = await prisma.section.findMany({
-      include: {
-        members: {
-          orderBy: { order: "asc" },
-        },
-      },
+      include: { members: { orderBy: { order: "asc" } } },
       orderBy: { order: "asc" },
     });
-
     return NextResponse.json(sections);
-  } catch (error) {
-    console.error("Error fetching sections:", error);
-    return NextResponse.json({ error: "Failed to fetch sections" }, { status: 500 });
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: "Database connection failed", detail: error.message?.slice(0, 200) },
+      { status: 500 }
+    );
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const body = await request.json();
-    const { name, order } = body;
-
-    const section = await prisma.section.create({
-      data: {
-        name,
-        order: order ?? 0,
-      },
-    });
-
+    const body = await req.json();
+    const section = await prisma.section.create({ data: body });
     return NextResponse.json(section, { status: 201 });
-  } catch (error) {
-    console.error("Error creating section:", error);
-    return NextResponse.json({ error: "Failed to create section" }, { status: 500 });
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: "Failed to create section", detail: error.message?.slice(0, 200) },
+      { status: 500 }
+    );
   }
 }
