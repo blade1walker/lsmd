@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
 
     if (body.rank) {
       const sectionHints: Record<string, string[]> = {
-        "High Command": ["Director of EMS", "Chief of EMS", "Deputy Chief of EMS", "Assistant Chief"],
+        "High Command": ["Director of Medicine", "Chief of EMS", "Deputy Chief of EMS", "Assistant Chief"],
         Command: ["Division Chief", "EMS Captain", "Lieutenant"],
         NCO: ["Senior Paramedic"],
         Patrol: ["Paramedic", "EMT", "EMR"],
