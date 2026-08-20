@@ -12,3 +12,28 @@ export async function GET() {
     );
   }
 }
+
+export async function PUT(req: Request) {
+  try {
+    const { content } = await req.json();
+    const existing = await prisma.sopContent.findFirst();
+
+    if (existing) {
+      await prisma.sopContent.update({
+        where: { id: existing.id },
+        data: { content },
+      });
+    } else {
+      await prisma.sopContent.create({
+        data: { id: "sop-main", content },
+      });
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: "Failed to save SOP", detail: error.message?.slice(0, 200) },
+      { status: 500 }
+    );
+  }
+}
