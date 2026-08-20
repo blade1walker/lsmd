@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   Users,
+  UserPlus,
   GraduationCap,
   FileText,
   Radio,
@@ -20,6 +21,7 @@ import {
 
 const navItems = [
   { href: "/admin/roster", label: "Roster", icon: Users },
+  { href: "/admin/onboarding", label: "Onboarding", icon: UserPlus },
   { href: "/admin/training", label: "Training", icon: GraduationCap },
   { href: "/admin/sop", label: "SOP", icon: FileText },
   { href: "/admin/radio-codes", label: "Radio Codes", icon: Radio },

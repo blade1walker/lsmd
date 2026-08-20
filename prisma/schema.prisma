@@ -268,3 +268,18 @@ model DeletionLog {
   deletedAt   DateTime @default(now())
   expiresAt   DateTime
 }
+
+model OnboardingRequest {
+  id          String   @id @default(cuid())
+  name        String
+  discordId   String
+  stateId     String?
+  steamId     String?
+  reason      String?
+  status      String   @default("Pending")
+  assignedRank String?
+  reviewedBy  String?
+  reviewNote  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

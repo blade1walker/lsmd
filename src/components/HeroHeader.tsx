@@ -56,6 +56,12 @@ export function HeroHeader() {
               Uniform Guide
             </a>
             <a
+              href="/onboarding"
+              className="px-8 py-3 bg-[#eab308]/20 hover:bg-[#eab308]/30 text-[#eab308] border border-[#eab308]/30 font-semibold rounded-lg transition-all hover:scale-105 text-sm"
+            >
+              Join LSMD
+            </a>
+            <a
               href="/sop"
               className="px-8 py-3 bg-white/5 hover:bg-white/10 text-white border border-white/10 font-semibold rounded-lg transition-all hover:scale-105 text-sm"
             >
