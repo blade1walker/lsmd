@@ -22,6 +22,7 @@ model Member {
   name           String
   dept           String   @default("LSMD")
   rank           String
+  stateId        String?
   position       String?
   callSign       String?
   activity       String   @default("Active")
