@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
         "High Command": ["Director of Medicine", "Chief of EMS", "Deputy Chief of EMS", "Assistant Chief"],
         Command: ["Division Chief", "EMS Captain", "Lieutenant"],
         Lead: ["Senior Paramedic"],
-        Patrol: ["Paramedic", "EMT", "EMR"],
+        "Medical Patrol": ["Paramedic", "EMT", "EMR"],
         Probationary: ["Medical Intern"],
       };
       for (const [sectionName, ranks] of Object.entries(sectionHints)) {

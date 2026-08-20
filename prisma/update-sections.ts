@@ -9,10 +9,10 @@ const prisma = (() => {
 
 async function main() {
   await prisma.section.updateMany({
-    where: { name: "NCO" },
-    data: { name: "Lead", order: 2 },
+    where: { name: "Patrol" },
+    data: { name: "Medical Patrol" },
   });
-  console.log("Renamed NCO to Lead");
+  console.log("Renamed Patrol to Medical Patrol");
 
   const sections = await prisma.section.findMany({ orderBy: { order: "asc" } });
   sections.forEach((s) => console.log(`  ${s.order}. ${s.name}`));
