@@ -16,7 +16,7 @@ export default function OnboardingPage() {
   const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = async () => {
-    if (!name || !discordId) return;
+    if (!name || !discordId || !stateId) return;
     setLoading(true);
     try {
       const res = await fetch("/api/onboarding", {
@@ -99,11 +99,11 @@ export default function OnboardingPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-gray-400 text-sm">State ID</Label>
+              <Label className="text-gray-400 text-sm">State ID *</Label>
               <Input
                 value={stateId}
                 onChange={(e) => setStateId(e.target.value)}
-                placeholder="If known"
+                placeholder="Enter your state ID"
                 className="mt-1 bg-[#0a0a0a] border-[#1e1e1e]"
               />
             </div>
@@ -121,7 +121,7 @@ export default function OnboardingPage() {
           <div className="pt-4">
             <Button
               onClick={handleSubmit}
-              disabled={loading || !name || !discordId}
+              disabled={loading || !name || !discordId || !stateId}
               className="w-full bg-[#eab308] text-black hover:bg-[#ca8a04]"
             >
               {loading ? "Submitting..." : "Submit Application"}
