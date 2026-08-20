@@ -10,20 +10,17 @@ export async function POST(req: NextRequest) {
         reason: body.reason,
         startDate: new Date(body.startDate),
         endDate: new Date(body.endDate),
-        status: "Active",
+        status: "Pending",
         notes: body.notes,
         createdBy: body.createdBy || "self",
       },
     });
 
-    await prisma.member.update({
-      where: { id: body.memberId },
-      data: { activity: "LOA" },
-    });
-
     return NextResponse.json(loa, { status: 201 });
   } catch (error: any) {
-    console.error("Error applying for LOA:", error);
-    return NextResponse.json({ error: "Failed to apply for LOA", detail: error.message?.slice(0, 200) }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to apply for LOA", detail: error.message?.slice(0, 200) },
+      { status: 500 }
+    );
   }
 }

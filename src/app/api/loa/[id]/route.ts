@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function PATCH(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -15,7 +15,12 @@ export async function PATCH(
       data: { status },
     });
 
-    if (status === "Expired" || status === "Cancelled") {
+    if (status === "Approved") {
+      await prisma.member.update({
+        where: { id: loa.memberId },
+        data: { activity: "LOA" },
+      });
+    } else if (status === "Declined" || status === "Expired" || status === "Cancelled") {
       await prisma.member.update({
         where: { id: loa.memberId },
         data: { activity: "Active" },
@@ -23,22 +28,26 @@ export async function PATCH(
     }
 
     return NextResponse.json(loa);
-  } catch (error) {
-    console.error("Error updating LOA:", error);
-    return NextResponse.json({ error: "Failed to update LOA" }, { status: 500 });
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: "Failed to update LOA", detail: error.message?.slice(0, 200) },
+      { status: 500 }
+    );
   }
 }
 
 export async function DELETE(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
     await prisma.lOA.delete({ where: { id } });
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Error deleting LOA:", error);
-    return NextResponse.json({ error: "Failed to delete LOA" }, { status: 500 });
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: "Failed to delete LOA", detail: error.message?.slice(0, 200) },
+      { status: 500 }
+    );
   }
 }
