@@ -27,7 +27,7 @@ export const RANK_NAMES = RANK_LIST;
 export const SECTION_HINTS: Record<string, string[]> = {
   "High Command": ["Director of Medicine", "Chief of EMS", "Deputy Chief of EMS", "Assistant Chief"],
   Command: ["Division Chief", "EMS Captain", "Lieutenant"],
-  NCO: ["Senior Paramedic"],
+  Lead: ["Senior Paramedic"],
   Patrol: ["Paramedic", "EMT", "EMR"],
   Probationary: ["Medical Intern"],
 };

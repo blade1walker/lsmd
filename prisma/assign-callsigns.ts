@@ -7,7 +7,7 @@ const prisma = (() => {
   return new PrismaClient({ adapter });
 })();
 
-const RANK_CALLSIGN: Record<string, { fixed?: number; start: number; end: number }> = {
+const RANK_CALLSIGN: Record<string, { fixed?: number; start?: number; end?: number }> = {
   "Director of Medicine": { fixed: 999 },
   "Director of EMS": { fixed: 900 },
   "Chief of EMS": { fixed: 911 },
@@ -39,7 +39,7 @@ async function main() {
       callsign = String(range.fixed);
     } else {
       const key = `${range.start}-${range.end}`;
-      if (!(key in counters)) counters[key] = range.start;
+      if (!(key in counters)) counters[key] = range.start!;
       callsign = String(counters[key]);
       counters[key]++;
     }

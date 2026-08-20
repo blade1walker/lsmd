@@ -18,7 +18,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       const sectionHints: Record<string, string[]> = {
         "High Command": ["Director of Medicine", "Chief of EMS", "Deputy Chief of EMS", "Assistant Chief"],
         Command: ["Division Chief", "EMS Captain", "Lieutenant"],
-        NCO: ["Senior Paramedic"],
+        Lead: ["Senior Paramedic"],
         Patrol: ["Paramedic", "EMT", "EMR"],
         Probationary: ["Medical Intern"],
       };
