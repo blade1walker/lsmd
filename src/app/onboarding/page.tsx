@@ -12,7 +12,6 @@ export default function OnboardingPage() {
   const [discordId, setDiscordId] = useState("");
   const [stateId, setStateId] = useState("");
   const [steamId, setSteamId] = useState("");
-  const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -23,7 +22,7 @@ export default function OnboardingPage() {
       const res = await fetch("/api/onboarding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, discordId, stateId, steamId, reason }),
+        body: JSON.stringify({ name, discordId, stateId, steamId }),
       });
       if (res.ok) setSubmitted(true);
     } catch (err) {
@@ -117,17 +116,6 @@ export default function OnboardingPage() {
                 className="mt-1 bg-[#0a0a0a] border-[#1e1e1e]"
               />
             </div>
-          </div>
-
-          <div>
-            <Label className="text-gray-400 text-sm">Why do you want to join LSMD?</Label>
-            <textarea
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="Tell us about yourself..."
-              rows={3}
-              className="mt-1 w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#eab308] resize-none"
-            />
           </div>
 
           <div className="pt-4">
