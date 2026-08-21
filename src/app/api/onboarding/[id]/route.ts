@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { postToLOAWebhook } from "@/lib/discord-webhook";
+import { postToEnrollWebhook } from "@/lib/discord-webhook";
 
 const SECTION_HINTS: Record<string, string[]> = {
   "High Command": ["Director of Medicine", "Chief of EMS", "Deputy Chief of EMS", "Assistant Chief"],
@@ -94,7 +94,7 @@ export async function PATCH(
         },
       });
 
-      await postToLOAWebhook({
+      await postToEnrollWebhook({
         title: "New Member Enrolled",
         description: `**${request.name}** has been enrolled in the EMS roster.`,
         color: 0x22c55e,

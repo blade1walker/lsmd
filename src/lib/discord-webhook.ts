@@ -1,10 +1,12 @@
-export async function postToLOAWebhook(embed: {
-  title: string;
-  description: string;
-  color: number;
-  fields: { name: string; value: string; inline?: boolean }[];
-}) {
-  const webhookUrl = process.env.DISCORD_LOA_WEBHOOK_URL;
+export async function postToWebhook(
+  webhookUrl: string,
+  embed: {
+    title: string;
+    description: string;
+    color: number;
+    fields: { name: string; value: string; inline?: boolean }[];
+  }
+) {
   if (!webhookUrl) return;
 
   try {
@@ -26,6 +28,26 @@ export async function postToLOAWebhook(embed: {
       }),
     });
   } catch (err) {
-    console.error("Failed to post to LOA webhook:", err);
+    console.error("Failed to post to webhook:", err);
   }
+}
+
+export async function postToLOAWebhook(embed: {
+  title: string;
+  description: string;
+  color: number;
+  fields: { name: string; value: string; inline?: boolean }[];
+}) {
+  const webhookUrl = process.env.DISCORD_LOA_WEBHOOK_URL;
+  if (webhookUrl) await postToWebhook(webhookUrl, embed);
+}
+
+export async function postToEnrollWebhook(embed: {
+  title: string;
+  description: string;
+  color: number;
+  fields: { name: string; value: string; inline?: boolean }[];
+}) {
+  const webhookUrl = process.env.DISCORD_ENROLL_WEBHOOK_URL;
+  if (webhookUrl) await postToWebhook(webhookUrl, embed);
 }
