@@ -96,7 +96,7 @@ export async function PATCH(
 
       await postToEnrollWebhook({
         title: "New Member Enrolled",
-        description: `**${request.name}** has been enrolled in the EMS roster.`,
+        description: `<@${request.discordId}> **${request.name}** has been enrolled in the EMS roster.`,
         color: 0x22c55e,
         fields: [
           { name: "Name", value: request.name, inline: true },

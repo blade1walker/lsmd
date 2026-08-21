@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
 
     await postToLOAWebhook({
       title: "LOA Requested",
-      description: `**${loa.member.name}** has requested a Leave of Absence.`,
+      description: `<@${loa.member.discordId}> **${loa.member.name}** has requested a Leave of Absence.`,
       color: 0xf59e0b,
       fields: [
         { name: "Member", value: loa.member.name, inline: true },

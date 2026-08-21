@@ -25,7 +25,7 @@ export async function PATCH(
 
       await postToLOAWebhook({
         title: "LOA Approved",
-        description: `**${loa.member.name}** has been granted a Leave of Absence.`,
+        description: `<@${loa.member.discordId}> **${loa.member.name}** has been granted a Leave of Absence.`,
         color: 0x22c55e,
         fields: [
           { name: "Member", value: loa.member.name, inline: true },
@@ -39,7 +39,7 @@ export async function PATCH(
     } else if (status === "Declined") {
       await postToLOAWebhook({
         title: "LOA Declined",
-        description: `**${loa.member.name}**'s Leave of Absence request has been declined.`,
+        description: `<@${loa.member.discordId}> **${loa.member.name}**'s Leave of Absence request has been declined.`,
         color: 0xef4444,
         fields: [
           { name: "Member", value: loa.member.name, inline: true },
