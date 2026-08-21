@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { postToLOAWebhook } from "@/lib/discord-webhook";
 
 const SECTION_HINTS: Record<string, string[]> = {
   "High Command": ["Director of Medicine", "Chief of EMS", "Deputy Chief of EMS", "Assistant Chief"],
@@ -78,7 +79,7 @@ export async function PATCH(
       const callSign = await getNextCallSign(assignedRank);
       const memberCount = await prisma.member.count();
 
-      await prisma.member.create({
+      const member = await prisma.member.create({
         data: {
           name: request.name,
           rank: assignedRank,
@@ -91,6 +92,18 @@ export async function PATCH(
           dateOfJoining: new Date(),
           order: memberCount,
         },
+      });
+
+      await postToLOAWebhook({
+        title: "New Member Enrolled",
+        description: `**${request.name}** has been enrolled in the EMS roster.`,
+        color: 0x22c55e,
+        fields: [
+          { name: "Name", value: request.name, inline: true },
+          { name: "Rank", value: assignedRank, inline: true },
+          { name: "Call Sign", value: callSign || "N/A", inline: true },
+          { name: "State ID", value: request.stateId || "N/A", inline: true },
+        ],
       });
     }
 
