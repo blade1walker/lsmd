@@ -59,7 +59,7 @@ export function HeroHeader() {
               href="/onboarding"
               className="px-8 py-3 bg-[#eab308]/20 hover:bg-[#eab308]/30 text-[#eab308] border border-[#eab308]/30 font-semibold rounded-lg transition-all hover:scale-105 text-sm"
             >
-              Join EMS
+              Enroll in Roster
             </a>
             <a
               href="/sop"
