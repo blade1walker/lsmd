@@ -14,7 +14,7 @@ export async function postToWebhook(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        username: "EMS HR Assistant",
+        username: "Nexus EMS HR",
         avatar_url: "",
         embeds: [
           {
