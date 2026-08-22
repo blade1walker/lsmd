@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Copy, CheckCircle } from "lucide-react";
+import { Copy, CheckCircle, Send, Loader2 } from "lucide-react";
 
 const DEFAULT_MESSAGE = `Hello and welcome to the team! :tada:
 
@@ -21,6 +21,9 @@ export default function OnboardingInvitePage() {
   const [name, setName] = useState("");
   const [message, setMessage] = useState(DEFAULT_MESSAGE);
   const [copied, setCopied] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState("");
 
   const personalizedMessage = () => {
     let msg = message;
@@ -36,10 +39,35 @@ export default function OnboardingInvitePage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleSendDM = async () => {
+    if (!discordId) return;
+    setSending(true);
+    setError("");
+    setSent(false);
+    try {
+      const res = await fetch("/api/discord/dm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ discordId, message }),
+      });
+      if (res.ok) {
+        setSent(true);
+      } else {
+        const data = await res.json();
+        setError(data.detail || data.error || "Failed to send");
+      }
+    } catch (err) {
+      setError("Network error");
+    }
+    setSending(false);
+  };
+
   const handleReset = () => {
     setMessage(DEFAULT_MESSAGE);
     setDiscordId("");
     setName("");
+    setSent(false);
+    setError("");
   };
 
   return (
@@ -71,7 +99,7 @@ export default function OnboardingInvitePage() {
           </div>
 
           <div>
-            <Label className="text-gray-400 text-sm">Discord ID</Label>
+            <Label className="text-gray-400 text-sm">Discord ID *</Label>
             <Input
               value={discordId}
               onChange={(e) => setDiscordId(e.target.value)}
@@ -90,10 +118,41 @@ export default function OnboardingInvitePage() {
             />
           </div>
 
+          {error && (
+            <div className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-md p-2">
+              {error}
+            </div>
+          )}
+
+          {sent && (
+            <div className="text-green-400 text-sm bg-green-500/10 border border-green-500/20 rounded-md p-2 flex items-center gap-2">
+              <CheckCircle className="w-4 h-4" />
+              Message sent successfully via DM!
+            </div>
+          )}
+
           <div className="flex gap-3 pt-2">
             <Button
+              onClick={handleSendDM}
+              disabled={!discordId || sending}
+              className="flex-1 bg-[#5865f2] text-white hover:bg-[#4752c4] disabled:opacity-50"
+            >
+              {sending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  Send DM
+                </>
+              )}
+            </Button>
+            <Button
               onClick={handleCopy}
-              className="flex-1 bg-[#eab308] text-black hover:bg-[#ca8a04]"
+              variant="outline"
+              className="border-[#1e1e1e] text-gray-400"
             >
               {copied ? (
                 <>
@@ -103,7 +162,7 @@ export default function OnboardingInvitePage() {
               ) : (
                 <>
                   <Copy className="w-4 h-4 mr-2" />
-                  Copy Message
+                  Copy
                 </>
               )}
             </Button>
@@ -156,7 +215,7 @@ export default function OnboardingInvitePage() {
 
           <div className="mt-4 p-3 bg-[#0a0a0a] rounded-lg border border-[#1e1e1e]">
             <p className="text-gray-500 text-xs">
-              Copy the message and paste it in your Discord channel. The Discord ID will be converted to a mention when pasted.
+              Click <strong>Send DM</strong> to send the invitation directly to the member via Discord DM. Or use <strong>Copy</strong> to paste it manually.
             </p>
           </div>
         </div>
