@@ -1,3 +1,32 @@
+import { prisma } from "./prisma";
+
+export async function getNotificationSettings() {
+  try {
+    let settings = await prisma.notificationSettings.findUnique({
+      where: { id: "singleton" },
+    });
+    if (!settings) {
+      settings = await prisma.notificationSettings.create({
+        data: { id: "singleton" },
+      });
+    }
+    return settings;
+  } catch {
+    return {
+      recruitWebhook: true,
+      recruitDM: true,
+      onboardingWebhook: false,
+      onboardingDM: true,
+      ftpWebhook: false,
+      ftpDM: true,
+      loaWebhook: true,
+      loaDM: false,
+      testWebhook: true,
+      testDM: true,
+    };
+  }
+}
+
 export async function postToWebhook(
   webhookUrl: string,
   embed: {

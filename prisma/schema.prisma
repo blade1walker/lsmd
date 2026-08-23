@@ -311,3 +311,17 @@ model RecruitRequest {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
+
+model NotificationSettings {
+  id                String  @id @default("singleton")
+  recruitWebhook    Boolean @default(true)
+  recruitDM         Boolean @default(true)
+  onboardingWebhook Boolean @default(false)
+  onboardingDM      Boolean @default(true)
+  ftpWebhook        Boolean @default(false)
+  ftpDM             Boolean @default(true)
+  loaWebhook        Boolean @default(true)
+  loaDM             Boolean @default(false)
+  testWebhook       Boolean @default(true)
+  testDM            Boolean @default(true)
+}

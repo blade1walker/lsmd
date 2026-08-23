@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { postToEnrollWebhook, sendDiscordDM } from "@/lib/discord-webhook";
+import { postToEnrollWebhook, sendDiscordDM, getNotificationSettings } from "@/lib/discord-webhook";
 
 const SECTION_HINTS: Record<string, string[]> = {
   "High Command": ["Director of Medicine", "Chief of EMS", "Deputy Chief of EMS", "Assistant Chief"],
@@ -94,22 +94,25 @@ export async function PATCH(
         },
       });
 
-      // Post enrollment details to enrollment webhook
-      await postToEnrollWebhook({
-        title: "New Member Enrolled",
-        description: `<@${request.discordId}> **${request.name}** has been enrolled in the EMS roster.`,
-        color: 0x22c55e,
-        fields: [
-          { name: "Name", value: request.name, inline: true },
-          { name: "Rank", value: assignedRank, inline: true },
-          { name: "Call Sign", value: callSign || "N/A", inline: true },
-          { name: "State ID", value: request.stateId || "N/A", inline: true },
-        ],
-      });
+      const settings = await getNotificationSettings();
 
-      // Send welcome DM
-      const inviteLink = process.env.DISCORD_STATE_INVITE || "https://discord.gg/YOUR_INVITE";
-      const welcomeMessage = `Congratulations, ${request.name}! 🎉
+      if (settings.onboardingWebhook) {
+        await postToEnrollWebhook({
+          title: "New Member Enrolled",
+          description: `<@${request.discordId}> **${request.name}** has been enrolled in the EMS roster.`,
+          color: 0x22c55e,
+          fields: [
+            { name: "Name", value: request.name, inline: true },
+            { name: "Rank", value: assignedRank, inline: true },
+            { name: "Call Sign", value: callSign || "N/A", inline: true },
+            { name: "State ID", value: request.stateId || "N/A", inline: true },
+          ],
+        });
+      }
+
+      if (settings.onboardingDM) {
+        const inviteLink = process.env.DISCORD_STATE_INVITE || "https://discord.gg/YOUR_INVITE";
+        const welcomeMessage = `Congratulations, ${request.name}! 🎉
 
 You have been accepted into the Emergency Medical Services!
 
@@ -123,14 +126,18 @@ ${inviteLink}
 
 Welcome aboard! 🚑🚀`;
 
-      await sendDiscordDM(request.discordId, welcomeMessage);
+        await sendDiscordDM(request.discordId, welcomeMessage);
+      }
     }
 
     if (status === "Declined") {
-      await sendDiscordDM(
-        request.discordId,
-        `Dear ${request.name},\n\nWe regret to inform you that your application has been **Declined**.\n\nIf you have questions, please contact HR.`
-      );
+      const settings = await getNotificationSettings();
+      if (settings.onboardingDM) {
+        await sendDiscordDM(
+          request.discordId,
+          `Dear ${request.name},\n\nWe regret to inform you that your application has been **Declined**.\n\nIf you have questions, please contact HR.`
+        );
+      }
     }
 
     return NextResponse.json(request);

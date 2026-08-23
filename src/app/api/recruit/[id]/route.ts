@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { postToAcceptWebhook, sendDiscordDM } from "@/lib/discord-webhook";
+import { postToAcceptWebhook, sendDiscordDM, getNotificationSettings } from "@/lib/discord-webhook";
 
 export async function PATCH(
   req: NextRequest,
@@ -26,26 +26,35 @@ export async function PATCH(
     });
 
     if (status && status !== "Pending") {
+      const settings = await getNotificationSettings();
+
       if (status === "Approved") {
-        await postToAcceptWebhook(
-          `<@${request.discordId}> Congratulations! Your recruitment has been **Accepted**!`,
-          "https://r2.fivemanage.com/kgAGMLox973pn5aee2Vbl/ems_approved.png"
-        );
+        if (settings.recruitWebhook) {
+          await postToAcceptWebhook(
+            `<@${request.discordId}> Congratulations! Your recruitment has been **Accepted**!`,
+            "https://r2.fivemanage.com/kgAGMLox973pn5aee2Vbl/ems_approved.png"
+          );
+        }
 
-        const inviteLink = process.env.DISCORD_STATE_INVITE || "https://discord.gg/YOUR_INVITE";
-        const message = customMessage || `Congratulations${request.characterName ? `, ${request.characterName}` : ""}! 🎉\n\nYour recruitment application has been **Accepted**!\n\nJoin our state Discord server to get started:\n${inviteLink}\n\nWelcome aboard! 🚑🚀`;
-
-        await sendDiscordDM(request.discordId, message);
+        if (settings.recruitDM) {
+          const inviteLink = process.env.DISCORD_STATE_INVITE || "https://discord.gg/YOUR_INVITE";
+          const message = customMessage || `Congratulations${request.characterName ? `, ${request.characterName}` : ""}! 🎉\n\nYour recruitment application has been **Accepted**!\n\nJoin our state Discord server to get started:\n${inviteLink}\n\nWelcome aboard! 🚑🚀`;
+          await sendDiscordDM(request.discordId, message);
+        }
       } else if (status === "Declined") {
-        await postToAcceptWebhook(
-          `<@${request.discordId}> Unfortunately, your recruitment application has been **Declined**.`,
-          "https://r2.fivemanage.com/kgAGMLox973pn5aee2Vbl/ems_rejected.png"
-        );
+        if (settings.recruitWebhook) {
+          await postToAcceptWebhook(
+            `<@${request.discordId}> Unfortunately, your recruitment application has been **Declined**.`,
+            "https://r2.fivemanage.com/kgAGMLox973pn5aee2Vbl/ems_rejected.png"
+          );
+        }
 
-        await sendDiscordDM(
-          request.discordId,
-          `Dear${request.characterName ? ` ${request.characterName}` : " recruit"},\n\nWe regret to inform you that your recruitment application has been **Declined**.\n\nIf you have questions, please contact HR.`
-        );
+        if (settings.recruitDM) {
+          await sendDiscordDM(
+            request.discordId,
+            `Dear${request.characterName ? ` ${request.characterName}` : " recruit"},\n\nWe regret to inform you that your recruitment application has been **Declined**.\n\nIf you have questions, please contact HR.`
+          );
+        }
       }
     }
 

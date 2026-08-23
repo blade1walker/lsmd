@@ -35,6 +35,7 @@ const navItems = [
   { href: "/admin/clock-log", label: "Clock Log", icon: Clock },
   { href: "/admin/hr", label: "HR", icon: Heart },
   { href: "/admin/signoffs", label: "Sign-offs", icon: GraduationCap },
+  { href: "/admin/notification-settings", label: "Notify Settings", icon: Settings },
   { href: "/admin/notifications", label: "Notifications", icon: Bell },
 ];
 

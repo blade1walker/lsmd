@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { sendDiscordDM } from "@/lib/discord-webhook";
+import { sendDiscordDM, getNotificationSettings } from "@/lib/discord-webhook";
 
 export async function PATCH(
   req: NextRequest,
@@ -16,6 +16,8 @@ export async function PATCH(
       data: { status, reviewedBy, reviewNote },
     });
 
+    const settings = await getNotificationSettings();
+
     if (status === "Approved") {
       const member = await prisma.member.findFirst({
         where: { discordId: request.discordId },
@@ -28,16 +30,20 @@ export async function PATCH(
         });
       }
 
-      const inviteLink = process.env.DISCORD_STATE_INVITE || "https://discord.gg/YOUR_INVITE";
-      await sendDiscordDM(
-        request.discordId,
-        `Congratulations, ${request.characterName}! 🎉\n\nYour Field Training Program (FTP) application has been **Accepted**!\n\nYou will be assigned an FTP role and a trainer will reach out to you shortly.\n\nJoin our state Discord server:\n${inviteLink}`
-      );
+      if (settings.ftpDM) {
+        const inviteLink = process.env.DISCORD_STATE_INVITE || "https://discord.gg/YOUR_INVITE";
+        await sendDiscordDM(
+          request.discordId,
+          `Congratulations, ${request.characterName}! 🎉\n\nYour Field Training Program (FTP) application has been **Accepted**!\n\nYou will be assigned an FTP role and a trainer will reach out to you shortly.\n\nJoin our state Discord server:\n${inviteLink}`
+        );
+      }
     } else if (status === "Declined") {
-      await sendDiscordDM(
-        request.discordId,
-        `Dear ${request.characterName},\n\nWe regret to inform you that your FTP application has been **Declined**.\n\nIf you have questions, please contact HR.`
-      );
+      if (settings.ftpDM) {
+        await sendDiscordDM(
+          request.discordId,
+          `Dear ${request.characterName},\n\nWe regret to inform you that your FTP application has been **Declined**.\n\nIf you have questions, please contact HR.`
+        );
+      }
     }
 
     return NextResponse.json(request);

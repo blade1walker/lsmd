@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { postToAcceptWebhook, sendDiscordDM } from "@/lib/discord-webhook";
+import { postToAcceptWebhook, sendDiscordDM, getNotificationSettings } from "@/lib/discord-webhook";
 
 export async function POST(req: NextRequest) {
   try {
     const { discordId, characterName, message, type } = await req.json();
+    const settings = await getNotificationSettings();
 
     if (type === "webhook") {
+      if (!settings.testWebhook) {
+        return NextResponse.json({ error: "Webhook testing is disabled in settings" }, { status: 400 });
+      }
       const testMessage = message || `Test Webhook — ${characterName || "Recruit"} — This is a test message from the Recruit System.`;
       await postToAcceptWebhook(
         `<@${discordId}> ${testMessage}`,
@@ -13,6 +17,9 @@ export async function POST(req: NextRequest) {
       );
       return NextResponse.json({ ok: true });
     } else {
+      if (!settings.testDM) {
+        return NextResponse.json({ error: "DM testing is disabled in settings" }, { status: 400 });
+      }
       const testMessage = message || `Test DM from Nexus EMS Recruit System${characterName ? ` — ${characterName}` : ""}. If you received this, the DM system is working! 🚑`;
       await sendDiscordDM(discordId, testMessage);
       return NextResponse.json({ ok: true });

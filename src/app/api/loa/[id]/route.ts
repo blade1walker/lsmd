@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { postToLOAWebhook } from "@/lib/discord-webhook";
+import { postToLOAWebhook, sendDiscordDM, getNotificationSettings } from "@/lib/discord-webhook";
 
 export async function PATCH(
   request: NextRequest,
@@ -17,39 +17,59 @@ export async function PATCH(
       include: { member: true },
     });
 
+    const settings = await getNotificationSettings();
+
     if (status === "Approved") {
       await prisma.member.update({
         where: { id: loa.memberId },
         data: { activity: "LOA" },
       });
 
-      await postToLOAWebhook({
-        title: "LOA Approved",
-        description: `<@${loa.member.discordId}> **${loa.member.name}** has been granted a Leave of Absence.`,
-        color: 0x22c55e,
-        fields: [
-          { name: "Member", value: loa.member.name, inline: true },
-          { name: "Rank", value: loa.member.rank, inline: true },
-          { name: "Call Sign", value: loa.member.callSign || "N/A", inline: true },
-          { name: "Start Date", value: loa.startDate.toLocaleDateString(), inline: true },
-          { name: "End Date", value: loa.endDate.toLocaleDateString(), inline: true },
-          { name: "Reason", value: loa.reason || "Not specified", inline: false },
-        ],
-      });
+      if (settings.loaWebhook) {
+        await postToLOAWebhook({
+          title: "LOA Approved",
+          description: `<@${loa.member.discordId}> **${loa.member.name}** has been granted a Leave of Absence.`,
+          color: 0x22c55e,
+          fields: [
+            { name: "Member", value: loa.member.name, inline: true },
+            { name: "Rank", value: loa.member.rank, inline: true },
+            { name: "Call Sign", value: loa.member.callSign || "N/A", inline: true },
+            { name: "Start Date", value: loa.startDate.toLocaleDateString(), inline: true },
+            { name: "End Date", value: loa.endDate.toLocaleDateString(), inline: true },
+            { name: "Reason", value: loa.reason || "Not specified", inline: false },
+          ],
+        });
+      }
+
+      if (settings.loaDM && loa.member.discordId) {
+        await sendDiscordDM(
+          loa.member.discordId,
+          `Your Leave of Absence has been **Approved**.\n\nStart: ${loa.startDate.toLocaleDateString()}\nEnd: ${loa.endDate.toLocaleDateString()}\nReason: ${loa.reason || "Not specified"}`
+        );
+      }
     } else if (status === "Declined") {
-      await postToLOAWebhook({
-        title: "LOA Declined",
-        description: `<@${loa.member.discordId}> **${loa.member.name}**'s Leave of Absence request has been declined.`,
-        color: 0xef4444,
-        fields: [
-          { name: "Member", value: loa.member.name, inline: true },
-          { name: "Rank", value: loa.member.rank, inline: true },
-          { name: "Call Sign", value: loa.member.callSign || "N/A", inline: true },
-          { name: "Start Date", value: loa.startDate.toLocaleDateString(), inline: true },
-          { name: "End Date", value: loa.endDate.toLocaleDateString(), inline: true },
-          { name: "Reason", value: loa.reason || "Not specified", inline: false },
-        ],
-      });
+      if (settings.loaWebhook) {
+        await postToLOAWebhook({
+          title: "LOA Declined",
+          description: `<@${loa.member.discordId}> **${loa.member.name}**'s Leave of Absence request has been declined.`,
+          color: 0xef4444,
+          fields: [
+            { name: "Member", value: loa.member.name, inline: true },
+            { name: "Rank", value: loa.member.rank, inline: true },
+            { name: "Call Sign", value: loa.member.callSign || "N/A", inline: true },
+            { name: "Start Date", value: loa.startDate.toLocaleDateString(), inline: true },
+            { name: "End Date", value: loa.endDate.toLocaleDateString(), inline: true },
+            { name: "Reason", value: loa.reason || "Not specified", inline: false },
+          ],
+        });
+      }
+
+      if (settings.loaDM && loa.member.discordId) {
+        await sendDiscordDM(
+          loa.member.discordId,
+          `Your Leave of Absence request has been **Declined**.\n\nIf you have questions, please contact HR.`
+        );
+      }
     } else if (status === "Expired" || status === "Cancelled") {
       await prisma.member.update({
         where: { id: loa.memberId },
