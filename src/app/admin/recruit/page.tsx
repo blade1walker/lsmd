@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CheckCircle, XCircle, Loader2, Upload, Eye, Trash2 } from "lucide-react";
+import * as XLSX from "xlsx";
 
 interface RecruitRequest {
   id: string;
@@ -47,15 +48,24 @@ export default function AdminRecruitPage() {
     setLoading(false);
   };
 
-  const handleCSVImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setImporting(true);
     try {
-      const text = await file.text();
-      const lines = text.split("\n").filter((l) => l.trim());
-      const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(sheet) as any[];
+
+      if (jsonData.length === 0) {
+        alert("No data found in the file");
+        setImporting(false);
+        return;
+      }
+
+      const headers = Object.keys(jsonData[0]).map((h) => h.trim().toLowerCase());
 
       const discordIdIdx = headers.findIndex((h) => h === "discord id");
       const steamIdIdx = headers.findIndex((h) => h === "steam id");
@@ -64,26 +74,26 @@ export default function AdminRecruitPage() {
       const userIdx = headers.findIndex((h) => h === "user");
 
       if (discordIdIdx === -1 || steamIdIdx === -1) {
-        alert("CSV must contain 'Discord ID' and 'Steam ID' columns");
+        alert("File must contain 'Discord ID' and 'Steam ID' columns");
         setImporting(false);
         return;
       }
 
-      const data = lines.slice(1).map((line) => {
-        const cols = line.split(",").map((c) => c.trim());
+      const importData = jsonData.map((row: any) => {
+        const keys = Object.keys(row);
         return {
-          discordId: cols[discordIdIdx],
-          steamId: cols[steamIdIdx],
-          discordUsername: discordUsernameIdx >= 0 ? cols[discordUsernameIdx] : null,
-          characterName: characterNameIdx >= 0 ? cols[characterNameIdx] : null,
-          user: userIdx >= 0 ? cols[userIdx] : null,
+          discordId: String(row[keys[discordIdIdx]] || ""),
+          steamId: String(row[keys[steamIdIdx]] || ""),
+          discordUsername: discordUsernameIdx >= 0 ? String(row[keys[discordUsernameIdx]] || "") : null,
+          characterName: characterNameIdx >= 0 ? String(row[keys[characterNameIdx]] || "") : null,
+          user: userIdx >= 0 ? String(row[keys[userIdx]] || "") : null,
         };
       }).filter((r) => r.discordId && r.steamId);
 
       const res = await fetch("/api/recruit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(importData),
       });
 
       if (res.ok) {
@@ -93,6 +103,7 @@ export default function AdminRecruitPage() {
       }
     } catch (err) {
       console.error(err);
+      alert("Failed to parse file");
     }
     setImporting(false);
     if (fileRef.current) fileRef.current.value = "";
@@ -143,8 +154,8 @@ export default function AdminRecruitPage() {
           <input
             ref={fileRef}
             type="file"
-            accept=".csv"
-            onChange={handleCSVImport}
+            accept=".csv,.xlsx,.xls"
+            onChange={handleFileImport}
             className="hidden"
           />
           <Button
@@ -157,14 +168,16 @@ export default function AdminRecruitPage() {
             ) : (
               <Upload className="w-4 h-4 mr-2" />
             )}
-            Import CSV
+            Import File
           </Button>
         </div>
       </div>
 
       <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl p-4 mb-6">
         <p className="text-gray-400 text-sm">
-          <strong>CSV Columns:</strong> <code className="bg-white/10 px-1 rounded">Discord ID</code>, <code className="bg-white/10 px-1 rounded">Steam ID</code>, <code className="bg-white/10 px-1 rounded">Character Name</code>, <code className="bg-white/10 px-1 rounded">Discord Username</code>, <code className="bg-white/10 px-1 rounded">User</code>
+          <strong>Supported Formats:</strong> CSV, XLSX, XLS<br />
+          <strong>Required Columns:</strong> <code className="bg-white/10 px-1 rounded">Discord ID</code>, <code className="bg-white/10 px-1 rounded">Steam ID</code><br />
+          <strong>Optional Columns:</strong> <code className="bg-white/10 px-1 rounded">Character Name</code>, <code className="bg-white/10 px-1 rounded">Discord Username</code>, <code className="bg-white/10 px-1 rounded">User</code>
         </p>
       </div>
 
