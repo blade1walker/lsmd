@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, XCircle, Loader2, Upload, Eye, Trash2 } from "lucide-react";
+import { CheckCircle, XCircle, Loader2, Upload, Eye, Trash2, Plus, Pencil, Send, X } from "lucide-react";
 import * as XLSX from "xlsx";
 
 interface RecruitRequest {
@@ -20,6 +20,14 @@ interface RecruitRequest {
   createdAt: string;
 }
 
+const EMPTY_FORM = {
+  discordId: "",
+  discordUsername: "",
+  steamId: "",
+  characterName: "",
+  user: "",
+};
+
 export default function AdminRecruitPage() {
   const [requests, setRequests] = useState<RecruitRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,6 +37,16 @@ export default function AdminRecruitPage() {
   const [customMessage, setCustomMessage] = useState("");
   const [importing, setImporting] = useState(false);
   const [importCount, setImportCount] = useState(0);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState<RecruitRequest | null>(null);
+  const [showTestModal, setShowTestModal] = useState(false);
+  const [testTarget, setTestTarget] = useState({ discordId: "", characterName: "" });
+  const [testMessage, setTestMessage] = useState("");
+  const [testType, setTestType] = useState<"dm" | "webhook">("dm");
+  const [testSending, setTestSending] = useState(false);
+  const [testResult, setTestResult] = useState("");
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -109,6 +127,63 @@ export default function AdminRecruitPage() {
     if (fileRef.current) fileRef.current.value = "";
   };
 
+  const handleAddManual = async () => {
+    if (!form.discordId || !form.steamId) {
+      alert("Discord ID and Steam ID are required");
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch("/api/recruit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify([form]),
+      });
+      if (res.ok) {
+        setForm(EMPTY_FORM);
+        setShowAddModal(false);
+        fetchRequests();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    setSaving(false);
+  };
+
+  const handleEditSave = async () => {
+    if (!showEditModal) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/recruit/${showEditModal.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          discordId: form.discordId,
+          discordUsername: form.discordUsername || null,
+          steamId: form.steamId,
+          characterName: form.characterName || null,
+          user: form.user || null,
+          status: showEditModal.status,
+          reviewedBy: showEditModal.reviewedBy,
+          reviewNote: showEditModal.reviewNote,
+        }),
+      });
+      if (res.ok) {
+        setShowEditModal(null);
+        fetchRequests();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    setSaving(false);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Delete this recruit?")) return;
+    await fetch(`/api/recruit/${id}`, { method: "DELETE" });
+    fetchRequests();
+  };
+
   const handleAction = async (id: string, status: string) => {
     setProcessingId(id);
     try {
@@ -131,9 +206,54 @@ export default function AdminRecruitPage() {
     setProcessingId(null);
   };
 
-  const handleDelete = async (id: string) => {
-    await fetch(`/api/recruit/${id}`, { method: "DELETE" });
-    fetchRequests();
+  const handleTestSend = async () => {
+    if (!testTarget.discordId) {
+      alert("Enter a Discord ID to test");
+      return;
+    }
+    setTestSending(true);
+    setTestResult("");
+    try {
+      if (testType === "dm") {
+        const res = await fetch("/api/discord/dm", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            discordId: testTarget.discordId,
+            content: testMessage || `Test DM from Nexus EMS Recruit System${testTarget.characterName ? ` — ${testTarget.characterName}` : ""}`,
+          }),
+        });
+        const data = await res.json();
+        setTestResult(res.ok ? "DM sent successfully!" : `Failed: ${data.error || "Unknown error"}`);
+      } else {
+        const res = await fetch("/api/recruit/test-webhook", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            discordId: testTarget.discordId,
+            characterName: testTarget.characterName,
+            message: testMessage,
+            type: "test",
+          }),
+        });
+        const data = await res.json();
+        setTestResult(res.ok ? "Webhook sent successfully!" : `Failed: ${data.error || "Unknown error"}`);
+      }
+    } catch (err) {
+      setTestResult("Failed to send test");
+    }
+    setTestSending(false);
+  };
+
+  const openEditModal = (req: RecruitRequest) => {
+    setForm({
+      discordId: req.discordId,
+      discordUsername: req.discordUsername || "",
+      steamId: req.steamId,
+      characterName: req.characterName || "",
+      user: req.user || "",
+    });
+    setShowEditModal(req);
   };
 
   const pending = requests.filter((r) => r.status === "Pending");
@@ -147,37 +267,29 @@ export default function AdminRecruitPage() {
             Recruit Management
           </h1>
           <p className="text-gray-500 text-sm mt-1">
-            Import and manage recruitment applications
+            Import, add, and manage recruitment applications
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".csv,.xlsx,.xls"
-            onChange={handleFileImport}
-            className="hidden"
-          />
-          <Button
-            onClick={() => fileRef.current?.click()}
-            disabled={importing}
-            className="bg-[#eab308] text-black hover:bg-[#ca8a04]"
-          >
-            {importing ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Upload className="w-4 h-4 mr-2" />
-            )}
+          <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" onChange={handleFileImport} className="hidden" />
+          <Button onClick={() => fileRef.current?.click()} disabled={importing} className="bg-[#eab308] text-black hover:bg-[#ca8a04]">
+            {importing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
             Import File
+          </Button>
+          <Button onClick={() => { setForm(EMPTY_FORM); setShowAddModal(true); }} className="bg-green-600 hover:bg-green-700 text-white">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Manually
+          </Button>
+          <Button onClick={() => { setTestTarget({ discordId: "", characterName: "" }); setTestMessage(""); setTestType("dm"); setTestResult(""); setShowTestModal(true); }} variant="outline" className="border-[#1e1e1e] text-gray-400">
+            <Send className="w-4 h-4 mr-2" />
+            Test DM
           </Button>
         </div>
       </div>
 
       <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl p-4 mb-6">
         <p className="text-gray-400 text-sm">
-          <strong>Supported Formats:</strong> CSV, XLSX, XLS<br />
-          <strong>Required Columns:</strong> <code className="bg-white/10 px-1 rounded">Discord ID</code>, <code className="bg-white/10 px-1 rounded">Steam ID</code><br />
-          <strong>Optional Columns:</strong> <code className="bg-white/10 px-1 rounded">Character Name</code>, <code className="bg-white/10 px-1 rounded">Discord Username</code>, <code className="bg-white/10 px-1 rounded">User</code>
+          <strong>Import:</strong> CSV/XLSX/XLS with columns <code className="bg-white/10 px-1 rounded">Discord ID</code>, <code className="bg-white/10 px-1 rounded">Steam ID</code>, <code className="bg-white/10 px-1 rounded">Character Name</code>, <code className="bg-white/10 px-1 rounded">Discord Username</code>, <code className="bg-white/10 px-1 rounded">User</code>
         </p>
       </div>
 
@@ -220,41 +332,22 @@ export default function AdminRecruitPage() {
                         <td className="py-3 px-4 text-gray-400 text-xs">{req.discordUsername ?? req.discordId}</td>
                         <td className="py-3 px-4 text-gray-400 text-xs">{req.user ?? "—"}</td>
                         <td className="py-3 px-4 text-gray-400 text-xs">{req.steamId}</td>
-                        <td className="py-3 px-4 text-gray-500 text-xs">
-                          {new Date(req.createdAt).toLocaleDateString()}
-                        </td>
+                        <td className="py-3 px-4 text-gray-500 text-xs">{new Date(req.createdAt).toLocaleDateString()}</td>
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-1">
-                            <Button
-                              size="sm"
-                              onClick={() => setSelectedRequest(req)}
-                              variant="outline"
-                              className="border-[#1e1e1e] text-gray-400"
-                            >
+                            <Button size="sm" onClick={() => setSelectedRequest(req)} variant="outline" className="border-[#1e1e1e] text-gray-400">
                               <Eye className="w-4 h-4" />
                             </Button>
-                            <Button
-                              size="sm"
-                              onClick={() => handleAction(req.id, "Approved")}
-                              disabled={processingId === req.id}
-                              className="bg-green-600 hover:bg-green-700 text-white"
-                            >
+                            <Button size="sm" onClick={() => openEditModal(req)} variant="outline" className="border-[#1e1e1e] text-gray-400">
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button size="sm" onClick={() => handleAction(req.id, "Approved")} disabled={processingId === req.id} className="bg-green-600 hover:bg-green-700 text-white">
                               {processingId === req.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
                             </Button>
-                            <Button
-                              size="sm"
-                              onClick={() => handleAction(req.id, "Declined")}
-                              disabled={processingId === req.id}
-                              className="bg-red-600 hover:bg-red-700 text-white"
-                            >
+                            <Button size="sm" onClick={() => handleAction(req.id, "Declined")} disabled={processingId === req.id} className="bg-red-600 hover:bg-red-700 text-white">
                               {processingId === req.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
                             </Button>
-                            <Button
-                              size="sm"
-                              onClick={() => handleDelete(req.id)}
-                              variant="ghost"
-                              className="text-gray-500 hover:text-red-400"
-                            >
+                            <Button size="sm" onClick={() => handleDelete(req.id)} variant="ghost" className="text-gray-500 hover:text-red-400">
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
@@ -281,8 +374,10 @@ export default function AdminRecruitPage() {
                     <tr className="border-b border-[#1e1e1e]">
                       <th className="text-left py-3 px-4 text-gray-500 font-medium">Name</th>
                       <th className="text-left py-3 px-4 text-gray-500 font-medium">Discord</th>
+                      <th className="text-left py-3 px-4 text-gray-500 font-medium">User</th>
                       <th className="text-left py-3 px-4 text-gray-500 font-medium">Status</th>
                       <th className="text-left py-3 px-4 text-gray-500 font-medium">Reviewed</th>
+                      <th className="text-left py-3 px-4 text-gray-500 font-medium">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -290,17 +385,22 @@ export default function AdminRecruitPage() {
                       <tr key={req.id} className="border-b border-[#1e1e1e]/50 opacity-70">
                         <td className="py-3 px-4 text-white">{req.characterName ?? "—"}</td>
                         <td className="py-3 px-4 text-gray-400 text-xs">{req.discordUsername ?? req.discordId}</td>
+                        <td className="py-3 px-4 text-gray-400 text-xs">{req.user ?? "—"}</td>
                         <td className="py-3 px-4">
-                          <span className={`text-xs px-2 py-0.5 rounded ${
-                            req.status === "Approved"
-                              ? "bg-green-500/20 text-green-400"
-                              : "bg-red-500/20 text-red-400"
-                          }`}>
+                          <span className={`text-xs px-2 py-0.5 rounded ${req.status === "Approved" ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>
                             {req.status}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-gray-500 text-xs">
-                          {req.reviewedBy ?? "—"}
+                        <td className="py-3 px-4 text-gray-500 text-xs">{req.reviewedBy ?? "—"}</td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-1">
+                            <Button size="sm" onClick={() => openEditModal(req)} variant="outline" className="border-[#1e1e1e] text-gray-400">
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button size="sm" onClick={() => handleDelete(req.id)} variant="ghost" className="text-gray-500 hover:text-red-400">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -316,72 +416,114 @@ export default function AdminRecruitPage() {
       {selectedRequest && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl p-6 max-w-lg w-full">
-            <h3 className="font-[family-name:var(--font-oswald)] text-lg font-semibold text-white mb-4">
-              Review Recruitment
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-[family-name:var(--font-oswald)] text-lg font-semibold text-white">Review Recruitment</h3>
+              <Button size="sm" onClick={() => { setSelectedRequest(null); setReviewNote(""); setCustomMessage(""); }} variant="ghost" className="text-gray-400"><X className="w-4 h-4" /></Button>
+            </div>
             <div className="space-y-3 mb-4">
-              <div>
-                <span className="text-gray-500 text-sm">Character Name:</span>
-                <span className="text-white ml-2">{selectedRequest.characterName ?? "—"}</span>
-              </div>
-              <div>
-                <span className="text-gray-500 text-sm">Discord Username:</span>
-                <span className="text-white ml-2">{selectedRequest.discordUsername ?? "—"}</span>
-              </div>
-              <div>
-                <span className="text-gray-500 text-sm">Discord ID:</span>
-                <span className="text-white ml-2">{selectedRequest.discordId}</span>
-              </div>
-              <div>
-                <span className="text-gray-500 text-sm">User:</span>
-                <span className="text-white ml-2">{selectedRequest.user ?? "—"}</span>
-              </div>
-              <div>
-                <span className="text-gray-500 text-sm">Steam ID:</span>
-                <span className="text-white ml-2">{selectedRequest.steamId}</span>
-              </div>
+              <div><span className="text-gray-500 text-sm">Character Name:</span><span className="text-white ml-2">{selectedRequest.characterName ?? "—"}</span></div>
+              <div><span className="text-gray-500 text-sm">Discord Username:</span><span className="text-white ml-2">{selectedRequest.discordUsername ?? "—"}</span></div>
+              <div><span className="text-gray-500 text-sm">Discord ID:</span><span className="text-white ml-2">{selectedRequest.discordId}</span></div>
+              <div><span className="text-gray-500 text-sm">User:</span><span className="text-white ml-2">{selectedRequest.user ?? "—"}</span></div>
+              <div><span className="text-gray-500 text-sm">Steam ID:</span><span className="text-white ml-2">{selectedRequest.steamId}</span></div>
             </div>
             <div className="mb-4">
               <Label className="text-gray-400 text-sm">Custom DM Message (optional)</Label>
-              <textarea
-                value={customMessage}
-                onChange={(e) => setCustomMessage(e.target.value)}
-                placeholder="Leave empty for default message..."
-                rows={4}
-                className="mt-1 w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#eab308] resize-none"
-              />
+              <textarea value={customMessage} onChange={(e) => setCustomMessage(e.target.value)} placeholder="Leave empty for default message..." rows={4} className="mt-1 w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#eab308] resize-none" />
             </div>
             <div className="mb-4">
               <Label className="text-gray-400 text-sm">Review Note (optional)</Label>
-              <textarea
-                value={reviewNote}
-                onChange={(e) => setReviewNote(e.target.value)}
-                rows={2}
-                className="mt-1 w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#eab308] resize-none"
-              />
+              <textarea value={reviewNote} onChange={(e) => setReviewNote(e.target.value)} rows={2} className="mt-1 w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#eab308] resize-none" />
             </div>
             <div className="flex gap-3">
-              <Button
-                onClick={() => handleAction(selectedRequest.id, "Approved")}
-                disabled={processingId === selectedRequest.id}
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-              >
-                Approve
+              <Button onClick={() => handleAction(selectedRequest.id, "Approved")} disabled={processingId === selectedRequest.id} className="flex-1 bg-green-600 hover:bg-green-700 text-white">Approve</Button>
+              <Button onClick={() => handleAction(selectedRequest.id, "Declined")} disabled={processingId === selectedRequest.id} className="flex-1 bg-red-600 hover:bg-red-700 text-white">Decline</Button>
+              <Button onClick={() => { setSelectedRequest(null); setReviewNote(""); setCustomMessage(""); }} variant="outline" className="border-[#1e1e1e] text-gray-400">Cancel</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add / Edit Modal */}
+      {(showAddModal || showEditModal) && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl p-6 max-w-lg w-full">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-[family-name:var(--font-oswald)] text-lg font-semibold text-white">
+                {showEditModal ? "Edit Recruit" : "Add Recruit Manually"}
+              </h3>
+              <Button size="sm" onClick={() => { setShowAddModal(false); setShowEditModal(null); setForm(EMPTY_FORM); }} variant="ghost" className="text-gray-400"><X className="w-4 h-4" /></Button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <Label className="text-gray-400 text-sm">Discord ID *</Label>
+                <Input value={form.discordId} onChange={(e) => setForm({ ...form, discordId: e.target.value })} placeholder="e.g. 721646919222427648" className="mt-1 bg-[#0a0a0a] border-[#1e1e1e] text-white" />
+              </div>
+              <div>
+                <Label className="text-gray-400 text-sm">Discord Username</Label>
+                <Input value={form.discordUsername} onChange={(e) => setForm({ ...form, discordUsername: e.target.value })} placeholder="e.g. username#1234" className="mt-1 bg-[#0a0a0a] border-[#1e1e1e] text-white" />
+              </div>
+              <div>
+                <Label className="text-gray-400 text-sm">Steam ID *</Label>
+                <Input value={form.steamId} onChange={(e) => setForm({ ...form, steamId: e.target.value })} placeholder="e.g. 123456789" className="mt-1 bg-[#0a0a0a] border-[#1e1e1e] text-white" />
+              </div>
+              <div>
+                <Label className="text-gray-400 text-sm">Character Name</Label>
+                <Input value={form.characterName} onChange={(e) => setForm({ ...form, characterName: e.target.value })} placeholder="e.g. John Smith" className="mt-1 bg-[#0a0a0a] border-[#1e1e1e] text-white" />
+              </div>
+              <div>
+                <Label className="text-gray-400 text-sm">User</Label>
+                <Input value={form.user} onChange={(e) => setForm({ ...form, user: e.target.value })} placeholder="e.g. User#1234" className="mt-1 bg-[#0a0a0a] border-[#1e1e1e] text-white" />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <Button onClick={showEditModal ? handleEditSave : handleAddManual} disabled={saving} className="flex-1 bg-[#eab308] text-black hover:bg-[#ca8a04]">
+                {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                {showEditModal ? "Save Changes" : "Add Recruit"}
               </Button>
-              <Button
-                onClick={() => handleAction(selectedRequest.id, "Declined")}
-                disabled={processingId === selectedRequest.id}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
-              >
-                Decline
+              <Button onClick={() => { setShowAddModal(false); setShowEditModal(null); setForm(EMPTY_FORM); }} variant="outline" className="border-[#1e1e1e] text-gray-400">Cancel</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Test DM Modal */}
+      {showTestModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl p-6 max-w-lg w-full">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-[family-name:var(--font-oswald)] text-lg font-semibold text-white">Test DM / Webhook</h3>
+              <Button size="sm" onClick={() => setShowTestModal(false)} variant="ghost" className="text-gray-400"><X className="w-4 h-4" /></Button>
+            </div>
+            <div className="flex gap-2 mb-4">
+              <Button size="sm" onClick={() => setTestType("dm")} className={testType === "dm" ? "bg-[#eab308] text-black" : "bg-[#1a1a1a] text-gray-400"}>Direct Message</Button>
+              <Button size="sm" onClick={() => setTestType("webhook")} className={testType === "webhook" ? "bg-[#eab308] text-black" : "bg-[#1a1a1a] text-gray-400"}>Webhook</Button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <Label className="text-gray-400 text-sm">Discord ID *</Label>
+                <Input value={testTarget.discordId} onChange={(e) => setTestTarget({ ...testTarget, discordId: e.target.value })} placeholder="Your Discord ID" className="mt-1 bg-[#0a0a0a] border-[#1e1e1e] text-white" />
+              </div>
+              <div>
+                <Label className="text-gray-400 text-sm">Character Name</Label>
+                <Input value={testTarget.characterName} onChange={(e) => setTestTarget({ ...testTarget, characterName: e.target.value })} placeholder="Optional" className="mt-1 bg-[#0a0a0a] border-[#1e1e1e] text-white" />
+              </div>
+              <div>
+                <Label className="text-gray-400 text-sm">Test Message</Label>
+                <textarea value={testMessage} onChange={(e) => setTestMessage(e.target.value)} rows={4} placeholder="Leave empty for default test message..." className="mt-1 w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#eab308] resize-none" />
+              </div>
+            </div>
+            {testResult && (
+              <div className={`mt-4 p-3 rounded text-sm ${testResult.includes("success") ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400"}`}>
+                {testResult}
+              </div>
+            )}
+            <div className="flex gap-3 mt-4">
+              <Button onClick={handleTestSend} disabled={testSending || !testTarget.discordId} className="flex-1 bg-[#eab308] text-black hover:bg-[#ca8a04]">
+                {testSending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+                Send Test
               </Button>
-              <Button
-                onClick={() => { setSelectedRequest(null); setReviewNote(""); setCustomMessage(""); }}
-                variant="outline"
-                className="border-[#1e1e1e] text-gray-400"
-              >
-                Cancel
-              </Button>
+              <Button onClick={() => setShowTestModal(false)} variant="outline" className="border-[#1e1e1e] text-gray-400">Close</Button>
             </div>
           </div>
         </div>
