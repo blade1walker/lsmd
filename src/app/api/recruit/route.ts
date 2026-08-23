@@ -23,7 +23,10 @@ export async function POST(req: NextRequest) {
       const created = await prisma.recruitRequest.createMany({
         data: body.map((r: any) => ({
           discordId: r.discordId,
+          discordUsername: r.discordUsername || null,
           steamId: r.steamId,
+          characterName: r.characterName || null,
+          user: r.user || null,
         })),
         skipDuplicates: true,
       });
@@ -33,7 +36,10 @@ export async function POST(req: NextRequest) {
     const request = await prisma.recruitRequest.create({
       data: {
         discordId: body.discordId,
+        discordUsername: body.discordUsername || null,
         steamId: body.steamId,
+        characterName: body.characterName || null,
+        user: body.user || null,
       },
     });
     return NextResponse.json(request, { status: 201 });

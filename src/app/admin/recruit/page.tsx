@@ -9,7 +9,10 @@ import { CheckCircle, XCircle, Loader2, Upload, Eye, Trash2 } from "lucide-react
 interface RecruitRequest {
   id: string;
   discordId: string;
+  discordUsername: string | null;
   steamId: string;
+  characterName: string | null;
+  user: string | null;
   status: string;
   reviewedBy: string | null;
   reviewNote: string | null;
@@ -56,6 +59,9 @@ export default function AdminRecruitPage() {
 
       const discordIdIdx = headers.findIndex((h) => h === "discord id");
       const steamIdIdx = headers.findIndex((h) => h === "steam id");
+      const discordUsernameIdx = headers.findIndex((h) => h === "discord username");
+      const characterNameIdx = headers.findIndex((h) => h === "character name");
+      const userIdx = headers.findIndex((h) => h === "user");
 
       if (discordIdIdx === -1 || steamIdIdx === -1) {
         alert("CSV must contain 'Discord ID' and 'Steam ID' columns");
@@ -68,6 +74,9 @@ export default function AdminRecruitPage() {
         return {
           discordId: cols[discordIdIdx],
           steamId: cols[steamIdIdx],
+          discordUsername: discordUsernameIdx >= 0 ? cols[discordUsernameIdx] : null,
+          characterName: characterNameIdx >= 0 ? cols[characterNameIdx] : null,
+          user: userIdx >= 0 ? cols[userIdx] : null,
         };
       }).filter((r) => r.discordId && r.steamId);
 
@@ -155,7 +164,7 @@ export default function AdminRecruitPage() {
 
       <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl p-4 mb-6">
         <p className="text-gray-400 text-sm">
-          <strong>CSV Format:</strong> Upload your export file. The system will extract <code className="bg-white/10 px-1 rounded">Discord ID</code> and <code className="bg-white/10 px-1 rounded">Steam ID</code> columns automatically.
+          <strong>CSV Columns:</strong> <code className="bg-white/10 px-1 rounded">Discord ID</code>, <code className="bg-white/10 px-1 rounded">Steam ID</code>, <code className="bg-white/10 px-1 rounded">Character Name</code>, <code className="bg-white/10 px-1 rounded">Discord Username</code>, <code className="bg-white/10 px-1 rounded">User</code>
         </p>
       </div>
 
@@ -183,7 +192,9 @@ export default function AdminRecruitPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[#1e1e1e]">
-                      <th className="text-left py-3 px-4 text-gray-500 font-medium">Discord ID</th>
+                      <th className="text-left py-3 px-4 text-gray-500 font-medium">Name</th>
+                      <th className="text-left py-3 px-4 text-gray-500 font-medium">Discord</th>
+                      <th className="text-left py-3 px-4 text-gray-500 font-medium">User</th>
                       <th className="text-left py-3 px-4 text-gray-500 font-medium">Steam ID</th>
                       <th className="text-left py-3 px-4 text-gray-500 font-medium">Submitted</th>
                       <th className="text-left py-3 px-4 text-gray-500 font-medium">Actions</th>
@@ -192,8 +203,10 @@ export default function AdminRecruitPage() {
                   <tbody>
                     {pending.map((req) => (
                       <tr key={req.id} className="border-b border-[#1e1e1e]/50 hover:bg-white/5">
-                        <td className="py-3 px-4 text-white">{req.discordId}</td>
-                        <td className="py-3 px-4 text-gray-400">{req.steamId}</td>
+                        <td className="py-3 px-4 text-white">{req.characterName ?? "—"}</td>
+                        <td className="py-3 px-4 text-gray-400 text-xs">{req.discordUsername ?? req.discordId}</td>
+                        <td className="py-3 px-4 text-gray-400 text-xs">{req.user ?? "—"}</td>
+                        <td className="py-3 px-4 text-gray-400 text-xs">{req.steamId}</td>
                         <td className="py-3 px-4 text-gray-500 text-xs">
                           {new Date(req.createdAt).toLocaleDateString()}
                         </td>
@@ -253,8 +266,8 @@ export default function AdminRecruitPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[#1e1e1e]">
-                      <th className="text-left py-3 px-4 text-gray-500 font-medium">Discord ID</th>
-                      <th className="text-left py-3 px-4 text-gray-500 font-medium">Steam ID</th>
+                      <th className="text-left py-3 px-4 text-gray-500 font-medium">Name</th>
+                      <th className="text-left py-3 px-4 text-gray-500 font-medium">Discord</th>
                       <th className="text-left py-3 px-4 text-gray-500 font-medium">Status</th>
                       <th className="text-left py-3 px-4 text-gray-500 font-medium">Reviewed</th>
                     </tr>
@@ -262,8 +275,8 @@ export default function AdminRecruitPage() {
                   <tbody>
                     {reviewed.map((req) => (
                       <tr key={req.id} className="border-b border-[#1e1e1e]/50 opacity-70">
-                        <td className="py-3 px-4 text-white">{req.discordId}</td>
-                        <td className="py-3 px-4 text-gray-400">{req.steamId}</td>
+                        <td className="py-3 px-4 text-white">{req.characterName ?? "—"}</td>
+                        <td className="py-3 px-4 text-gray-400 text-xs">{req.discordUsername ?? req.discordId}</td>
                         <td className="py-3 px-4">
                           <span className={`text-xs px-2 py-0.5 rounded ${
                             req.status === "Approved"
@@ -295,8 +308,20 @@ export default function AdminRecruitPage() {
             </h3>
             <div className="space-y-3 mb-4">
               <div>
+                <span className="text-gray-500 text-sm">Character Name:</span>
+                <span className="text-white ml-2">{selectedRequest.characterName ?? "—"}</span>
+              </div>
+              <div>
+                <span className="text-gray-500 text-sm">Discord Username:</span>
+                <span className="text-white ml-2">{selectedRequest.discordUsername ?? "—"}</span>
+              </div>
+              <div>
                 <span className="text-gray-500 text-sm">Discord ID:</span>
                 <span className="text-white ml-2">{selectedRequest.discordId}</span>
+              </div>
+              <div>
+                <span className="text-gray-500 text-sm">User:</span>
+                <span className="text-white ml-2">{selectedRequest.user ?? "—"}</span>
               </div>
               <div>
                 <span className="text-gray-500 text-sm">Steam ID:</span>

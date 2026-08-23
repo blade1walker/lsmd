@@ -23,7 +23,7 @@ export async function PATCH(
       );
 
       const inviteLink = process.env.DISCORD_STATE_INVITE || "https://discord.gg/YOUR_INVITE";
-      const message = customMessage || `Congratulations! 🎉\n\nYour recruitment application has been **Accepted**!\n\nJoin our state Discord server to get started:\n${inviteLink}\n\nWelcome aboard! 🚑🚀`;
+      const message = customMessage || `Congratulations${request.characterName ? `, ${request.characterName}` : ""}! 🎉\n\nYour recruitment application has been **Accepted**!\n\nJoin our state Discord server to get started:\n${inviteLink}\n\nWelcome aboard! 🚑🚀`;
 
       await sendDiscordDM(request.discordId, message);
     } else if (status === "Declined") {
@@ -34,7 +34,7 @@ export async function PATCH(
 
       await sendDiscordDM(
         request.discordId,
-        `Dear recruit,\n\nWe regret to inform you that your recruitment application has been **Declined**.\n\nIf you have questions, please contact HR.`
+        `Dear${request.characterName ? ` ${request.characterName}` : " recruit"},\n\nWe regret to inform you that your recruitment application has been **Declined**.\n\nIf you have questions, please contact HR.`
       );
     }
 

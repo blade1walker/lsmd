@@ -299,12 +299,15 @@ model FTPRequest {
 }
 
 model RecruitRequest {
-  id          String   @id @default(cuid())
-  discordId   String
-  steamId     String
-  status      String   @default("Pending")
-  reviewedBy  String?
-  reviewNote  String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String   @id @default(cuid())
+  discordId       String
+  discordUsername String?
+  steamId         String
+  characterName   String?
+  user            String?
+  status          String   @default("Pending")
+  reviewedBy      String?
+  reviewNote      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
