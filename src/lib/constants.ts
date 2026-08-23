@@ -59,6 +59,8 @@ export const ALL_PERMISSIONS = [
   "notifications",
   "templates",
   "radio.edit",
+  "onboarding.view",
+  "onboarding.approve",
 ] as const;
 
 export type Permission = (typeof ALL_PERMISSIONS)[number];
