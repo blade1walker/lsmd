@@ -9,11 +9,6 @@ import { CheckCircle, GraduationCap } from "lucide-react";
 
 const DEPARTMENTS = [
   "EMS",
-  "BCSO",
-  "LSPD",
-  "SAHP",
-  "DOC",
-  "Other",
 ];
 
 export default function FTPPage() {
