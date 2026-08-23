@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { postToEnrollWebhook } from "@/lib/discord-webhook";
+import { postToEnrollWebhook, postToAcceptWebhook, sendDiscordDM } from "@/lib/discord-webhook";
 
 const SECTION_HINTS: Record<string, string[]> = {
   "High Command": ["Director of Medicine", "Chief of EMS", "Deputy Chief of EMS", "Assistant Chief"],
@@ -94,6 +94,12 @@ export async function PATCH(
         },
       });
 
+      // Post acceptance message to webhook
+      await postToAcceptWebhook(
+        `<@${request.discordId}> You've been accepted. Kindly check your DM.`
+      );
+
+      // Post enrollment details to enrollment webhook
       await postToEnrollWebhook({
         title: "New Member Enrolled",
         description: `<@${request.discordId}> **${request.name}** has been enrolled in the EMS roster.`,
@@ -105,6 +111,24 @@ export async function PATCH(
           { name: "State ID", value: request.stateId || "N/A", inline: true },
         ],
       });
+
+      // Send welcome DM
+      const inviteLink = process.env.DISCORD_STATE_INVITE || "https://discord.gg/YOUR_INVITE";
+      const welcomeMessage = `Congratulations, ${request.name}! 🎉
+
+You have been accepted into the Emergency Medical Services!
+
+**Your Details:**
+• Rank: ${assignedRank}
+• Call Sign: ${callSign || "N/A"}
+• State ID: ${request.stateId || "N/A"}
+
+Join our state Discord server to get started:
+${inviteLink}
+
+Welcome aboard! 🚑🚀`;
+
+      await sendDiscordDM(request.discordId, welcomeMessage);
     }
 
     return NextResponse.json(request);
