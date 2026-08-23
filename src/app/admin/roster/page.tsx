@@ -135,6 +135,7 @@ export default function AdminRosterPage() {
                       <th className="text-left py-3 px-4 text-gray-500 font-medium">Rank</th>
                       <th className="text-left py-3 px-4 text-gray-500 font-medium">Status</th>
                       <th className="text-left py-3 px-4 text-gray-500 font-medium">Temp Rank</th>
+                      <th className="text-left py-3 px-4 text-gray-500 font-medium">Category</th>
                       <th className="text-left py-3 px-4 text-gray-500 font-medium">Actions</th>
                     </tr>
                   </thead>

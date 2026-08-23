@@ -142,6 +142,21 @@ export default function MemberRow({ member, onUpdate, onDelete, onPromote, onDem
         {member.tempRank ?? "—"}
       </td>
       <td className="py-3 px-4">
+        {member.category ? (
+          <span className={`text-xs px-2 py-0.5 rounded ${
+            member.category === "FTP" ? "bg-blue-500/20 text-blue-400" :
+            member.category === "Full Time" ? "bg-green-500/20 text-green-400" :
+            member.category === "Part Time" ? "bg-yellow-500/20 text-yellow-400" :
+            member.category === "Probationary" ? "bg-orange-500/20 text-orange-400" :
+            "bg-gray-500/20 text-gray-400"
+          }`}>
+            {member.category}
+          </span>
+        ) : (
+          <span className="text-gray-600 text-xs">—</span>
+        )}
+      </td>
+      <td className="py-3 px-4">
         <div className="flex items-center gap-1">
           <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setEditing(true)}>
             Edit
