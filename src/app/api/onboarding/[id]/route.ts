@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { postToEnrollWebhook, postToAcceptWebhook, sendDiscordDM } from "@/lib/discord-webhook";
+import { postToEnrollWebhook, sendDiscordDM } from "@/lib/discord-webhook";
 
 const SECTION_HINTS: Record<string, string[]> = {
   "High Command": ["Director of Medicine", "Chief of EMS", "Deputy Chief of EMS", "Assistant Chief"],
@@ -94,12 +94,6 @@ export async function PATCH(
         },
       });
 
-      // Post acceptance message to webhook
-      await postToAcceptWebhook(
-        `<@${request.discordId}> You've been accepted. Kindly check your DM.`,
-        "https://r2.fivemanage.com/kgAGMLox973pn5aee2Vbl/ems_approved.png"
-      );
-
       // Post enrollment details to enrollment webhook
       await postToEnrollWebhook({
         title: "New Member Enrolled",
@@ -133,9 +127,9 @@ Welcome aboard! 🚑🚀`;
     }
 
     if (status === "Declined") {
-      await postToAcceptWebhook(
-        `<@${request.discordId}> Unfortunately, your application has been declined.`,
-        "https://r2.fivemanage.com/kgAGMLox973pn5aee2Vbl/ems_rejected.png"
+      await sendDiscordDM(
+        request.discordId,
+        `Dear ${request.name},\n\nWe regret to inform you that your application has been **Declined**.\n\nIf you have questions, please contact HR.`
       );
     }
 
