@@ -24,7 +24,7 @@ import {
 const navItems = [
   { href: "/admin/roster", label: "Roster", icon: Users },
   { href: "/admin/onboarding", label: "Onboarding", icon: UserPlus },
-  { href: "/admin/onboarding-invite", label: "Invite", icon: Mail },
+  { href: "/admin/recruit", label: "Recruit", icon: Mail },
   { href: "/admin/ftp", label: "FTP", icon: BookOpen },
   { href: "/admin/training", label: "Training", icon: GraduationCap },
   { href: "/admin/sop", label: "SOP", icon: FileText },

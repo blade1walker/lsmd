@@ -297,3 +297,14 @@ model FTPRequest {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
+
+model RecruitRequest {
+  id          String   @id @default(cuid())
+  discordId   String
+  steamId     String
+  status      String   @default("Pending")
+  reviewedBy  String?
+  reviewNote  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
