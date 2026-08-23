@@ -52,19 +52,29 @@ export async function postToEnrollWebhook(embed: {
   if (webhookUrl) await postToWebhook(webhookUrl, embed);
 }
 
-export async function postToAcceptWebhook(content: string) {
+export async function postToAcceptWebhook(content: string, imageUrl?: string) {
   const webhookUrl = process.env.DISCORD_ACCEPT_WEBHOOK_URL;
   if (!webhookUrl) return;
 
   try {
+    const body: any = {
+      username: "Nexus EMS HR",
+      avatar_url: "",
+      content,
+    };
+
+    if (imageUrl) {
+      body.embeds = [
+        {
+          image: { url: imageUrl },
+        },
+      ];
+    }
+
     await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username: "Nexus EMS HR",
-        avatar_url: "",
-        content,
-      }),
+      body: JSON.stringify(body),
     });
   } catch (err) {
     console.error("Failed to post to accept webhook:", err);
