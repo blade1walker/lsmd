@@ -131,6 +131,12 @@ Welcome aboard! 🚑🚀`;
       await sendDiscordDM(request.discordId, welcomeMessage);
     }
 
+    if (status === "Declined") {
+      await postToAcceptWebhook(
+        `<@${request.discordId}> Unfortunately, your application has been declined.`
+      );
+    }
+
     return NextResponse.json(request);
   } catch (error: any) {
     return NextResponse.json(
