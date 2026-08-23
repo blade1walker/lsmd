@@ -214,31 +214,18 @@ export default function AdminRecruitPage() {
     setTestSending(true);
     setTestResult("");
     try {
-      if (testType === "dm") {
-        const res = await fetch("/api/discord/dm", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            discordId: testTarget.discordId,
-            content: testMessage || `Test DM from Nexus EMS Recruit System${testTarget.characterName ? ` — ${testTarget.characterName}` : ""}`,
-          }),
-        });
-        const data = await res.json();
-        setTestResult(res.ok ? "DM sent successfully!" : `Failed: ${data.error || "Unknown error"}`);
-      } else {
-        const res = await fetch("/api/recruit/test-webhook", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            discordId: testTarget.discordId,
-            characterName: testTarget.characterName,
-            message: testMessage,
-            type: "test",
-          }),
-        });
-        const data = await res.json();
-        setTestResult(res.ok ? "Webhook sent successfully!" : `Failed: ${data.error || "Unknown error"}`);
-      }
+      const res = await fetch("/api/recruit/test-webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          discordId: testTarget.discordId,
+          characterName: testTarget.characterName,
+          message: testMessage,
+          type: testType,
+        }),
+      });
+      const data = await res.json();
+      setTestResult(res.ok ? `${testType === "dm" ? "DM" : "Webhook"} sent successfully!` : `Failed: ${data.error || "Unknown error"}`);
     } catch (err) {
       setTestResult("Failed to send test");
     }
