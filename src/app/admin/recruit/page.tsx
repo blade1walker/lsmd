@@ -52,9 +52,23 @@ export default function AdminRecruitPage() {
     try {
       const text = await file.text();
       const lines = text.split("\n").filter((l) => l.trim());
+      const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
+
+      const discordIdIdx = headers.findIndex((h) => h === "discord id");
+      const steamIdIdx = headers.findIndex((h) => h === "steam id");
+
+      if (discordIdIdx === -1 || steamIdIdx === -1) {
+        alert("CSV must contain 'Discord ID' and 'Steam ID' columns");
+        setImporting(false);
+        return;
+      }
+
       const data = lines.slice(1).map((line) => {
-        const [discordId, steamId] = line.split(",").map((c) => c.trim());
-        return { discordId, steamId };
+        const cols = line.split(",").map((c) => c.trim());
+        return {
+          discordId: cols[discordIdIdx],
+          steamId: cols[steamIdIdx],
+        };
       }).filter((r) => r.discordId && r.steamId);
 
       const res = await fetch("/api/recruit", {
@@ -141,7 +155,7 @@ export default function AdminRecruitPage() {
 
       <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl p-4 mb-6">
         <p className="text-gray-400 text-sm">
-          <strong>CSV Format:</strong> First row should be headers. Data rows should have: <code className="bg-white/10 px-1 rounded">DiscordID,SteamID</code>
+          <strong>CSV Format:</strong> Upload your export file. The system will extract <code className="bg-white/10 px-1 rounded">Discord ID</code> and <code className="bg-white/10 px-1 rounded">Steam ID</code> columns automatically.
         </p>
       </div>
 
