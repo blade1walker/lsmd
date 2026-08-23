@@ -10,9 +10,9 @@ export async function POST(req: NextRequest) {
       if (!settings.testWebhook) {
         return NextResponse.json({ error: "Webhook testing is disabled in settings" }, { status: 400 });
       }
-      const testMessage = message || `Test Webhook — ${characterName || "Recruit"} — This is a test message from the Recruit System.`;
+      const testMessage = message || `Congratulations! Your EMS application has been Accepted, <@${discordId}> For further details, please check your DMs`;
       await postToAcceptWebhook(
-        `<@${discordId}> ${testMessage}`,
+        testMessage,
         "https://r2.fivemanage.com/kgAGMLox973pn5aee2Vbl/ems_approved.png"
       );
       return NextResponse.json({ ok: true });

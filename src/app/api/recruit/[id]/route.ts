@@ -31,7 +31,7 @@ export async function PATCH(
       if (status === "Approved") {
         if (settings.recruitWebhook) {
           await postToAcceptWebhook(
-            `<@${request.discordId}> Congratulations! Your recruitment has been **Accepted**!`,
+            `Congratulations! Your EMS application has been Accepted, <@${request.discordId}> For further details, please check your DMs`,
             "https://r2.fivemanage.com/kgAGMLox973pn5aee2Vbl/ems_approved.png"
           );
         }
@@ -44,7 +44,7 @@ export async function PATCH(
       } else if (status === "Declined") {
         if (settings.recruitWebhook) {
           await postToAcceptWebhook(
-            `<@${request.discordId}> Unfortunately, your recruitment application has been **Declined**.`,
+            `Unfortunately, your EMS application has been Declined, <@${request.discordId}> For further details, please check your DMs`,
             "https://r2.fivemanage.com/kgAGMLox973pn5aee2Vbl/ems_rejected.png"
           );
         }
