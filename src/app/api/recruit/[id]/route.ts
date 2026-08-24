@@ -27,7 +27,7 @@ export async function PATCH(
 
     if (status && status !== "Pending") {
       const settings = await getNotificationSettings();
-      const inviteLink = process.env.DISCORD_STATE_INVITE || "https://discord.gg/YOUR_INVITE";
+      const inviteLink = settings.botSettings?.stateInvite || settings.webhookUrls?.recruit || process.env.DISCORD_STATE_INVITE || "https://discord.gg/YOUR_INVITE";
 
       if (status === "Approved") {
         if (settings.recruitWebhook) {

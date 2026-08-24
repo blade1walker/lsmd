@@ -31,7 +31,7 @@ export async function PATCH(
       }
 
       if (settings.ftpDM) {
-        const inviteLink = process.env.DISCORD_STATE_INVITE || "https://discord.gg/YOUR_INVITE";
+        const inviteLink = settings.botSettings?.stateInvite || process.env.DISCORD_STATE_INVITE || "https://discord.gg/YOUR_INVITE";
         await sendDiscordDM(
           request.discordId,
           `Congratulations, ${request.characterName}! 🎉\n\nYour Field Training Program (FTP) application has been **Accepted**!\n\nYou will be assigned an FTP role and a trainer will reach out to you shortly.\n\nJoin our state Discord server:\n${inviteLink}`

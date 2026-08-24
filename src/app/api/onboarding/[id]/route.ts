@@ -111,7 +111,7 @@ export async function PATCH(
       }
 
       if (settings.onboardingDM) {
-        const inviteLink = process.env.DISCORD_STATE_INVITE || "https://discord.gg/YOUR_INVITE";
+        const inviteLink = settings.botSettings?.stateInvite || process.env.DISCORD_STATE_INVITE || "https://discord.gg/YOUR_INVITE";
         const welcomeMessage = settings.onboardingDMApprove
           .replace(/{name}/g, request.name)
           .replace(/{rank}/g, assignedRank)
