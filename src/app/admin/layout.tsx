@@ -19,6 +19,7 @@ import {
   Mail,
   BookOpen,
   ChevronLeft,
+  MessageSquare,
 } from "lucide-react";
 
 const navItems = [
@@ -37,6 +38,7 @@ const navItems = [
   { href: "/admin/signoffs", label: "Sign-offs", icon: GraduationCap },
   { href: "/admin/notification-settings", label: "Notify Settings", icon: Settings },
   { href: "/admin/notifications", label: "Notifications", icon: Bell },
+  { href: "/admin/messaging", label: "Bot Messaging", icon: MessageSquare },
 ];
 
 export default function AdminLayout({
