@@ -32,9 +32,9 @@ export async function PATCH(
       if (status === "Approved") {
         if (settings.recruitWebhook) {
           const msg = settings.recruitWebhookApprove
-            .replace(/{inviteLink}/g, inviteLink)
+            .replace(/{discordId}/g, request.discordId)
             .replace(/{name}/g, request.characterName || "Recruit")
-            .replace(/{discordId}/g, request.discordId);
+            .replace(/{inviteLink}/g, inviteLink);
           await postToAcceptWebhook(msg, "https://r2.fivemanage.com/kgAGMLox973pn5aee2Vbl/ems_approved.png");
         }
 
