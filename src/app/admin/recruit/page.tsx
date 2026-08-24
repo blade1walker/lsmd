@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, XCircle, Loader2, Upload, Eye, Trash2, Plus, Pencil, Send, X } from "lucide-react";
+import { CheckCircle, XCircle, Loader2, Upload, Eye, Trash2, Plus, Pencil, Send, X, ClipboardList } from "lucide-react";
 import * as XLSX from "xlsx";
 
 interface RecruitRequest {
@@ -47,6 +47,7 @@ export default function AdminRecruitPage() {
   const [testResult, setTestResult] = useState("");
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState<"pending" | "log">("pending");
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -244,7 +245,9 @@ export default function AdminRecruitPage() {
   };
 
   const pending = requests.filter((r) => r.status === "Pending");
-  const reviewed = requests.filter((r) => r.status !== "Pending");
+  const approved = requests.filter((r) => r.status === "Approved");
+  const declined = requests.filter((r) => r.status === "Declined");
+  const allReviewed = [...approved, ...declined].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   return (
     <div>
@@ -286,116 +289,139 @@ export default function AdminRecruitPage() {
         </div>
       )}
 
+      {/* Tabs */}
+      <div className="flex gap-1 mb-6 bg-[#111111] border border-[#1e1e1e] rounded-xl p-1 w-fit">
+        <button
+          onClick={() => setActiveTab("pending")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            activeTab === "pending" ? "bg-[#eab308] text-black" : "text-gray-400 hover:text-white"
+          }`}
+        >
+          Pending ({pending.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("log")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            activeTab === "log" ? "bg-[#eab308] text-black" : "text-gray-400 hover:text-white"
+          }`}
+        >
+          <ClipboardList className="w-4 h-4 mr-1 inline" />
+          Approve Log ({allReviewed.length})
+        </button>
+      </div>
+
       {loading ? (
         <div className="text-center py-12">
           <Loader2 className="w-8 h-8 text-gray-500 animate-spin mx-auto" />
         </div>
       ) : (
         <>
-          {/* Pending */}
-          <div className="mb-8">
-            <h2 className="font-[family-name:var(--font-oswald)] text-lg font-semibold text-white mb-4">
-              Pending ({pending.length})
-            </h2>
-            {pending.length === 0 ? (
-              <p className="text-gray-500 text-sm">No pending recruits</p>
-            ) : (
-              <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-[#1e1e1e]">
-                      <th className="text-left py-3 px-4 text-gray-500 font-medium">Name</th>
-                      <th className="text-left py-3 px-4 text-gray-500 font-medium">Discord</th>
-                      <th className="text-left py-3 px-4 text-gray-500 font-medium">User</th>
-                      <th className="text-left py-3 px-4 text-gray-500 font-medium">Steam ID</th>
-                      <th className="text-left py-3 px-4 text-gray-500 font-medium">Submitted</th>
-                      <th className="text-left py-3 px-4 text-gray-500 font-medium">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pending.map((req) => (
-                      <tr key={req.id} className="border-b border-[#1e1e1e]/50 hover:bg-white/5">
-                        <td className="py-3 px-4 text-white">{req.characterName ?? "—"}</td>
-                        <td className="py-3 px-4 text-gray-400 text-xs">{req.discordUsername ?? req.discordId}</td>
-                        <td className="py-3 px-4 text-gray-400 text-xs">{req.user ?? "—"}</td>
-                        <td className="py-3 px-4 text-gray-400 text-xs">{req.steamId}</td>
-                        <td className="py-3 px-4 text-gray-500 text-xs">{new Date(req.createdAt).toLocaleDateString()}</td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-1">
-                            <Button size="sm" onClick={() => setSelectedRequest(req)} variant="outline" className="border-[#1e1e1e] text-gray-400">
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <Button size="sm" onClick={() => openEditModal(req)} variant="outline" className="border-[#1e1e1e] text-gray-400">
-                              <Pencil className="w-4 h-4" />
-                            </Button>
-                            <Button size="sm" onClick={() => handleAction(req.id, "Approved")} disabled={processingId === req.id} className="bg-green-600 hover:bg-green-700 text-white">
-                              {processingId === req.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-                            </Button>
-                            <Button size="sm" onClick={() => handleAction(req.id, "Declined")} disabled={processingId === req.id} className="bg-red-600 hover:bg-red-700 text-white">
-                              {processingId === req.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
-                            </Button>
-                            <Button size="sm" onClick={() => handleDelete(req.id)} variant="ghost" className="text-gray-500 hover:text-red-400">
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </td>
+          {/* Pending Tab */}
+          {activeTab === "pending" && (
+            <div>
+              {pending.length === 0 ? (
+                <p className="text-gray-500 text-sm">No pending recruits</p>
+              ) : (
+                <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-[#1e1e1e]">
+                        <th className="text-left py-3 px-4 text-gray-500 font-medium">Name</th>
+                        <th className="text-left py-3 px-4 text-gray-500 font-medium">Discord</th>
+                        <th className="text-left py-3 px-4 text-gray-500 font-medium">User</th>
+                        <th className="text-left py-3 px-4 text-gray-500 font-medium">Steam ID</th>
+                        <th className="text-left py-3 px-4 text-gray-500 font-medium">Submitted</th>
+                        <th className="text-left py-3 px-4 text-gray-500 font-medium">Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+                    </thead>
+                    <tbody>
+                      {pending.map((req) => (
+                        <tr key={req.id} className="border-b border-[#1e1e1e]/50 hover:bg-white/5">
+                          <td className="py-3 px-4 text-white">{req.characterName ?? "—"}</td>
+                          <td className="py-3 px-4 text-gray-400 text-xs">{req.discordUsername ?? req.discordId}</td>
+                          <td className="py-3 px-4 text-gray-400 text-xs">{req.user ?? "—"}</td>
+                          <td className="py-3 px-4 text-gray-400 text-xs">{req.steamId}</td>
+                          <td className="py-3 px-4 text-gray-500 text-xs">{new Date(req.createdAt).toLocaleDateString()}</td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-1">
+                              <Button size="sm" onClick={() => setSelectedRequest(req)} variant="outline" className="border-[#1e1e1e] text-gray-400">
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              <Button size="sm" onClick={() => openEditModal(req)} variant="outline" className="border-[#1e1e1e] text-gray-400">
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                              <Button size="sm" onClick={() => handleAction(req.id, "Approved")} disabled={processingId === req.id} className="bg-green-600 hover:bg-green-700 text-white">
+                                {processingId === req.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                              </Button>
+                              <Button size="sm" onClick={() => handleAction(req.id, "Declined")} disabled={processingId === req.id} className="bg-red-600 hover:bg-red-700 text-white">
+                                {processingId === req.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
+                              </Button>
+                              <Button size="sm" onClick={() => handleDelete(req.id)} variant="ghost" className="text-gray-500 hover:text-red-400">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
 
-          {/* Reviewed */}
-          <div>
-            <h2 className="font-[family-name:var(--font-oswald)] text-lg font-semibold text-white mb-4">
-              Reviewed ({reviewed.length})
-            </h2>
-            {reviewed.length === 0 ? (
-              <p className="text-gray-500 text-sm">No reviewed recruits</p>
-            ) : (
-              <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-[#1e1e1e]">
-                      <th className="text-left py-3 px-4 text-gray-500 font-medium">Name</th>
-                      <th className="text-left py-3 px-4 text-gray-500 font-medium">Discord</th>
-                      <th className="text-left py-3 px-4 text-gray-500 font-medium">User</th>
-                      <th className="text-left py-3 px-4 text-gray-500 font-medium">Status</th>
-                      <th className="text-left py-3 px-4 text-gray-500 font-medium">Reviewed</th>
-                      <th className="text-left py-3 px-4 text-gray-500 font-medium">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {reviewed.map((req) => (
-                      <tr key={req.id} className="border-b border-[#1e1e1e]/50 opacity-70">
-                        <td className="py-3 px-4 text-white">{req.characterName ?? "—"}</td>
-                        <td className="py-3 px-4 text-gray-400 text-xs">{req.discordUsername ?? req.discordId}</td>
-                        <td className="py-3 px-4 text-gray-400 text-xs">{req.user ?? "—"}</td>
-                        <td className="py-3 px-4">
-                          <span className={`text-xs px-2 py-0.5 rounded ${req.status === "Approved" ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>
-                            {req.status}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-gray-500 text-xs">{req.reviewedBy ?? "—"}</td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-1">
-                            <Button size="sm" onClick={() => openEditModal(req)} variant="outline" className="border-[#1e1e1e] text-gray-400">
-                              <Pencil className="w-4 h-4" />
-                            </Button>
-                            <Button size="sm" onClick={() => handleDelete(req.id)} variant="ghost" className="text-gray-500 hover:text-red-400">
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </td>
+          {/* Approve Log Tab */}
+          {activeTab === "log" && (
+            <div>
+              {allReviewed.length === 0 ? (
+                <p className="text-gray-500 text-sm">No reviewed recruits yet</p>
+              ) : (
+                <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-[#1e1e1e]">
+                        <th className="text-left py-3 px-4 text-gray-500 font-medium">Name</th>
+                        <th className="text-left py-3 px-4 text-gray-500 font-medium">Discord</th>
+                        <th className="text-left py-3 px-4 text-gray-500 font-medium">User</th>
+                        <th className="text-left py-3 px-4 text-gray-500 font-medium">Status</th>
+                        <th className="text-left py-3 px-4 text-gray-500 font-medium">Reviewed By</th>
+                        <th className="text-left py-3 px-4 text-gray-500 font-medium">Note</th>
+                        <th className="text-left py-3 px-4 text-gray-500 font-medium">Date</th>
+                        <th className="text-left py-3 px-4 text-gray-500 font-medium">Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+                    </thead>
+                    <tbody>
+                      {allReviewed.map((req) => (
+                        <tr key={req.id} className="border-b border-[#1e1e1e]/50 hover:bg-white/5">
+                          <td className="py-3 px-4 text-white">{req.characterName ?? "—"}</td>
+                          <td className="py-3 px-4 text-gray-400 text-xs">{req.discordUsername ?? req.discordId}</td>
+                          <td className="py-3 px-4 text-gray-400 text-xs">{req.user ?? "—"}</td>
+                          <td className="py-3 px-4">
+                            <span className={`text-xs px-2 py-0.5 rounded ${req.status === "Approved" ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>
+                              {req.status}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-gray-400 text-xs">{req.reviewedBy ?? "—"}</td>
+                          <td className="py-3 px-4 text-gray-500 text-xs max-w-[150px] truncate">{req.reviewNote ?? "—"}</td>
+                          <td className="py-3 px-4 text-gray-500 text-xs">{new Date(req.createdAt).toLocaleDateString()}</td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-1">
+                              <Button size="sm" onClick={() => openEditModal(req)} variant="outline" className="border-[#1e1e1e] text-gray-400">
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                              <Button size="sm" onClick={() => handleDelete(req.id)} variant="ghost" className="text-gray-500 hover:text-red-400">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
         </>
       )}
 
