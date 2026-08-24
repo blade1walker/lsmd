@@ -316,7 +316,7 @@ model NotificationSettings {
   id                   String  @id @default("singleton")
   recruitWebhook       Boolean @default(true)
   recruitDM            Boolean @default(true)
-  recruitWebhookApprove String @default("Congratulations! Your EMS application has been Accepted, <@ID> For further details, please check your DMs")
+  recruitWebhookApprove String @default("🎉 **EMS Application Accepted!**\nCongratulations! Your application for the **EMS Department** has been **accepted**. 🚑\n\nPlease join the **State Discord** using the link below and make sure to **tag Ben_Hunt** once you have joined.\n\n🔗 **State Discord:** {inviteLink}\n\nAfter joining, please tag **Ben_Hunt** so we can proceed with the next steps.\n\nWelcome to EMS! ❤️🚑")
   recruitWebhookDecline String @default("Unfortunately, your EMS application has been Declined, <@ID> For further details, please check your DMs")
   recruitDMApprove     String @default("Congratulations, {name}! 🎉\n\nYour recruitment application has been **Accepted**!\n\nJoin our state Discord server to get started:\n{inviteLink}\n\nWelcome aboard! 🚑🚀")
   recruitDMDecline     String @default("Dear {name},\n\nWe regret to inform you that your recruitment application has been **Declined**.\n\nIf you have questions, please contact HR.")

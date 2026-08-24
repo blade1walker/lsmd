@@ -40,7 +40,7 @@ export async function getNotificationSettings() {
     return {
       recruitWebhook: true,
       recruitDM: true,
-      recruitWebhookApprove: "Congratulations! Your EMS application has been Accepted, <@ID> For further details, please check your DMs",
+      recruitWebhookApprove: "🎉 **EMS Application Accepted!**\nCongratulations! Your application for the **EMS Department** has been **accepted**. 🚑\n\nPlease join the **State Discord** using the link below and make sure to **tag Ben_Hunt** once you have joined.\n\n🔗 **State Discord:** {inviteLink}\n\nAfter joining, please tag **Ben_Hunt** so we can proceed with the next steps.\n\nWelcome to EMS! ❤️🚑",
       recruitWebhookDecline: "Unfortunately, your EMS application has been Declined, <@ID> For further details, please check your DMs",
       recruitDMApprove: "Congratulations, {name}! 🎉\n\nYour recruitment application has been **Accepted**!\n\nJoin our state Discord server to get started:\n{inviteLink}\n\nWelcome aboard! 🚑🚀",
       recruitDMDecline: "Dear {name},\n\nWe regret to inform you that your recruitment application has been **Declined**.\n\nIf you have questions, please contact HR.",
