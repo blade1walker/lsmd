@@ -93,8 +93,8 @@ export default function AdminRecruitPage() {
       const characterNameIdx = headers.findIndex((h) => h === "character name");
       const userIdx = headers.findIndex((h) => h === "user");
 
-      if (discordIdIdx === -1 || steamIdIdx === -1) {
-        alert("File must contain 'Discord ID' and 'Steam ID' columns");
+      if (discordIdIdx === -1) {
+        alert("File must contain 'Discord ID' column");
         setImporting(false);
         return;
       }
@@ -108,7 +108,7 @@ export default function AdminRecruitPage() {
           characterName: characterNameIdx >= 0 ? String(row[keys[characterNameIdx]] || "") : null,
           user: userIdx >= 0 ? String(row[keys[userIdx]] || "") : null,
         };
-      }).filter((r) => r.discordId && r.steamId);
+      }).filter((r) => r.discordId);
 
       const res = await fetch("/api/recruit", {
         method: "POST",
@@ -131,8 +131,8 @@ export default function AdminRecruitPage() {
   };
 
   const handleAddManual = async () => {
-    if (!form.discordId || !form.steamId) {
-      alert("Discord ID and Steam ID are required");
+    if (!form.discordId) {
+      alert("Discord ID is required");
       return;
     }
     setSaving(true);
@@ -479,7 +479,7 @@ export default function AdminRecruitPage() {
                 <Input value={form.discordUsername} onChange={(e) => setForm({ ...form, discordUsername: e.target.value })} placeholder="e.g. username#1234" className="mt-1 bg-[#0a0a0a] border-[#1e1e1e] text-white" />
               </div>
               <div>
-                <Label className="text-gray-400 text-sm">Steam ID *</Label>
+                <Label className="text-gray-400 text-sm">Steam ID</Label>
                 <Input value={form.steamId} onChange={(e) => setForm({ ...form, steamId: e.target.value })} placeholder="e.g. 123456789" className="mt-1 bg-[#0a0a0a] border-[#1e1e1e] text-white" />
               </div>
               <div>

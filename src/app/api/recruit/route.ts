@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       let updated = 0;
 
       for (const r of body) {
-        if (!r.discordId || !r.steamId) continue;
+        if (!r.discordId) continue;
 
         const existing = await prisma.recruitRequest.findFirst({
           where: { discordId: r.discordId },
