@@ -33,7 +33,8 @@ export async function PATCH(
         if (settings.recruitWebhook) {
           const msg = settings.recruitWebhookApprove
             .replace(/{inviteLink}/g, inviteLink)
-            .replace(/{name}/g, request.characterName || "Recruit");
+            .replace(/{name}/g, request.characterName || "Recruit")
+            .replace(/{discordId}/g, request.discordId);
           await postToAcceptWebhook(msg, "https://r2.fivemanage.com/kgAGMLox973pn5aee2Vbl/ems_approved.png");
         }
 
@@ -46,7 +47,8 @@ export async function PATCH(
       } else if (status === "Declined") {
         if (settings.recruitWebhook) {
           const msg = settings.recruitWebhookDecline
-            .replace(/{name}/g, request.characterName || "Recruit");
+            .replace(/{name}/g, request.characterName || "Recruit")
+            .replace(/{discordId}/g, request.discordId);
           await postToAcceptWebhook(msg, "https://r2.fivemanage.com/kgAGMLox973pn5aee2Vbl/ems_rejected.png");
         }
 

@@ -37,8 +37,8 @@ interface Settings {
 const DEFAULTS: Settings = {
   recruitWebhook: true,
   recruitDM: true,
-  recruitWebhookApprove: "🎉 **EMS Application Accepted!**\nCongratulations! Your application for the **EMS Department** has been **accepted**. 🚑\n\nPlease join the **State Discord** using the link below and make sure to **tag Ben_Hunt** once you have joined.\n\n🔗 **State Discord:** {inviteLink}\n\nAfter joining, please tag **Ben_Hunt** so we can proceed with the next steps.\n\nWelcome to EMS! ❤️🚑",
-  recruitWebhookDecline: "Unfortunately, your EMS application has been Declined, <@ID> For further details, please check your DMs",
+  recruitWebhookApprove: "<@{discordId}> 🎉 **EMS Application Accepted!**\nCongratulations! Your application for the **EMS Department** has been **accepted**. 🚑\n\nPlease join the **State Discord** using the link below and make sure to **tag Ben_Hunt** once you have joined.\n\n🔗 **State Discord:** {inviteLink}\n\nAfter joining, please tag **Ben_Hunt** so we can proceed with the next steps.\n\nWelcome to EMS! ❤️🚑",
+  recruitWebhookDecline: "<@{discordId}> Unfortunately, your EMS application has been Declined.",
   recruitDMApprove: "Congratulations, {name}! 🎉\n\nYour recruitment application has been **Accepted**!\n\nJoin our state Discord server to get started:\n{inviteLink}\n\nWelcome aboard! 🚑🚀",
   recruitDMDecline: "Dear {name},\n\nWe regret to inform you that your recruitment application has been **Declined**.\n\nIf you have questions, please contact HR.",
   onboardingWebhook: false,
@@ -248,7 +248,7 @@ export default function AdminNotificationSettingsPage() {
             </div>
             {expanded === "recruit" && (
               <div className="border-t border-[#1e1e1e] p-4 space-y-4">
-                <p className="text-gray-500 text-xs"><strong>Variables:</strong> {"<@ID>"} = mention user, {"{name}"} = character name, {"{inviteLink}"} = server invite</p>
+                <p className="text-gray-500 text-xs"><strong>Variables:</strong> {"{discordId}"} = mention user, {"{name}"} = character name, {"{inviteLink}"} = server invite</p>
                 <MessageField label="Webhook - Approved" value={settings.recruitWebhookApprove} onChange={(v) => setSettings({ ...settings, recruitWebhookApprove: v })} />
                 <MessageField label="Webhook - Declined" value={settings.recruitWebhookDecline} onChange={(v) => setSettings({ ...settings, recruitWebhookDecline: v })} />
                 <MessageField label="DM - Approved" value={settings.recruitDMApprove} onChange={(v) => setSettings({ ...settings, recruitDMApprove: v })} />
