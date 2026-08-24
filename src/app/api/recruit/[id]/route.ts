@@ -27,33 +27,31 @@ export async function PATCH(
 
     if (status && status !== "Pending") {
       const settings = await getNotificationSettings();
+      const inviteLink = process.env.DISCORD_STATE_INVITE || "https://discord.gg/YOUR_INVITE";
 
       if (status === "Approved") {
         if (settings.recruitWebhook) {
-          await postToAcceptWebhook(
-            `Congratulations! Your EMS application has been Accepted, <@${request.discordId}> For further details, please check your DMs`,
-            "https://r2.fivemanage.com/kgAGMLox973pn5aee2Vbl/ems_approved.png"
-          );
+          const msg = settings.recruitWebhookApprove.replace("<@ID>", `<@${request.discordId}>`);
+          await postToAcceptWebhook(msg, "https://r2.fivemanage.com/kgAGMLox973pn5aee2Vbl/ems_approved.png");
         }
 
         if (settings.recruitDM) {
-          const inviteLink = process.env.DISCORD_STATE_INVITE || "https://discord.gg/YOUR_INVITE";
-          const message = customMessage || `Congratulations${request.characterName ? `, ${request.characterName}` : ""}! 🎉\n\nYour recruitment application has been **Accepted**!\n\nJoin our state Discord server to get started:\n${inviteLink}\n\nWelcome aboard! 🚑🚀`;
-          await sendDiscordDM(request.discordId, message);
+          const msg = (customMessage || settings.recruitDMApprove)
+            .replace(/{name}/g, request.characterName || "Recruit")
+            .replace(/{inviteLink}/g, inviteLink);
+          await sendDiscordDM(request.discordId, msg);
         }
       } else if (status === "Declined") {
         if (settings.recruitWebhook) {
-          await postToAcceptWebhook(
-            `Unfortunately, your EMS application has been Declined, <@${request.discordId}> For further details, please check your DMs`,
-            "https://r2.fivemanage.com/kgAGMLox973pn5aee2Vbl/ems_rejected.png"
-          );
+          const msg = settings.recruitWebhookDecline.replace("<@ID>", `<@${request.discordId}>`);
+          await postToAcceptWebhook(msg, "https://r2.fivemanage.com/kgAGMLox973pn5aee2Vbl/ems_rejected.png");
         }
 
         if (settings.recruitDM) {
-          await sendDiscordDM(
-            request.discordId,
-            `Dear${request.characterName ? ` ${request.characterName}` : " recruit"},\n\nWe regret to inform you that your recruitment application has been **Declined**.\n\nIf you have questions, please contact HR.`
-          );
+          const msg = settings.recruitDMDecline
+            .replace(/{name}/g, request.characterName || "Recruit")
+            .replace(/{inviteLink}/g, inviteLink);
+          await sendDiscordDM(request.discordId, msg);
         }
       }
     }

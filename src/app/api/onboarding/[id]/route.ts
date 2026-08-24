@@ -112,19 +112,12 @@ export async function PATCH(
 
       if (settings.onboardingDM) {
         const inviteLink = process.env.DISCORD_STATE_INVITE || "https://discord.gg/YOUR_INVITE";
-        const welcomeMessage = `Congratulations, ${request.name}! 🎉
-
-You have been accepted into the Emergency Medical Services!
-
-**Your Details:**
-• Rank: ${assignedRank}
-• Call Sign: ${callSign || "N/A"}
-• State ID: ${request.stateId || "N/A"}
-
-Join our state Discord server to get started:
-${inviteLink}
-
-Welcome aboard! 🚑🚀`;
+        const welcomeMessage = settings.onboardingDMApprove
+          .replace(/{name}/g, request.name)
+          .replace(/{rank}/g, assignedRank)
+          .replace(/{callSign}/g, callSign || "N/A")
+          .replace(/{stateId}/g, request.stateId || "N/A")
+          .replace(/{inviteLink}/g, inviteLink);
 
         await sendDiscordDM(request.discordId, welcomeMessage);
       }
@@ -133,10 +126,9 @@ Welcome aboard! 🚑🚀`;
     if (status === "Declined") {
       const settings = await getNotificationSettings();
       if (settings.onboardingDM) {
-        await sendDiscordDM(
-          request.discordId,
-          `Dear ${request.name},\n\nWe regret to inform you that your application has been **Declined**.\n\nIf you have questions, please contact HR.`
-        );
+        const msg = settings.onboardingDMDecline
+          .replace(/{name}/g, request.name);
+        await sendDiscordDM(request.discordId, msg);
       }
     }
 
