@@ -20,17 +20,59 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     if (Array.isArray(body)) {
-      const created = await prisma.recruitRequest.createMany({
-        data: body.map((r: any) => ({
-          discordId: r.discordId,
-          discordUsername: r.discordUsername || null,
-          steamId: r.steamId,
-          characterName: r.characterName || null,
-          user: r.user || null,
-        })),
-        skipDuplicates: true,
+      let created = 0;
+      let updated = 0;
+
+      for (const r of body) {
+        if (!r.discordId || !r.steamId) continue;
+
+        const existing = await prisma.recruitRequest.findFirst({
+          where: { discordId: r.discordId },
+        });
+
+        if (existing) {
+          await prisma.recruitRequest.update({
+            where: { id: existing.id },
+            data: {
+              discordUsername: r.discordUsername || existing.discordUsername,
+              steamId: r.steamId,
+              characterName: r.characterName || existing.characterName,
+              user: r.user || existing.user,
+            },
+          });
+          updated++;
+        } else {
+          await prisma.recruitRequest.create({
+            data: {
+              discordId: r.discordId,
+              discordUsername: r.discordUsername || null,
+              steamId: r.steamId,
+              characterName: r.characterName || null,
+              user: r.user || null,
+            },
+          });
+          created++;
+        }
+      }
+
+      return NextResponse.json({ count: created, updated }, { status: 201 });
+    }
+
+    const existing = await prisma.recruitRequest.findFirst({
+      where: { discordId: body.discordId },
+    });
+
+    if (existing) {
+      const request = await prisma.recruitRequest.update({
+        where: { id: existing.id },
+        data: {
+          discordUsername: body.discordUsername || existing.discordUsername,
+          steamId: body.steamId,
+          characterName: body.characterName || existing.characterName,
+          user: body.user || existing.user,
+        },
       });
-      return NextResponse.json({ count: created.count }, { status: 201 });
+      return NextResponse.json(request, { status: 200 });
     }
 
     const request = await prisma.recruitRequest.create({

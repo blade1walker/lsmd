@@ -37,6 +37,7 @@ export default function AdminRecruitPage() {
   const [customMessage, setCustomMessage] = useState("");
   const [importing, setImporting] = useState(false);
   const [importCount, setImportCount] = useState(0);
+  const [importUpdated, setImportUpdated] = useState(0);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState<RecruitRequest | null>(null);
   const [showTestModal, setShowTestModal] = useState(false);
@@ -118,6 +119,7 @@ export default function AdminRecruitPage() {
       if (res.ok) {
         const result = await res.json();
         setImportCount(result.count);
+        setImportUpdated(result.updated || 0);
         fetchRequests();
       }
     } catch (err) {
@@ -285,7 +287,7 @@ export default function AdminRecruitPage() {
 
       {importCount > 0 && (
         <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 mb-6 text-green-400 text-sm">
-          Successfully imported {importCount} recruits
+          Imported {importCount} new recruits{importUpdated > 0 ? `, updated ${importUpdated} existing` : ""}
         </div>
       )}
 
