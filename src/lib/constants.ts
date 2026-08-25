@@ -94,3 +94,19 @@ export function canSeeTrainingPages(permissions: string[]): boolean {
     permissions.includes("training.signoff.manage")
   );
 }
+
+export const RANK_CALLSIGN: Record<string, { fixed?: number; start?: number; end?: number }> = {
+  "Director of Medicine": { fixed: 999 },
+  "Director of EMS": { fixed: 900 },
+  "Chief of EMS": { fixed: 911 },
+  "Deputy Chief of EMS": { fixed: 912 },
+  "Assistant Chief": { fixed: 913 },
+  "Division Chief": { fixed: 914 },
+  "EMS Captain": { fixed: 915 },
+  "Lieutenant": { start: 920, end: 929 },
+  "Senior Paramedic": { start: 930, end: 949 },
+  "Paramedic": { start: 950, end: 969 },
+  "EMT": { start: 970, end: 979 },
+  "EMR": { start: 980, end: 989 },
+  "Medical Intern": { start: 990, end: 998 },
+};

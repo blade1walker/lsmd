@@ -6,6 +6,7 @@ import AddMemberDialog from "@/components/AddMemberDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RANK_NAMES, SECTION_HINTS } from "@/lib/constants";
+import { toast } from "sonner";
 
 interface Section {
   id: string;
@@ -40,7 +41,7 @@ export default function AdminRosterPage() {
       const data = await res.json();
       setSections(data);
     } catch (err) {
-      console.error("Failed to fetch:", err);
+      toast.error("Failed to load roster data");
     } finally {
       setLoading(false);
     }
@@ -49,17 +50,28 @@ export default function AdminRosterPage() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleUpdate = async (id: string, data: Record<string, unknown>) => {
-    await fetch(`/api/members/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    fetchData();
+    try {
+      const res = await fetch(`/api/members/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to update");
+      fetchData();
+    } catch {
+      toast.error("Failed to update member");
+    }
   };
 
   const handleDelete = async (id: string) => {
-    await fetch(`/api/members/${id}`, { method: "DELETE" });
-    fetchData();
+    try {
+      const res = await fetch(`/api/members/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete");
+      toast.success("Member removed");
+      fetchData();
+    } catch {
+      toast.error("Failed to delete member");
+    }
   };
 
   const handlePromote = async (id: string) => {
@@ -68,6 +80,7 @@ export default function AdminRosterPage() {
     const idx = RANK_NAMES.indexOf(member.rank as typeof RANK_NAMES[number]);
     if (idx < RANK_NAMES.length - 1) {
       await handleUpdate(id, { rank: RANK_NAMES[idx + 1], lastPromotion: new Date().toISOString() });
+      toast.success(`Promoted to ${RANK_NAMES[idx + 1]}`);
     }
   };
 
@@ -77,6 +90,7 @@ export default function AdminRosterPage() {
     const idx = RANK_NAMES.indexOf(member.rank as typeof RANK_NAMES[number]);
     if (idx > 0) {
       await handleUpdate(id, { rank: RANK_NAMES[idx - 1], lastPromotion: new Date().toISOString() });
+      toast.success(`Demoted to ${RANK_NAMES[idx - 1]}`);
     }
   };
 

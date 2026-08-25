@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { RotateCcw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface DeletionLog {
   id: string;
@@ -25,7 +26,7 @@ export default function AdminRestorePage() {
       const data = await res.json();
       setLogs(data);
     } catch (error) {
-      console.error("Error fetching logs:", error);
+      toast.error("Failed to load deletion logs");
     }
     setLoading(false);
   };
@@ -36,19 +37,23 @@ export default function AdminRestorePage() {
 
   const handleRestore = async (logId: string) => {
     try {
-      await fetch(`/api/admin/deleted?logId=${logId}`, { method: "POST" });
+      const res = await fetch(`/api/admin/deleted?logId=${logId}`, { method: "POST" });
+      if (!res.ok) throw new Error("Failed");
+      toast.success("Item restored");
       fetchLogs();
     } catch (error) {
-      console.error("Error restoring:", error);
+      toast.error("Failed to restore item");
     }
   };
 
   const handleDismiss = async (logId: string) => {
     try {
-      await fetch(`/api/admin/deleted?logId=${logId}`, { method: "DELETE" });
+      const res = await fetch(`/api/admin/deleted?logId=${logId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed");
+      toast.success("Log dismissed");
       fetchLogs();
     } catch (error) {
-      console.error("Error dismissing:", error);
+      toast.error("Failed to dismiss log");
     }
   };
 

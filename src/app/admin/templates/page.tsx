@@ -5,6 +5,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 interface TempRank {
   id: string;
@@ -35,7 +36,7 @@ export default function AdminTemplatesPage() {
       setTempRanks(await ranksRes.json());
       setCategories(await catsRes.json());
     } catch (error) {
-      console.error("Error fetching data:", error);
+      toast.error("Failed to load templates");
     }
     setLoading(false);
   };
@@ -47,48 +48,56 @@ export default function AdminTemplatesPage() {
   const handleAddTempRank = async () => {
     if (!newTempRank) return;
     try {
-      await fetch("/api/admin/temp-ranks", {
+      const res = await fetch("/api/admin/temp-ranks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newTempRank, order: tempRanks.length }),
       });
+      if (!res.ok) throw new Error("Failed");
       setNewTempRank("");
+      toast.success("Temp rank added");
       fetchData();
     } catch (error) {
-      console.error("Error adding temp rank:", error);
+      toast.error("Failed to add temp rank");
     }
   };
 
   const handleDeleteTempRank = async (id: string) => {
     try {
-      await fetch(`/api/admin/temp-ranks?id=${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/admin/temp-ranks?id=${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed");
+      toast.success("Temp rank removed");
       fetchData();
     } catch (error) {
-      console.error("Error deleting temp rank:", error);
+      toast.error("Failed to delete temp rank");
     }
   };
 
   const handleAddCategory = async () => {
     if (!newCategory.name) return;
     try {
-      await fetch("/api/admin/categories", {
+      const res = await fetch("/api/admin/categories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...newCategory, order: categories.length }),
       });
+      if (!res.ok) throw new Error("Failed");
       setNewCategory({ name: "", color: "#eab308" });
+      toast.success("Category added");
       fetchData();
     } catch (error) {
-      console.error("Error adding category:", error);
+      toast.error("Failed to add category");
     }
   };
 
   const handleDeleteCategory = async (id: string) => {
     try {
-      await fetch(`/api/admin/categories?id=${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/admin/categories?id=${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed");
+      toast.success("Category removed");
       fetchData();
     } catch (error) {
-      console.error("Error deleting category:", error);
+      toast.error("Failed to delete category");
     }
   };
 

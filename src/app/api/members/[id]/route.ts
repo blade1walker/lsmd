@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { SECTION_HINTS } from "@/lib/constants";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -15,14 +16,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     });
 
     if (body.rank) {
-      const sectionHints: Record<string, string[]> = {
-        "High Command": ["Director of Medicine", "Chief of EMS", "Deputy Chief of EMS", "Assistant Chief"],
-        Command: ["Division Chief", "EMS Captain", "Lieutenant"],
-        Lead: ["Senior Paramedic"],
-        "Medical Patrol": ["Paramedic", "EMT", "EMR"],
-        Probationary: ["Medical Intern"],
-      };
-      for (const [sectionName, ranks] of Object.entries(sectionHints)) {
+      for (const [sectionName, ranks] of Object.entries(SECTION_HINTS)) {
         if (ranks.includes(body.rank)) {
           const section = await prisma.section.findFirst({ where: { name: sectionName } });
           if (section) {

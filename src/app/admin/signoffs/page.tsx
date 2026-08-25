@@ -5,6 +5,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 interface SignOffDefinition {
   id: string;
@@ -45,7 +46,7 @@ export default function AdminSignoffsPage() {
       setDefinitions(await defRes.json());
       setRecords(await recRes.json());
     } catch (error) {
-      console.error("Error fetching data:", error);
+      toast.error("Failed to load sign-offs");
     }
     setLoading(false);
   };
@@ -57,7 +58,7 @@ export default function AdminSignoffsPage() {
   const handleAddDefinition = async () => {
     if (!newDefinition) return;
     try {
-      await fetch("/api/signoffs", {
+      const res = await fetch("/api/signoffs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -65,19 +66,23 @@ export default function AdminSignoffsPage() {
           order: definitions.length,
         }),
       });
+      if (!res.ok) throw new Error("Failed");
       setNewDefinition("");
+      toast.success("Sign-off type added");
       fetchData();
     } catch (error) {
-      console.error("Error adding definition:", error);
+      toast.error("Failed to add sign-off type");
     }
   };
 
   const handleDeleteDefinition = async (id: string) => {
     try {
-      await fetch(`/api/signoffs/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/signoffs/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed");
+      toast.success("Sign-off type removed");
       fetchData();
     } catch (error) {
-      console.error("Error deleting definition:", error);
+      toast.error("Failed to delete sign-off type");
     }
   };
 

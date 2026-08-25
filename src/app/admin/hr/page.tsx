@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Check, X, Clock, CheckCircle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface LOA {
   id: string;
@@ -58,7 +59,7 @@ export default function AdminHrPage() {
       setRemovals(await removalRes.json());
       setInactivities(await inactRes.json());
     } catch (error) {
-      console.error("Error fetching data:", error);
+      toast.error("Failed to load HR data");
     }
     setLoading(false);
   }, []);
@@ -66,30 +67,48 @@ export default function AdminHrPage() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleLoaAction = async (id: string, status: string) => {
-    await fetch(`/api/loa/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    });
-    fetchData();
+    try {
+      const res = await fetch(`/api/loa/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      toast.success(`LOA ${status.toLowerCase()}`);
+      fetchData();
+    } catch {
+      toast.error("Failed to update LOA");
+    }
   };
 
   const handleRemovalAction = async (id: string, status: string) => {
-    await fetch(`/api/removal-requests/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status, reviewedBy: "Admin" }),
-    });
-    fetchData();
+    try {
+      const res = await fetch(`/api/removal-requests/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status, reviewedBy: "Admin" }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      toast.success(`Removal ${status.toLowerCase()}`);
+      fetchData();
+    } catch {
+      toast.error("Failed to update removal request");
+    }
   };
 
   const handleInactivityAction = async (id: string, status: string) => {
-    await fetch(`/api/inactivity-requests/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    });
-    fetchData();
+    try {
+      const res = await fetch(`/api/inactivity-requests/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      toast.success(`Inactivity ${status.toLowerCase()}`);
+      fetchData();
+    } catch {
+      toast.error("Failed to update inactivity request");
+    }
   };
 
   const pendingLoas = loas.filter((l) => l.status === "Pending");

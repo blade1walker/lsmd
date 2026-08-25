@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Save } from "lucide-react";
+import { toast } from "sonner";
 
 export default function AdminSopPage() {
   const [content, setContent] = useState("");
@@ -22,13 +23,15 @@ export default function AdminSopPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await fetch("/api/sop", {
+      const res = await fetch("/api/sop", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content }),
       });
+      if (!res.ok) throw new Error("Failed");
+      toast.success("SOP saved successfully");
     } catch (error) {
-      console.error("Error saving SOP:", error);
+      toast.error("Failed to save SOP");
     }
     setSaving(false);
   };

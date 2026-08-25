@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 interface TrainingRecord {
   id: string;
@@ -65,7 +66,7 @@ export default function AdminTrainingPage() {
       const data = await res.json();
       setRecords(data);
     } catch (error) {
-      console.error("Error fetching records:", error);
+      toast.error("Failed to load training records");
     }
     setLoading(false);
   };
@@ -80,7 +81,7 @@ export default function AdminTrainingPage() {
     currentValue: boolean
   ) => {
     try {
-      await fetch(`/api/training/${recordId}`, {
+      const res = await fetch(`/api/training/${recordId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -88,9 +89,10 @@ export default function AdminTrainingPage() {
           [`${field}By`]: signedBy || "Admin",
         }),
       });
+      if (!res.ok) throw new Error("Failed");
       fetchRecords();
     } catch (error) {
-      console.error("Error updating checkpoint:", error);
+      toast.error("Failed to update checkpoint");
     }
   };
 
@@ -100,7 +102,7 @@ export default function AdminTrainingPage() {
     currentValue: boolean
   ) => {
     try {
-      await fetch(`/api/training/${recordId}`, {
+      const res = await fetch(`/api/training/${recordId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -109,9 +111,11 @@ export default function AdminTrainingPage() {
           [`phase${phase}SignedAt`]: new Date().toISOString(),
         }),
       });
+      if (!res.ok) throw new Error("Failed");
+      toast.success(`Phase ${phase} ${currentValue ? "unsigned" : "signed off"}`);
       fetchRecords();
     } catch (error) {
-      console.error("Error signing off phase:", error);
+      toast.error("Failed to sign off phase");
     }
   };
 
