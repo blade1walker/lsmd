@@ -13,6 +13,18 @@ import {
   Shield,
   Activity,
 } from "lucide-react";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts";
 
 interface DashboardData {
   stats: {
@@ -81,6 +93,12 @@ function StatCard({
   );
 }
 
+const ACTIVITY_COLORS: Record<string, string> = {
+  Active: "#22c55e",
+  Reserve: "#eab308",
+  LOA: "#dc2626",
+};
+
 export default function AdminDashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -126,7 +144,17 @@ export default function AdminDashboardPage() {
     );
   }
 
-  const { stats, recentPromotions, membersByRank, topClockers } = data;
+  const { stats, recentPromotions, membersByRank, membersByActivity, topClockers } = data;
+
+  const activityChartData = membersByActivity.map((a) => ({
+    name: a.activity,
+    value: a.count,
+  }));
+
+  const rankChartData = membersByRank.map((r) => ({
+    rank: r.rank,
+    count: r.count,
+  }));
 
   return (
     <div>
@@ -205,8 +233,9 @@ export default function AdminDashboardPage() {
         </motion.div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Members by Rank */}
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        {/* Activity Pie Chart */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -214,34 +243,115 @@ export default function AdminDashboardPage() {
           className="bg-[#111118] border border-[#1e1e28] rounded-xl p-6"
         >
           <h2 className="font-[family-name:var(--font-oswald)] text-lg font-bold text-white uppercase mb-4">
-            Personnel by Rank
+            Members by Activity
           </h2>
-          <div className="space-y-3">
-            {membersByRank.map((item) => {
-              const percentage = stats.totalMembers > 0 ? (item.count / stats.totalMembers) * 100 : 0;
-              return (
-                <div key={item.rank}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm text-gray-300">{item.rank}</span>
-                    <span className="text-sm text-gray-500">{item.count}</span>
-                  </div>
-                  <div className="h-2 bg-[#1e1e28] rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-red-600 to-red-700 rounded-full transition-all"
-                      style={{ width: `${percentage}%` }}
+          {activityChartData.length === 0 ? (
+            <div className="text-center py-8 text-gray-500 text-sm">
+              No activity data
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={280}>
+              <PieChart>
+                <Pie
+                  data={activityChartData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={100}
+                  paddingAngle={4}
+                  dataKey="value"
+                  stroke="none"
+                >
+                  {activityChartData.map((entry) => (
+                    <Cell
+                      key={entry.name}
+                      fill={ACTIVITY_COLORS[entry.name] ?? "#6b7280"}
                     />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#1e1e28",
+                    border: "1px solid #2a2a38",
+                    borderRadius: 8,
+                    color: "#fff",
+                  }}
+                />
+                <Legend
+                  wrapperStyle={{ fontSize: 12, color: "#9ca3af" }}
+                  formatter={(value) => (
+                    <span className="text-gray-400">{value}</span>
+                  )}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
         </motion.div>
 
-        {/* Recent Promotions */}
+        {/* Rank Bar Chart */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
+          className="bg-[#111118] border border-[#1e1e28] rounded-xl p-6"
+        >
+          <h2 className="font-[family-name:var(--font-oswald)] text-lg font-bold text-white uppercase mb-4">
+            Members by Rank
+          </h2>
+          {rankChartData.length === 0 ? (
+            <div className="text-center py-8 text-gray-500 text-sm">
+              No rank data
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={rankChartData} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+                <XAxis
+                  dataKey="rank"
+                  tick={{ fill: "#9ca3af", fontSize: 11 }}
+                  axisLine={{ stroke: "#1e1e28" }}
+                  tickLine={false}
+                  angle={-35}
+                  textAnchor="end"
+                  height={60}
+                />
+                <YAxis
+                  tick={{ fill: "#9ca3af", fontSize: 11 }}
+                  axisLine={{ stroke: "#1e1e28" }}
+                  tickLine={false}
+                  allowDecimals={false}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#1e1e28",
+                    border: "1px solid #2a2a38",
+                    borderRadius: 8,
+                    color: "#fff",
+                  }}
+                />
+                <Bar
+                  dataKey="count"
+                  radius={[4, 4, 0, 0]}
+                  maxBarSize={40}
+                >
+                  {rankChartData.map((_, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={`rgba(220, 38, 38, ${0.6 + (index / rankChartData.length) * 0.4})`}
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </motion.div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Recent Promotions */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
           className="bg-[#111118] border border-[#1e1e28] rounded-xl p-6"
         >
           <h2 className="font-[family-name:var(--font-oswald)] text-lg font-bold text-white uppercase mb-4">
@@ -287,7 +397,7 @@ export default function AdminDashboardPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
+          transition={{ delay: 0.4 }}
           className="bg-[#111118] border border-[#1e1e28] rounded-xl p-6"
         >
           <h2 className="font-[family-name:var(--font-oswald)] text-lg font-bold text-white uppercase mb-4">
@@ -328,7 +438,7 @@ export default function AdminDashboardPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: 0.45 }}
           className="bg-[#111118] border border-[#1e1e28] rounded-xl p-6"
         >
           <h2 className="font-[family-name:var(--font-oswald)] text-lg font-bold text-white uppercase mb-4">

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import RankInsignia from "@/components/RankInsignia";
 import ActivityPill from "@/components/ActivityPill";
 import { getRankInfo, RANK_LIST, ACTIVITY_STATUSES } from "@/lib/constants";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -161,6 +162,11 @@ export default function MemberRow({ member, onUpdate, onDelete, onPromote, onDem
       </td>
       <td className="py-3 px-4">
         <div className="flex items-center gap-1">
+          <Link href={`/admin/roster/${member.id}`}>
+            <Button size="sm" variant="ghost" className="h-7 text-xs text-blue-400">
+              View
+            </Button>
+          </Link>
           <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setEditing(true)}>
             Edit
           </Button>

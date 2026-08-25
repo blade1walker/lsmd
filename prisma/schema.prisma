@@ -49,6 +49,7 @@ model Member {
   inactivityRequests InactivityRequest[]
   removalRequests    RemovalRequest[]
   ftoSignOffRecords  FTOSignOffRecord[]
+  shiftAssignments   ShiftAssignment[]
 }
 
 model ClockEntry {
@@ -327,7 +328,7 @@ model NotificationSettings {
   ftpWebhook           Boolean @default(false)
   ftpDM                Boolean @default(true)
   ftpDMApprove         String @default("Congratulations, {name}! 🎉\n\nYour Field Training Program (FTP) application has been **Accepted**!\n\nYou will be assigned an FTP role and a trainer will reach out to you shortly.\n\nJoin our state Discord server:\n{inviteLink}")
-  ftpDMDecline         String @default("Dear {name},\n\nWe regret to inform you that your FTP application has been **Declined**.\n\nIf you have questions, please contact HR.")
+  ftpDMDecline         String @default("Dear {name},\n\nYour Field Training Program (FTP) application has been **Declined**.\n\nIf you have questions, please contact HR.")
   loaWebhook           Boolean @default(true)
   loaDM                Boolean @default(false)
   loaWebhookApprove    String @default("LOA Approved for {name}")
@@ -338,4 +339,74 @@ model NotificationSettings {
   testDM               Boolean @default(true)
   webhookUrls          Json?
   botSettings          Json?
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  action      String
+  entityType  String
+  entityId    String
+  entityLabel String
+  details     Json     @default({})
+  performedBy String
+  createdAt   DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([performedBy])
+  @@index([createdAt])
+}
+
+model Shift {
+  id          String   @id @default(cuid())
+  name        String
+  startTime   String
+  endTime     String
+  days        String[]
+  color       String   @default("#3b82f6")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  assignments ShiftAssignment[]
+}
+
+model ShiftAssignment {
+  id        String   @id @default(cuid())
+  shiftId   String
+  memberId  String
+  date      DateTime
+  status    String   @default("Scheduled")
+  notes     String?
+  createdAt DateTime @default(now())
+  shift     Shift    @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([shiftId, memberId, date])
+}
+
+model IncidentReport {
+  id            String   @id @default(cuid())
+  reportNumber  String   @unique
+  type          String
+  location      String
+  description   String
+  status        String   @default("Open")
+  priority      String   @default("Normal")
+  reportedById  String
+  reportedBy    String
+  assignedToId  String?
+  assignedTo    String?
+  outcome       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  members       IncidentMember[]
+}
+
+model IncidentMember {
+  id            String           @id @default(cuid())
+  incidentId    String
+  memberId      String
+  role          String
+  member        Member           @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  incident      IncidentReport   @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  @@unique([incidentId, memberId])
 }

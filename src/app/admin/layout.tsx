@@ -23,6 +23,9 @@ import {
   ChevronLeft,
   MessageSquare,
   Menu,
+  CalendarDays,
+  FileWarning,
+  ScrollText,
 } from "lucide-react";
 
 const navItems = [
@@ -43,6 +46,9 @@ const navItems = [
   { href: "/admin/notification-settings", label: "Notify Settings", icon: Settings },
   { href: "/admin/notifications", label: "Notifications", icon: Bell },
   { href: "/admin/messaging", label: "Bot Messaging", icon: MessageSquare },
+  { href: "/admin/shifts", label: "Shifts", icon: CalendarDays },
+  { href: "/admin/incidents", label: "Incidents", icon: FileWarning },
+  { href: "/admin/audit", label: "Audit Log", icon: ScrollText },
 ];
 
 export default function AdminLayout({
