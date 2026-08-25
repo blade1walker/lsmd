@@ -347,7 +347,7 @@ model AuditLog {
   entityType  String
   entityId    String
   entityLabel String
-  details     Json     @default({})
+  details     Json     @default("{}")
   performedBy String
   createdAt   DateTime @default(now())
 
