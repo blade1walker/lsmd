@@ -50,6 +50,7 @@ model Member {
   removalRequests    RemovalRequest[]
   ftoSignOffRecords  FTOSignOffRecord[]
   shiftAssignments   ShiftAssignment[]
+  incidentMembers    IncidentMember[]
 }
 
 model ClockEntry {
