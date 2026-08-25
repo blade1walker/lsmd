@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
 import { RotateCcw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -59,8 +60,16 @@ export default function AdminRestorePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading deletion logs...</div>
+      <div>
+        <div className="mb-8">
+          <Skeleton className="h-8 w-56 mb-2" />
+          <Skeleton className="h-4 w-72" />
+        </div>
+        <div className="space-y-4">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-20 rounded-xl" />
+          ))}
+        </div>
       </div>
     );
   }

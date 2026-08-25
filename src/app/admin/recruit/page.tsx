@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CheckCircle, XCircle, Loader2, Upload, Eye, Trash2, Plus, Pencil, Send, X, ClipboardList } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import * as XLSX from "xlsx";
 
 interface RecruitRequest {
@@ -49,6 +50,7 @@ export default function AdminRecruitPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<"pending" | "log">("pending");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -182,7 +184,6 @@ export default function AdminRecruitPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this recruit?")) return;
     await fetch(`/api/recruit/${id}`, { method: "DELETE" });
     fetchRequests();
   };
@@ -358,7 +359,7 @@ export default function AdminRecruitPage() {
                               <Button size="sm" onClick={() => handleAction(req.id, "Declined")} disabled={processingId === req.id} className="bg-red-600 hover:bg-red-700 text-white">
                                 {processingId === req.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
                               </Button>
-                              <Button size="sm" onClick={() => handleDelete(req.id)} variant="ghost" className="text-gray-500 hover:text-red-400">
+                              <Button size="sm" onClick={() => setDeleteId(req.id)} variant="ghost" className="text-gray-500 hover:text-red-400">
                                 <Trash2 className="w-4 h-4" />
                               </Button>
                             </div>
@@ -411,7 +412,7 @@ export default function AdminRecruitPage() {
                               <Button size="sm" onClick={() => openEditModal(req)} variant="outline" className="border-[#1e1e1e] text-gray-400">
                                 <Pencil className="w-4 h-4" />
                               </Button>
-                              <Button size="sm" onClick={() => handleDelete(req.id)} variant="ghost" className="text-gray-500 hover:text-red-400">
+                              <Button size="sm" onClick={() => setDeleteId(req.id)} variant="ghost" className="text-gray-500 hover:text-red-400">
                                 <Trash2 className="w-4 h-4" />
                               </Button>
                             </div>
@@ -543,6 +544,21 @@ export default function AdminRecruitPage() {
           </div>
         </div>
       )}
+
+      <AlertDialog open={deleteId !== null} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Recruit</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this recruit? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteId(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { if (deleteId) handleDelete(deleteId); setDeleteId(null); }}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

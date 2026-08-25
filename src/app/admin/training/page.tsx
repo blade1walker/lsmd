@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
 import { CheckCircle, Circle, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -121,8 +122,18 @@ export default function AdminTrainingPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading training records...</div>
+      <div>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <Skeleton className="h-8 w-56 mb-2" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+        </div>
+        <div className="grid gap-6">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-48 rounded-xl" />
+          ))}
+        </div>
       </div>
     );
   }

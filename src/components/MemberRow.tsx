@@ -7,6 +7,7 @@ import { getRankInfo, RANK_LIST, ACTIVITY_STATUSES } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface Member {
   id: string;
@@ -34,6 +35,7 @@ interface MemberRowProps {
 
 export default function MemberRow({ member, onUpdate, onDelete, onPromote, onDemote }: MemberRowProps) {
   const [editing, setEditing] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({
     name: member.name,
     callSign: member.callSign ?? "",
@@ -117,6 +119,7 @@ export default function MemberRow({ member, onUpdate, onDelete, onPromote, onDem
   }
 
   return (
+    <>
     <tr className="border-b border-[#1e1e1e]/50 hover:bg-white/5 transition-colors">
       <td className="py-3 px-4">
         <div className="flex items-center gap-3">
@@ -167,13 +170,26 @@ export default function MemberRow({ member, onUpdate, onDelete, onPromote, onDem
           <Button size="sm" variant="ghost" className="h-7 text-xs text-orange-400" onClick={() => onDemote(member.id)}>
             ↓
           </Button>
-          <Button size="sm" variant="ghost" className="h-7 text-xs text-red-400" onClick={() => {
-            if (confirm(`Delete ${member.name}?`)) onDelete(member.id);
-          }}>
+          <Button size="sm" variant="ghost" className="h-7 text-xs text-red-400" onClick={() => setDeleteId(member.id)}>
             ×
           </Button>
         </div>
       </td>
     </tr>
+    <AlertDialog open={deleteId !== null} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete Member</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete {member.name}? This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => setDeleteId(null)}>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={() => { onDelete(member.id); setDeleteId(null); }}>Delete</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

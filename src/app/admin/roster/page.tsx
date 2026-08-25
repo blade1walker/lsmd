@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import MemberRow from "@/components/MemberRow";
 import AddMemberDialog from "@/components/AddMemberDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Download } from "lucide-react";
 import { RANK_NAMES, SECTION_HINTS } from "@/lib/constants";
 import { toast } from "sonner";
 
@@ -127,12 +129,36 @@ export default function AdminRosterPage() {
             onChange={(e) => setSearch(e.target.value)}
             className="w-64"
           />
+          <Button
+            variant="outline"
+            onClick={() => window.open("/api/admin/export?type=members", "_blank")}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Export CSV
+          </Button>
           <Button onClick={() => setShowAdd(true)}>Add Member</Button>
         </div>
       </div>
 
       {loading ? (
-        <div className="text-center py-16 text-gray-500">Loading...</div>
+        <div className="space-y-8">
+          {[...Array(3)].map((_, i) => (
+            <div key={i}>
+              <Skeleton className="h-6 w-32 mb-3" />
+              <div className="bg-card border border-[#1e1e28] rounded-xl overflow-hidden">
+                {[...Array(4)].map((_, j) => (
+                  <div key={j} className="flex items-center gap-4 px-4 py-3 border-b border-[#1e1e28]">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       ) : (
         <div className="space-y-8">
           {filteredSections.map((section) => (
