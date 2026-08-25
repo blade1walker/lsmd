@@ -264,7 +264,7 @@ export default function AdminRecruitPage() {
         </div>
         <div className="flex items-center gap-3">
           <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" onChange={handleFileImport} className="hidden" />
-          <Button onClick={() => fileRef.current?.click()} disabled={importing} className="bg-[#eab308] text-black hover:bg-[#ca8a04]">
+          <Button onClick={() => fileRef.current?.click()} disabled={importing} className="bg-[#dc2626] text-black hover:bg-[#b91c1c]">
             {importing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
             Import File
           </Button>
@@ -296,7 +296,7 @@ export default function AdminRecruitPage() {
         <button
           onClick={() => setActiveTab("pending")}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            activeTab === "pending" ? "bg-[#eab308] text-black" : "text-gray-400 hover:text-white"
+            activeTab === "pending" ? "bg-[#dc2626] text-black" : "text-gray-400 hover:text-white"
           }`}
         >
           Pending ({pending.length})
@@ -304,7 +304,7 @@ export default function AdminRecruitPage() {
         <button
           onClick={() => setActiveTab("log")}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            activeTab === "log" ? "bg-[#eab308] text-black" : "text-gray-400 hover:text-white"
+            activeTab === "log" ? "bg-[#dc2626] text-black" : "text-gray-400 hover:text-white"
           }`}
         >
           <ClipboardList className="w-4 h-4 mr-1 inline" />
@@ -444,11 +444,11 @@ export default function AdminRecruitPage() {
             </div>
             <div className="mb-4">
               <Label className="text-gray-400 text-sm">Custom DM Message (optional)</Label>
-              <textarea value={customMessage} onChange={(e) => setCustomMessage(e.target.value)} placeholder="Leave empty for default message..." rows={4} className="mt-1 w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#eab308] resize-none" />
+              <textarea value={customMessage} onChange={(e) => setCustomMessage(e.target.value)} placeholder="Leave empty for default message..." rows={4} className="mt-1 w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#dc2626] resize-none" />
             </div>
             <div className="mb-4">
               <Label className="text-gray-400 text-sm">Review Note (optional)</Label>
-              <textarea value={reviewNote} onChange={(e) => setReviewNote(e.target.value)} rows={2} className="mt-1 w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#eab308] resize-none" />
+              <textarea value={reviewNote} onChange={(e) => setReviewNote(e.target.value)} rows={2} className="mt-1 w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#dc2626] resize-none" />
             </div>
             <div className="flex gap-3">
               <Button onClick={() => handleAction(selectedRequest.id, "Approved")} disabled={processingId === selectedRequest.id} className="flex-1 bg-green-600 hover:bg-green-700 text-white">Approve</Button>
@@ -492,7 +492,7 @@ export default function AdminRecruitPage() {
               </div>
             </div>
             <div className="flex gap-3 mt-6">
-              <Button onClick={showEditModal ? handleEditSave : handleAddManual} disabled={saving} className="flex-1 bg-[#eab308] text-black hover:bg-[#ca8a04]">
+              <Button onClick={showEditModal ? handleEditSave : handleAddManual} disabled={saving} className="flex-1 bg-[#dc2626] text-black hover:bg-[#b91c1c]">
                 {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                 {showEditModal ? "Save Changes" : "Add Recruit"}
               </Button>
@@ -511,8 +511,8 @@ export default function AdminRecruitPage() {
               <Button size="sm" onClick={() => setShowTestModal(false)} variant="ghost" className="text-gray-400"><X className="w-4 h-4" /></Button>
             </div>
             <div className="flex gap-2 mb-4">
-              <Button size="sm" onClick={() => setTestType("dm")} className={testType === "dm" ? "bg-[#eab308] text-black" : "bg-[#1a1a1a] text-gray-400"}>Direct Message</Button>
-              <Button size="sm" onClick={() => setTestType("webhook")} className={testType === "webhook" ? "bg-[#eab308] text-black" : "bg-[#1a1a1a] text-gray-400"}>Webhook</Button>
+              <Button size="sm" onClick={() => setTestType("dm")} className={testType === "dm" ? "bg-[#dc2626] text-black" : "bg-[#1a1a1a] text-gray-400"}>Direct Message</Button>
+              <Button size="sm" onClick={() => setTestType("webhook")} className={testType === "webhook" ? "bg-[#dc2626] text-black" : "bg-[#1a1a1a] text-gray-400"}>Webhook</Button>
             </div>
             <div className="space-y-4">
               <div>
@@ -525,7 +525,7 @@ export default function AdminRecruitPage() {
               </div>
               <div>
                 <Label className="text-gray-400 text-sm">Test Message</Label>
-                <textarea value={testMessage} onChange={(e) => setTestMessage(e.target.value)} rows={4} placeholder="Leave empty for default test message..." className="mt-1 w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#eab308] resize-none" />
+                <textarea value={testMessage} onChange={(e) => setTestMessage(e.target.value)} rows={4} placeholder="Leave empty for default test message..." className="mt-1 w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#dc2626] resize-none" />
               </div>
             </div>
             {testResult && (
@@ -534,7 +534,7 @@ export default function AdminRecruitPage() {
               </div>
             )}
             <div className="flex gap-3 mt-4">
-              <Button onClick={handleTestSend} disabled={testSending || !testTarget.discordId} className="flex-1 bg-[#eab308] text-black hover:bg-[#ca8a04]">
+              <Button onClick={handleTestSend} disabled={testSending || !testTarget.discordId} className="flex-1 bg-[#dc2626] text-black hover:bg-[#b91c1c]">
                 {testSending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
                 Send Test
               </Button>

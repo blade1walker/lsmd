@@ -24,7 +24,7 @@ export function FilterBar({
           placeholder="Search by name, callsign, rank..."
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full sm:w-80 pl-10 pr-4 py-2.5 bg-[#111111] border border-[#1e1e1e] rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-[#eab308]/50 focus:ring-1 focus:ring-[#eab308]/20 transition-all"
+          className="w-full sm:w-80 pl-10 pr-4 py-2.5 bg-[#111111] border border-[#1e1e1e] rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-red-600/50 focus:ring-1 focus:ring-red-600/20 transition-all"
         />
       </div>
 
@@ -35,7 +35,7 @@ export function FilterBar({
             onClick={() => onActivityFilterChange(filter)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
               activityFilter === filter
-                ? "bg-[#eab308] text-black"
+                ? "bg-red-600 text-white"
                 : "bg-[#111111] text-gray-400 hover:text-white border border-[#1e1e1e]"
             }`}
           >

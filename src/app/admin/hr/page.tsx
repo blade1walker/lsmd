@@ -294,7 +294,7 @@ export default function AdminHrPage() {
                     </div>
                     <div className="text-xs text-gray-400 mt-1">{removal.reason}</div>
                     {removal.isPTDCase && (
-                      <span className="inline-block mt-1 px-2 py-0.5 bg-[#eab308]/10 text-[#eab308] text-xs rounded">
+                      <span className="inline-block mt-1 px-2 py-0.5 bg-[#dc2626]/10 text-[#dc2626] text-xs rounded">
                         PTD Case
                       </span>
                     )}

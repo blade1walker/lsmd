@@ -181,7 +181,7 @@ export default function AdminOnboardingPage() {
                   {req.status}
                 </span>
                 {req.assignedRank && (
-                  <span className="text-xs text-[#eab308]">→ {req.assignedRank}</span>
+                  <span className="text-xs text-[#dc2626]">→ {req.assignedRank}</span>
                 )}
               </div>
             ))}

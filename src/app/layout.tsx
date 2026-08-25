@@ -22,14 +22,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "EMS Roster - Nexus Universe",
+  title: "LSMS Roster - Nexus Universe",
   description:
-    "Official Personnel Roster of the Emergency Medical Services - Nexus Universe RP",
+    "Official Personnel Roster of the Los Santos Emergency Medical Services - Nexus Universe RP",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "EMS Roster",
+    title: "LSMS Roster",
   },
 };
 
@@ -38,7 +38,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#0a0a0a",
+  themeColor: "#0a0a0f",
 };
 
 export default function RootLayout({
@@ -49,7 +49,7 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${oswald.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-[#0a0a0a] text-white font-[family-name:var(--font-inter)]">
+      <body className="min-h-full flex flex-col bg-[#0a0a0f] text-white font-[family-name:var(--font-inter)]">
         <script
           dangerouslySetInnerHTML={{
             __html: `

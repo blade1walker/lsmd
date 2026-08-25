@@ -86,7 +86,7 @@ export default function AdminClockLogPage() {
                       {t.callSign}
                     </div>
                   </div>
-                  <span className="font-[family-name:var(--font-mono)] text-sm text-[#eab308]">
+                  <span className="font-[family-name:var(--font-mono)] text-sm text-[#dc2626]">
                     {formatDuration(t.totalSeconds)}
                   </span>
                 </div>
@@ -107,7 +107,7 @@ export default function AdminClockLogPage() {
               <div className="text-xs text-gray-500 mt-1">Members with Hours</div>
             </div>
             <div className="p-4 bg-[#0a0a0a] rounded-lg text-center">
-              <div className="text-2xl font-bold text-[#eab308] font-[family-name:var(--font-oswald)]">
+              <div className="text-2xl font-bold text-[#dc2626] font-[family-name:var(--font-oswald)]">
                 {formatDuration(
                   totals.reduce((sum: number, t: any) => sum + t.totalSeconds, 0)
                 )}

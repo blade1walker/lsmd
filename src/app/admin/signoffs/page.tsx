@@ -111,7 +111,7 @@ export default function AdminSignoffsPage() {
           onClick={() => setActiveTab("definitions")}
           className={
             activeTab === "definitions"
-              ? "bg-[#eab308] text-black"
+              ? "bg-[#dc2626] text-black"
               : "border-[#1e1e1e] text-gray-400"
           }
         >
@@ -122,7 +122,7 @@ export default function AdminSignoffsPage() {
           onClick={() => setActiveTab("records")}
           className={
             activeTab === "records"
-              ? "bg-[#eab308] text-black"
+              ? "bg-[#dc2626] text-black"
               : "border-[#1e1e1e] text-gray-400"
           }
         >
@@ -143,7 +143,7 @@ export default function AdminSignoffsPage() {
             <Button
               onClick={handleAddDefinition}
               disabled={!newDefinition}
-              className="bg-[#eab308] text-black hover:bg-[#ca8a04]"
+              className="bg-[#dc2626] text-black hover:bg-[#b91c1c]"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add

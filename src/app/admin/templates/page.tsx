@@ -25,7 +25,7 @@ export default function AdminTemplatesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [newTempRank, setNewTempRank] = useState("");
-  const [newCategory, setNewCategory] = useState({ name: "", color: "#eab308" });
+  const [newCategory, setNewCategory] = useState({ name: "", color: "#dc2626" });
 
   const fetchData = async () => {
     try {
@@ -82,7 +82,7 @@ export default function AdminTemplatesPage() {
         body: JSON.stringify({ ...newCategory, order: categories.length }),
       });
       if (!res.ok) throw new Error("Failed");
-      setNewCategory({ name: "", color: "#eab308" });
+      setNewCategory({ name: "", color: "#dc2626" });
       toast.success("Category added");
       fetchData();
     } catch (error) {
@@ -136,7 +136,7 @@ export default function AdminTemplatesPage() {
             <Button
               onClick={handleAddTempRank}
               disabled={!newTempRank}
-              className="bg-[#eab308] text-black hover:bg-[#ca8a04]"
+              className="bg-[#dc2626] text-black hover:bg-[#b91c1c]"
             >
               <Plus className="w-4 h-4" />
             </Button>
@@ -184,7 +184,7 @@ export default function AdminTemplatesPage() {
             <Button
               onClick={handleAddCategory}
               disabled={!newCategory.name}
-              className="bg-[#eab308] text-black hover:bg-[#ca8a04]"
+              className="bg-[#dc2626] text-black hover:bg-[#b91c1c]"
             >
               <Plus className="w-4 h-4" />
             </Button>

@@ -61,7 +61,7 @@ export default function MemberRow({ member, onUpdate, onDelete, onPromote, onDem
 
   if (editing) {
     return (
-      <tr className="border-b border-[#1e1e1e]/50 bg-gold/5">
+      <tr className="border-b border-[#1e1e1e]/50 bg-red-600/5">
         <td className="py-2 px-4">
           <Input
             value={editForm.name}
@@ -120,7 +120,7 @@ export default function MemberRow({ member, onUpdate, onDelete, onPromote, onDem
     <tr className="border-b border-[#1e1e1e]/50 hover:bg-white/5 transition-colors">
       <td className="py-3 px-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gold/80 to-gold/40 flex items-center justify-center text-[#0a0a0a] font-bold text-xs shrink-0">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-600/80 to-red-600/40 flex items-center justify-center text-[#0a0a0a] font-bold text-xs shrink-0">
             {member.name.split(" ").map((n) => n[0]).join("")}
           </div>
           <span className="text-white font-medium text-sm">{member.name}</span>

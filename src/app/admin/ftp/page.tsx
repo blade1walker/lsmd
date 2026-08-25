@@ -227,7 +227,7 @@ export default function AdminFTPPage() {
                 value={reviewNote}
                 onChange={(e) => setReviewNote(e.target.value)}
                 rows={2}
-                className="mt-1 w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#eab308] resize-none"
+                className="mt-1 w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#dc2626] resize-none"
               />
             </div>
             <div className="flex gap-3">

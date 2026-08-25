@@ -148,7 +148,7 @@ export default function AdminNotificationSettingsPage() {
       <span className="text-sm text-gray-300">{label}</span>
       <div
         onClick={() => onChange(!checked)}
-        className={`w-11 h-6 rounded-full relative transition-colors cursor-pointer ${checked ? "bg-[#eab308]" : "bg-[#2a2a2a]"}`}
+        className={`w-11 h-6 rounded-full relative transition-colors cursor-pointer ${checked ? "bg-[#dc2626]" : "bg-[#2a2a2a]"}`}
       >
         <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${checked ? "translate-x-5.5" : "translate-x-0.5"}`} />
       </div>
@@ -163,7 +163,7 @@ export default function AdminNotificationSettingsPage() {
         onChange={(e) => onChange(e.target.value)}
         rows={3}
         placeholder={placeholder}
-        className="w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#eab308] resize-none"
+        className="w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#dc2626] resize-none"
       />
     </div>
   );
@@ -192,7 +192,7 @@ export default function AdminNotificationSettingsPage() {
             <RotateCcw className="w-4 h-4 mr-2" />
             Reset
           </Button>
-          <Button onClick={handleSave} disabled={saving} className="bg-[#eab308] text-black hover:bg-[#ca8a04]">
+          <Button onClick={handleSave} disabled={saving} className="bg-[#dc2626] text-black hover:bg-[#b91c1c]">
             {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
             {saved ? "Saved!" : "Save"}
           </Button>
@@ -204,7 +204,7 @@ export default function AdminNotificationSettingsPage() {
         <button
           onClick={() => setActiveSection("messages")}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-            activeSection === "messages" ? "bg-[#eab308] text-black" : "text-gray-400 hover:text-white"
+            activeSection === "messages" ? "bg-[#dc2626] text-black" : "text-gray-400 hover:text-white"
           }`}
         >
           <MessageSquare className="w-4 h-4" />
@@ -213,7 +213,7 @@ export default function AdminNotificationSettingsPage() {
         <button
           onClick={() => setActiveSection("webhooks")}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-            activeSection === "webhooks" ? "bg-[#eab308] text-black" : "text-gray-400 hover:text-white"
+            activeSection === "webhooks" ? "bg-[#dc2626] text-black" : "text-gray-400 hover:text-white"
           }`}
         >
           <Webhook className="w-4 h-4" />
@@ -222,7 +222,7 @@ export default function AdminNotificationSettingsPage() {
         <button
           onClick={() => setActiveSection("bot")}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-            activeSection === "bot" ? "bg-[#eab308] text-black" : "text-gray-400 hover:text-white"
+            activeSection === "bot" ? "bg-[#dc2626] text-black" : "text-gray-400 hover:text-white"
           }`}
         >
           <Bot className="w-4 h-4" />
@@ -395,8 +395,8 @@ export default function AdminNotificationSettingsPage() {
             </div>
             <div className="p-4 space-y-4">
               <div className="flex gap-2">
-                <Button size="sm" onClick={() => setTestType("dm")} className={testType === "dm" ? "bg-[#eab308] text-black" : "bg-[#1a1a1a] text-gray-400"}>Direct Message</Button>
-                <Button size="sm" onClick={() => setTestType("webhook")} className={testType === "webhook" ? "bg-[#eab308] text-black" : "bg-[#1a1a1a] text-gray-400"}>Webhook</Button>
+                <Button size="sm" onClick={() => setTestType("dm")} className={testType === "dm" ? "bg-[#dc2626] text-black" : "bg-[#1a1a1a] text-gray-400"}>Direct Message</Button>
+                <Button size="sm" onClick={() => setTestType("webhook")} className={testType === "webhook" ? "bg-[#dc2626] text-black" : "bg-[#1a1a1a] text-gray-400"}>Webhook</Button>
               </div>
               <div>
                 <Label className="text-gray-400 text-sm">Discord ID</Label>
@@ -407,7 +407,7 @@ export default function AdminNotificationSettingsPage() {
                   {testResult}
                 </div>
               )}
-              <Button onClick={handleTestSend} disabled={testSending || !testTarget.discordId} className="bg-[#eab308] text-black hover:bg-[#ca8a04]">
+              <Button onClick={handleTestSend} disabled={testSending || !testTarget.discordId} className="bg-[#dc2626] text-black hover:bg-[#b91c1c]">
                 {testSending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                 Send Test
               </Button>

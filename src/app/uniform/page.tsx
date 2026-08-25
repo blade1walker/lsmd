@@ -24,7 +24,7 @@ EMS
 
         <div className="grid sm:grid-cols-2 gap-6 mb-12">
           <Link href="/uniform/male" className="group">
-            <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl p-8 hover:border-[#eab308]/30 transition-colors">
+            <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl p-8 hover:border-[#dc2626]/30 transition-colors">
               <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center mb-4">
                 <span className="text-2xl font-bold text-white">M</span>
               </div>
@@ -38,7 +38,7 @@ EMS
           </Link>
 
           <Link href="/uniform/female" className="group">
-            <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl p-8 hover:border-[#eab308]/30 transition-colors">
+            <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl p-8 hover:border-[#dc2626]/30 transition-colors">
               <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-pink-600 to-pink-800 flex items-center justify-center mb-4">
                 <span className="text-2xl font-bold text-white">F</span>
               </div>

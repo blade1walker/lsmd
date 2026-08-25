@@ -62,12 +62,12 @@ export function RadioCodesPageClient({ codes }: RadioCodesPageClientProps) {
                     <div
                       key={code.id}
                       className={`px-6 py-3 flex items-center gap-4 ${
-                        code.highlighted ? "bg-[#eab308]/5" : ""
+                        code.highlighted ? "bg-[#dc2626]/5" : ""
                       }`}
                     >
                       <span
                         className={`font-[family-name:var(--font-mono)] text-sm font-bold min-w-[60px] ${
-                          code.highlighted ? "text-[#eab308]" : "text-white"
+                          code.highlighted ? "text-[#dc2626]" : "text-white"
                         }`}
                       >
                         {code.code}
@@ -76,7 +76,7 @@ export function RadioCodesPageClient({ codes }: RadioCodesPageClientProps) {
                         {code.description}
                       </span>
                       {code.highlighted && (
-                        <span className="ml-auto px-2 py-0.5 bg-[#eab308]/10 text-[#eab308] text-xs rounded">
+                        <span className="ml-auto px-2 py-0.5 bg-[#dc2626]/10 text-[#dc2626] text-xs rounded">
                           Important
                         </span>
                       )}

@@ -29,7 +29,7 @@ export function StatsBar({ total, active, reserve, loa }: StatsBarProps) {
         <div className="text-xs text-gray-500 mt-1">Active</div>
       </div>
       <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl p-4 text-center">
-        <div className="text-2xl font-bold text-yellow-400 font-[family-name:var(--font-oswald)]">
+        <div className="text-2xl font-bold text-red-400 font-[family-name:var(--font-oswald)]">
           {reserve}
         </div>
         <div className="text-xs text-gray-500 mt-1">Reserve</div>

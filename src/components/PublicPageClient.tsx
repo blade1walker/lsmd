@@ -136,13 +136,13 @@ export function PublicPageClient({ sections }: PublicPageClientProps) {
             {/* Join EMS CTA */}
             <a
               href="/onboarding"
-              className="block mt-12 rounded-xl border border-[#eab308]/30 bg-[#eab308]/5 hover:bg-[#eab308]/10 transition-all group"
+              className="block mt-12 rounded-xl border border-red-600/30 bg-red-600/5 hover:bg-red-600/10 transition-all group"
             >
               <div className="flex items-center justify-between p-6">
-                <h3 className="font-[family-name:var(--font-oswald)] text-2xl font-bold text-[#eab308] uppercase tracking-wider group-hover:scale-105 transition-transform origin-left">
+                <h3 className="font-[family-name:var(--font-oswald)] text-2xl font-bold text-red-500 uppercase tracking-wider group-hover:scale-105 transition-transform origin-left">
 Join EMS
                 </h3>
-                <div className="text-[#eab308] text-2xl group-hover:translate-x-1 transition-transform">
+                <div className="text-red-500 text-2xl group-hover:translate-x-1 transition-transform">
                   →
                 </div>
               </div>

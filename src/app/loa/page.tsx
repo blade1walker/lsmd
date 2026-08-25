@@ -104,7 +104,7 @@ export default function LOARequestPage() {
 
       <main className="max-w-2xl mx-auto px-4 py-12">
         <div className="flex items-center gap-2 mb-2">
-          <Calendar className="w-5 h-5 text-[#eab308]" />
+          <Calendar className="w-5 h-5 text-[#dc2626]" />
           <h1 className="font-[family-name:var(--font-oswald)] text-2xl font-bold text-white uppercase">
             Request LOA
           </h1>
@@ -208,7 +208,7 @@ export default function LOARequestPage() {
                 <Button
                   onClick={handleSubmit}
                   disabled={loading || !reason || !startDate || !endDate}
-                  className="flex-1 bg-[#eab308] text-black hover:bg-[#ca8a04]"
+                  className="flex-1 bg-[#dc2626] text-black hover:bg-[#b91c1c]"
                 >
                   {loading ? "Submitting..." : "Submit Request"}
                 </Button>

@@ -15,7 +15,7 @@ export function SectionHeader({ name, count, isOpen, onToggle }: SectionHeaderPr
       onClick={onToggle}
       className="w-full flex items-center gap-3 mb-4 px-1 py-2 hover:bg-white/5 rounded-lg transition-colors"
     >
-      <div className="w-1 h-6 rounded-full bg-gradient-to-b from-[#eab308] to-[#ca8a04]" />
+      <div className="w-1 h-6 rounded-full bg-gradient-to-b from-red-600 to-red-700" />
       <h2 className="font-[family-name:var(--font-oswald)] text-xl font-semibold text-white uppercase tracking-wide text-left">
         {name}
       </h2>

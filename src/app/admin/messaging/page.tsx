@@ -83,7 +83,7 @@ export default function MessagingPage() {
             onChange={(e) => { setDiscordId(e.target.value); setUser(null); setResult(null); }}
             onKeyDown={(e) => e.key === "Enter" && searchUser()}
             placeholder="Enter Discord ID (e.g. 123456789012345678)"
-            className="flex-1 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#eab308] transition-colors"
+            className="flex-1 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#dc2626] transition-colors"
           />
           <button
             onClick={searchUser}
@@ -130,14 +130,14 @@ export default function MessagingPage() {
           onChange={(e) => setMessage(e.target.value)}
           placeholder="Type your message here... (supports **bold**, *italic*, `code`)"
           rows={5}
-          className="w-full bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-[#eab308] transition-colors resize-none"
+          className="w-full bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-[#dc2626] transition-colors resize-none"
         />
         <div className="flex items-center justify-between">
           <span className="text-xs text-gray-500">{message.length}/2000</span>
           <button
             onClick={sendMessage}
             disabled={sending || !discordId.trim() || !message.trim()}
-            className="flex items-center gap-2 px-5 py-2.5 bg-[#eab308] hover:bg-[#ca8a04] text-black font-medium rounded-lg text-sm transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-5 py-2.5 bg-[#dc2626] hover:bg-[#b91c1c] text-black font-medium rounded-lg text-sm transition-colors disabled:opacity-50"
           >
             {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             Send DM

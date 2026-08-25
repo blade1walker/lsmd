@@ -56,14 +56,14 @@ export default function RankInsignia({ shape, count, rank, size = 16 }: RankInsi
         const y = size / 2;
 
         if (finalShape === "pip") {
-          return <circle key={i} cx={x} cy={y} r={itemSize / 2} fill="#eab308" opacity={0.9} />;
+          return <circle key={i} cx={x} cy={y} r={itemSize / 2} fill="#dc2626" opacity={0.9} />;
         }
         if (finalShape === "chevron") {
           const points = `${x - itemSize / 2},${y + itemSize / 3} ${x},${y - itemSize / 3} ${x + itemSize / 2},${y + itemSize / 3}`;
-          return <polyline key={i} points={points} stroke="#eab308" strokeWidth={1.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />;
+          return <polyline key={i} points={points} stroke="#dc2626" strokeWidth={1.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />;
         }
         if (finalShape === "bar") {
-          return <rect key={i} x={x - itemSize / 2} y={y - itemSize / 6} width={itemSize} height={itemSize / 3} rx={1} fill="#eab308" opacity={0.9} />;
+          return <rect key={i} x={x - itemSize / 2} y={y - itemSize / 6} width={itemSize} height={itemSize / 3} rx={1} fill="#dc2626" opacity={0.9} />;
         }
         if (finalShape === "star") {
           const r = itemSize / 2;
@@ -74,7 +74,7 @@ export default function RankInsignia({ shape, count, rank, size = 16 }: RankInsi
               return `${x + r * Math.cos(angle)},${y + r * Math.sin(angle)} ${x + r * 0.4 * Math.cos(innerAngle)},${y + r * 0.4 * Math.sin(innerAngle)}`;
             })
             .join(" ");
-          return <polygon key={i} points={points} fill="#eab308" opacity={0.9} />;
+          return <polygon key={i} points={points} fill="#dc2626" opacity={0.9} />;
         }
         return null;
       })}

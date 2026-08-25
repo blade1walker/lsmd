@@ -159,7 +159,7 @@ export default function AdminTrainingPage() {
             className="bg-[#111111] border border-[#1e1e1e] rounded-xl p-6"
           >
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#eab308] to-[#ca8a04] flex items-center justify-center text-black font-bold text-sm">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#dc2626] to-[#b91c1c] flex items-center justify-center text-black font-bold text-sm">
                 {record.member.name
                   .split(" ")
                   .map((n) => n[0])
@@ -189,7 +189,7 @@ export default function AdminTrainingPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <h4 className="text-sm font-medium text-[#eab308] uppercase tracking-wider mb-3">
+                <h4 className="text-sm font-medium text-[#dc2626] uppercase tracking-wider mb-3">
                   Phase 1
                 </h4>
                 <div className="space-y-2">
@@ -227,7 +227,7 @@ export default function AdminTrainingPage() {
               </div>
 
               <div>
-                <h4 className="text-sm font-medium text-[#eab308] uppercase tracking-wider mb-3">
+                <h4 className="text-sm font-medium text-[#dc2626] uppercase tracking-wider mb-3">
                   Phase 2
                 </h4>
                 <div className="space-y-2">
@@ -265,7 +265,7 @@ export default function AdminTrainingPage() {
               </div>
 
               <div>
-                <h4 className="text-sm font-medium text-[#eab308] uppercase tracking-wider mb-3">
+                <h4 className="text-sm font-medium text-[#dc2626] uppercase tracking-wider mb-3">
                   Phase 3
                 </h4>
                 <div className="space-y-2">

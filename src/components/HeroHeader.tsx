@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 export function HeroHeader() {
   return (
     <section className="relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-[#eab308]/10 via-[#0a0a0a] to-[#0a0a0a]" />
+      <div className="absolute inset-0 bg-gradient-to-b from-red-900/20 via-[#0a0a0f] to-[#0a0a0f]" />
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0djZoNnYtNmgtNnptMC0zMHY2aDZ2LTZoLTZ6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-50" />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28">
@@ -15,9 +15,9 @@ export function HeroHeader() {
           transition={{ duration: 0.6 }}
           className="text-center"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#eab308]/10 border border-[#eab308]/20 rounded-full mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-600/10 border border-red-600/20 rounded-full mb-8">
             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-sm text-[#eab308] font-medium">
+            <span className="text-sm text-red-400 font-medium">
               Active Department
             </span>
           </div>
@@ -25,8 +25,8 @@ export function HeroHeader() {
           <h1 className="font-[family-name:var(--font-oswald)] text-4xl sm:text-5xl md:text-7xl font-bold text-white mb-4 tracking-tight uppercase">
             Los Santos
             <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#eab308] to-[#ca8a04]">
-              Medical Department
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-600">
+              Emergency Medical Services
             </span>
           </h1>
 
@@ -39,7 +39,7 @@ export function HeroHeader() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <a
               href="#roster"
-              className="px-8 py-3 bg-[#eab308] hover:bg-[#ca8a04] text-black font-semibold rounded-lg transition-all hover:scale-105 text-sm"
+              className="px-8 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-all hover:scale-105 text-sm"
             >
               View Full Roster
             </a>
@@ -57,7 +57,7 @@ export function HeroHeader() {
             </a>
             <a
               href="/onboarding"
-              className="px-8 py-3 bg-[#eab308]/20 hover:bg-[#eab308]/30 text-[#eab308] border border-[#eab308]/30 font-semibold rounded-lg transition-all hover:scale-105 text-sm"
+              className="px-8 py-3 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-600/30 font-semibold rounded-lg transition-all hover:scale-105 text-sm"
             >
               Enroll in Roster
             </a>

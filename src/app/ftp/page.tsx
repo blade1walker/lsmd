@@ -72,7 +72,7 @@ export default function FTPPage() {
 
       <main className="max-w-2xl mx-auto px-4 py-12">
         <div className="flex items-center gap-2 mb-2">
-          <GraduationCap className="w-5 h-5 text-[#eab308]" />
+          <GraduationCap className="w-5 h-5 text-[#dc2626]" />
           <h1 className="font-[family-name:var(--font-oswald)] text-2xl font-bold text-white uppercase">
             Field Training Program
           </h1>
@@ -119,7 +119,7 @@ export default function FTPPage() {
               onChange={(e) => setPreviousExperience(e.target.value)}
               placeholder="Describe any previous training experience..."
               rows={3}
-              className="mt-1 w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#eab308] resize-none"
+              className="mt-1 w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#dc2626] resize-none"
             />
           </div>
 
@@ -128,7 +128,7 @@ export default function FTPPage() {
             <select
               value={department}
               onChange={(e) => setDepartment(e.target.value)}
-              className="mt-1 w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#eab308]"
+              className="mt-1 w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#dc2626]"
             >
               <option value="">Select department</option>
               {DEPARTMENTS.map((d) => (
@@ -141,7 +141,7 @@ export default function FTPPage() {
             <Button
               onClick={handleSubmit}
               disabled={loading || !characterName || !discordId || !currentRole || !department}
-              className="w-full bg-[#eab308] text-black hover:bg-[#ca8a04]"
+              className="w-full bg-[#dc2626] text-black hover:bg-[#b91c1c]"
             >
               {loading ? "Submitting..." : "Submit Application"}
             </Button>

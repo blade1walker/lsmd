@@ -22,7 +22,7 @@ export default function AdminLoginPage() {
         className="w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-[#eab308] to-[#ca8a04] flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-[#dc2626] to-[#b91c1c] flex items-center justify-center mx-auto mb-4">
             <span className="font-[family-name:var(--font-oswald)] text-black font-bold text-2xl">
               N
             </span>

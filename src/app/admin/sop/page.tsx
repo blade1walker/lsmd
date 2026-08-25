@@ -58,7 +58,7 @@ export default function AdminSopPage() {
         <Button
           onClick={handleSave}
           disabled={saving}
-          className="bg-[#eab308] text-black hover:bg-[#ca8a04]"
+          className="bg-[#dc2626] text-black hover:bg-[#b91c1c]"
         >
           <Save className="w-4 h-4 mr-2" />
           {saving ? "Saving..." : "Save Changes"}

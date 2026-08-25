@@ -46,7 +46,7 @@ function ProgressBar({ label, completed, total }: { label: string; completed: nu
       </div>
       <div className="w-full h-2 bg-[#1e1e1e] rounded-full overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-[#eab308] to-[#ca8a04] rounded-full transition-all"
+          className="h-full bg-gradient-to-r from-[#dc2626] to-[#b91c1c] rounded-full transition-all"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -115,7 +115,7 @@ export function TrainingPageClient({ records }: TrainingPageClientProps) {
                   className="bg-[#111111] border border-[#1e1e1e] rounded-xl p-6"
                 >
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#eab308] to-[#ca8a04] flex items-center justify-center text-black font-bold text-sm">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#dc2626] to-[#b91c1c] flex items-center justify-center text-black font-bold text-sm">
                       {record.member.name
                         .split(" ")
                         .map((n) => n[0])
@@ -134,7 +134,7 @@ export function TrainingPageClient({ records }: TrainingPageClientProps) {
                       </div>
                     </div>
                     {record.member.ftoRole && (
-                      <span className="ml-auto px-2 py-1 bg-[#eab308]/10 text-[#eab308] text-xs rounded-md border border-[#eab308]/20">
+                      <span className="ml-auto px-2 py-1 bg-[#dc2626]/10 text-[#dc2626] text-xs rounded-md border border-[#dc2626]/20">
                         {record.member.ftoRole}
                       </span>
                     )}

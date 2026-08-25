@@ -47,7 +47,7 @@ export function MemberDrawer({ member, onClose }: MemberDrawerProps) {
 
             <div className="space-y-6">
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#eab308] to-[#ca8a04] flex items-center justify-center text-black font-bold text-xl">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center text-white font-bold text-xl">
                   {member.name
                     .split(" ")
                     .map((n: string) => n[0])
@@ -98,7 +98,7 @@ export function MemberDrawer({ member, onClose }: MemberDrawerProps) {
                 <div className="text-xs text-gray-500 mb-2">Divisions</div>
                 <div className="flex flex-wrap gap-2">
                   {member.ptd && (
-                    <span className="px-2 py-1 bg-[#eab308]/10 text-[#eab308] text-xs rounded-md border border-[#eab308]/20">
+                    <span className="px-2 py-1 bg-red-600/10 text-red-500 text-xs rounded-md border border-red-600/20">
                       PTD
                     </span>
                   )}

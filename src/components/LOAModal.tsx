@@ -64,7 +64,7 @@ export function LOAModal({ isOpen, onClose, memberId }: LOAModalProps) {
         >
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-[#eab308]" />
+              <Calendar className="w-5 h-5 text-red-500" />
               <h2 className="font-[family-name:var(--font-oswald)] text-lg font-bold text-white uppercase">
                 Apply for LOA
               </h2>
@@ -120,7 +120,7 @@ export function LOAModal({ isOpen, onClose, memberId }: LOAModalProps) {
               <Button
                 onClick={handleSubmit}
                 disabled={loading || !reason || !startDate || !endDate}
-                className="flex-1 bg-[#eab308] text-black hover:bg-[#ca8a04]"
+                className="flex-1 bg-red-600 text-white hover:bg-red-700"
               >
                 {loading ? "Submitting..." : "Submit"}
               </Button>

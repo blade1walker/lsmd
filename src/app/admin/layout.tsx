@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import {
+  LayoutDashboard,
   Users,
   UserPlus,
   GraduationCap,
@@ -23,6 +24,7 @@ import {
 } from "lucide-react";
 
 const navItems = [
+  { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/roster", label: "Roster", icon: Users },
   { href: "/admin/onboarding", label: "Onboarding", icon: UserPlus },
   { href: "/admin/recruit", label: "Recruit", icon: Mail },
@@ -58,7 +60,7 @@ export default function AdminLayout({
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
         <div className="text-gray-500">Loading...</div>
       </div>
     );
@@ -70,18 +72,18 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] flex">
-      <aside className="w-64 bg-[#111111] border-r border-[#1e1e1e] flex flex-col fixed h-full">
-        <div className="p-4 border-b border-[#1e1e1e]">
+    <div className="min-h-screen bg-[#0a0a0f] flex">
+      <aside className="w-64 bg-[#111118] border-r border-[#1e1e28] flex flex-col fixed h-full">
+        <div className="p-4 border-b border-[#1e1e28]">
           <Link href="/" className="flex items-center gap-2 text-gray-400 hover:text-white text-sm">
             <ChevronLeft className="w-4 h-4" />
             Back to Roster
           </Link>
         </div>
 
-        <div className="p-4 border-b border-[#1e1e1e]">
+        <div className="p-4 border-b border-[#1e1e28]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#eab308] to-[#ca8a04] flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#dc2626] to-[#b91c1c] flex items-center justify-center">
               <span className="font-[family-name:var(--font-oswald)] text-black font-bold text-lg">
                 N
               </span>
@@ -106,7 +108,7 @@ export default function AdminLayout({
                 href={item.href}
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors mb-1 ${
                   isActive
-                    ? "bg-[#eab308]/10 text-[#eab308]"
+                    ? "bg-[#dc2626]/10 text-[#dc2626]"
                     : "text-gray-400 hover:text-white hover:bg-white/5"
                 }`}
               >
@@ -117,9 +119,9 @@ export default function AdminLayout({
           })}
         </nav>
 
-        <div className="p-4 border-t border-[#1e1e1e]">
+        <div className="p-4 border-t border-[#1e1e28]">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 rounded-full bg-[#1e1e1e] flex items-center justify-center text-xs text-gray-400">
+            <div className="w-8 h-8 rounded-full bg-[#1e1e28] flex items-center justify-center text-xs text-gray-400">
               {session.user.name?.[0] ?? "A"}
             </div>
             <div className="flex-1 min-w-0">

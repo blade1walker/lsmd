@@ -29,7 +29,7 @@ export function UserNotificationBell() {
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#eab308] text-black text-xs font-bold rounded-full flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
             {unreadCount}
           </span>
         )}
@@ -48,7 +48,7 @@ export function UserNotificationBell() {
               {unreadCount > 0 && (
                 <button
                   onClick={markAllRead}
-                  className="text-xs text-[#eab308] hover:underline"
+                  className="text-xs text-red-500 hover:underline"
                 >
                   Mark all read
                 </button>
@@ -64,14 +64,14 @@ export function UserNotificationBell() {
                   <div
                     key={notif.id}
                     className={`p-4 border-b border-[#1e1e1e] ${
-                      !notif.isRead ? "bg-[#eab308]/5" : ""
+                      !notif.isRead ? "bg-red-600/5" : ""
                     }`}
                   >
                     <div className="text-sm text-white">
                       <span className="font-semibold">{notif.memberName}</span>{" "}
                       was promoted from{" "}
                       <span className="text-gray-400">{notif.fromRank}</span> to{" "}
-                      <span className="text-[#eab308]">{notif.toRank}</span>
+                      <span className="text-red-500">{notif.toRank}</span>
                     </div>
                     <div className="text-xs text-gray-500 mt-1">
                       by {notif.promotedBy}

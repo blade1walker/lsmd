@@ -7,8 +7,8 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="md:col-span-2">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#eab308] to-[#ca8a04] flex items-center justify-center">
-                <span className="font-[family-name:var(--font-oswald)] text-black font-bold text-lg">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center">
+                <span className="font-[family-name:var(--font-oswald)] text-white font-bold text-lg">
                   N
                 </span>
               </div>

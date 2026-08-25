@@ -50,7 +50,7 @@ export default function FemaleUniformPage() {
                     <span className="text-gray-500 text-xs ml-2">({c.note})</span>
                   )}
                 </div>
-                <span className="font-mono text-[#eab308] text-lg font-semibold">{c.value}</span>
+                <span className="font-mono text-[#dc2626] text-lg font-semibold">{c.value}</span>
               </div>
             ))}
           </div>
