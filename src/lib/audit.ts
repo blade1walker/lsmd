@@ -1,5 +1,4 @@
 import { prisma } from "./prisma";
-import { Prisma } from "@/generated/prisma";
 
 export interface AuditAction {
   action: "create" | "update" | "delete" | "promote" | "demote" | "approve" | "decline";
@@ -18,7 +17,7 @@ export async function logAudit(action: AuditAction) {
         entityType: action.entityType,
         entityId: action.entityId,
         entityLabel: action.entityLabel,
-        details: (action.details ?? {}) as Prisma.InputJsonValue,
+        details: (action.details ?? {}) as never,
         performedBy: action.performedBy,
       },
     });
