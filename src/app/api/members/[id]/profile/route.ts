@@ -45,23 +45,11 @@ export async function GET(
       orderBy: { createdAt: "desc" },
     });
 
-    const auditLogs = await prisma.auditLog.findMany({
-      where: {
-        OR: [
-          { entityType: "Member", entityId: memberId },
-          { performedBy: member.name },
-        ],
-      },
-      orderBy: { createdAt: "desc" },
-      take: 30,
-    });
-
     return NextResponse.json({
       member,
       trainingRecord,
       clockEntries,
       loaHistory,
-      auditLogs,
     });
   } catch (error) {
       return apiError("Failed to fetch member profile", error);

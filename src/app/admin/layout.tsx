@@ -23,9 +23,6 @@ import {
   ChevronLeft,
   MessageSquare,
   Menu,
-  CalendarDays,
-  FileWarning,
-  ScrollText,
 } from "lucide-react";
 
 // `permission` mirrors the check on the matching API route, so a section is
@@ -48,9 +45,6 @@ const navItems = [
   { href: "/admin/notification-settings", label: "Notify Settings", icon: Settings, permission: "notifications" },
   { href: "/admin/notifications", label: "Notifications", icon: Bell, permission: "notifications" },
   { href: "/admin/messaging", label: "Bot Messaging", icon: MessageSquare, permission: "notifications" },
-  { href: "/admin/shifts", label: "Shifts", icon: CalendarDays, permission: "shifts.view" },
-  { href: "/admin/incidents", label: "Incidents", icon: FileWarning, permission: "incidents.view" },
-  { href: "/admin/audit", label: "Audit Log", icon: ScrollText, permission: "audit.view" },
 ];
 
 export default function AdminLayout({

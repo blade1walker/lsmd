@@ -56,8 +56,6 @@ export const ROLE_PRESETS: RolePreset[] = [
       "training.view",
       "training.manage",
       "training.signoff.manage",
-      "shifts.view",
-      "incidents.view",
     ],
   },
 ];

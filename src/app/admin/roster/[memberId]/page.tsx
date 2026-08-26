@@ -18,7 +18,6 @@ import {
   Clock,
   FileText,
   ClipboardCheck,
-  AlertTriangle,
 } from "lucide-react";
 import ActivityPill from "@/components/ActivityPill";
 
@@ -95,16 +94,6 @@ interface MemberProfileData {
     endDate: string;
     status: string;
     notes: string | null;
-    createdAt: string;
-  }>;
-  auditLogs: Array<{
-    id: string;
-    action: string;
-    entityType: string;
-    entityId: string;
-    entityLabel: string;
-    details: Record<string, unknown>;
-    performedBy: string;
     createdAt: string;
   }>;
 }
@@ -204,7 +193,6 @@ export default function MemberProfilePage() {
   const { member, trainingRecord } = data;
   const clockEntries = data.clockEntries ?? [];
   const loaHistory = data.loaHistory ?? [];
-  const auditLogs = data.auditLogs ?? [];
 
   const trainingCheckpoints: Array<{ label: string; checked: boolean; by: string | null }> = [];
   for (const phase of TRAINING_CHECKPOINTS) {
@@ -438,50 +426,6 @@ export default function MemberProfilePage() {
         </motion.div>
       </div>
 
-      {/* Audit Trail */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="bg-[#111118] border border-[#1e1e28] rounded-xl p-6"
-      >
-        <h2 className="font-[family-name:var(--font-oswald)] text-lg font-bold text-white uppercase mb-4">
-          Audit Trail
-        </h2>
-        {auditLogs.length === 0 ? (
-          <div className="text-center py-8 text-gray-500 text-sm">No audit logs</div>
-        ) : (
-          <div className="space-y-2 max-h-96 overflow-y-auto">
-            {auditLogs.map((log) => (
-              <div
-                key={log.id}
-                className="flex items-start gap-3 p-3 bg-[#0a0a0f] rounded-lg"
-              >
-                <div className="w-8 h-8 rounded-full bg-red-600/10 flex items-center justify-center shrink-0">
-                  <AlertTriangle className="w-3.5 h-3.5 text-red-500" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-xs text-white">
-                    <span className="font-medium">{log.action}</span>
-                    <span className="text-gray-500 ml-1">on {log.entityType}</span>
-                  </div>
-                  <div className="text-[10px] text-gray-600 mt-0.5">
-                    by {log.performedBy}
-                    {log.details && Object.keys(log.details).length > 0 && (
-                      <span className="ml-1">
-                        — {JSON.stringify(log.details).slice(0, 80)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="text-[10px] text-gray-600 shrink-0">
-                  {new Date(log.createdAt).toLocaleDateString()}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </motion.div>
     </div>
   );
 }
