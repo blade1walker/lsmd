@@ -6,8 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ALL_PERMISSIONS } from "@/lib/constants";
+import { DEFAULT_MEMBER_ROLE } from "@/lib/role-presets";
 import { ErrorState } from "@/components/ui/error-state";
-import { fetchList, errorMessage } from "@/lib/fetch-json";
+import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
+import { toast } from "sonner";
 
 interface AdminRole { id: string; name: string; permissions: string[]; }
 interface AdminUser { id: string; discordId: string; discordName: string; roleId?: string | null; role?: AdminRole | null; }
@@ -23,6 +25,7 @@ export default function AdminRolesPage() {
   const [userForm, setUserForm] = useState({ discordId: "", discordName: "", roleId: "" });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [savingUserId, setSavingUserId] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     setError(null);
@@ -68,14 +71,21 @@ export default function AdminRolesPage() {
 
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    await fetch("/api/admin/users", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(userForm),
-    });
-    setUserForm({ discordId: "", discordName: "", roleId: "" });
-    setShowAddUser(false);
-    fetchData();
+    try {
+      await fetchJson("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // roleId is a foreign key — "" is not a valid AdminRole.id, so the
+        // unset "default role" option must send null, not the raw "" value.
+        body: JSON.stringify({ ...userForm, roleId: userForm.roleId || null }),
+      });
+      toast.success(`${userForm.discordName} added`);
+      setUserForm({ discordId: "", discordName: "", roleId: "" });
+      setShowAddUser(false);
+      fetchData();
+    } catch (err) {
+      toast.error(errorMessage(err));
+    }
   };
 
   const handleDeleteRole = async (id: string) => {
@@ -86,6 +96,34 @@ export default function AdminRolesPage() {
   const handleDeleteUser = async (id: string) => {
     await fetch(`/api/admin/users?id=${id}`, { method: "DELETE" });
     fetchData();
+  };
+
+  const handleChangeUserRole = async (user: AdminUser, roleId: string) => {
+    // roleId === "" means "no explicit role" — the user falls back to the
+    // default role at session time rather than storing a role of its own.
+    const nextRoleId = roleId || null;
+    if ((user.roleId ?? null) === nextRoleId) return;
+
+    const previous = users;
+    const nextRole = roles.find((r) => r.id === nextRoleId) ?? null;
+    setUsers((prev) =>
+      prev.map((u) => (u.id === user.id ? { ...u, roleId: nextRoleId, role: nextRole } : u))
+    );
+    setSavingUserId(user.id);
+
+    try {
+      await fetchJson("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: user.id, roleId: nextRoleId }),
+      });
+      toast.success(`${user.discordName} is now ${nextRole?.name ?? DEFAULT_MEMBER_ROLE}`);
+    } catch (err) {
+      setUsers(previous);
+      toast.error(errorMessage(err));
+    } finally {
+      setSavingUserId(null);
+    }
   };
 
   return (
@@ -130,13 +168,25 @@ export default function AdminRolesPage() {
             </div>
             <div className="space-y-2">
               {users.map((u) => (
-                <div key={u.id} className="flex items-center justify-between p-3 bg-card border border-[#1e1e1e] rounded-lg">
-                  <div>
-                    <span className="text-white font-medium text-sm">{u.discordName}</span>
-                    <span className="text-gray-500 text-xs ml-2">{u.discordId}</span>
-                    {u.role && <span className="text-gold text-xs ml-2">({u.role.name})</span>}
+                <div key={u.id} className="flex items-center justify-between gap-3 p-3 bg-card border border-[#1e1e1e] rounded-lg">
+                  <div className="min-w-0">
+                    <div className="text-white font-medium text-sm truncate">{u.discordName}</div>
+                    <div className="text-gray-500 text-xs truncate">{u.discordId}</div>
                   </div>
-                  <Button size="sm" variant="ghost" className="h-6 text-xs text-red-400" onClick={() => handleDeleteUser(u.id)}>×</Button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <select
+                      value={u.roleId ?? ""}
+                      onChange={(e) => handleChangeUserRole(u, e.target.value)}
+                      disabled={savingUserId === u.id}
+                      className="h-8 rounded-md border border-[#1e1e1e] bg-[#111111] px-2 text-xs text-white disabled:opacity-50"
+                    >
+                      <option value="">{DEFAULT_MEMBER_ROLE} (default)</option>
+                      {roles.map((r) => (
+                        <option key={r.id} value={r.id}>{r.name}</option>
+                      ))}
+                    </select>
+                    <Button size="sm" variant="ghost" className="h-6 text-xs text-red-400" onClick={() => handleDeleteUser(u.id)}>×</Button>
+                  </div>
                 </div>
               ))}
               {users.length === 0 && <p className="text-gray-600 text-sm">No admin users</p>}
@@ -217,7 +267,7 @@ export default function AdminRolesPage() {
                 onChange={(e) => setUserForm((p) => ({ ...p, roleId: e.target.value }))}
                 className="flex h-9 w-full rounded-md border border-[#1e1e1e] bg-[#111111] px-3 py-1 text-sm text-white"
               >
-                <option value="">None</option>
+                <option value="">{DEFAULT_MEMBER_ROLE} (default)</option>
                 {roles.map((r) => (
                   <option key={r.id} value={r.id}>{r.name}</option>
                 ))}
