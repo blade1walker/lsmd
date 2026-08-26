@@ -61,6 +61,12 @@ export const ALL_PERMISSIONS = [
   "radio.edit",
   "onboarding.view",
   "onboarding.approve",
+  "shifts.view",
+  "shifts.manage",
+  "incidents.view",
+  "incidents.manage",
+  "audit.view",
+  "roles.manage",
 ] as const;
 
 export type Permission = (typeof ALL_PERMISSIONS)[number];

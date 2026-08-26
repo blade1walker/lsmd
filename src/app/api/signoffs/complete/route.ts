@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth, isDenied } from "@/lib/api-auth";
 
 export async function POST(request: Request) {
+  const auth = await requireAuth("training.signoff.manage");
+  if (isDenied(auth)) return auth.error;
+
   try {
     const body = await request.json();
     const { ftoMemberId, signOffDefinitionId, completedBy, notes } = body;

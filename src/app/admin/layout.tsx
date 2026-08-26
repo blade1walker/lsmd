@@ -28,27 +28,29 @@ import {
   ScrollText,
 } from "lucide-react";
 
+// `permission` mirrors the check on the matching API route, so a section is
+// only offered when the calls behind it will actually succeed.
 const navItems = [
-  { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/roster", label: "Roster", icon: Users },
-  { href: "/admin/onboarding", label: "Onboarding", icon: UserPlus },
-  { href: "/admin/recruit", label: "Recruit", icon: Mail },
-  { href: "/admin/ftp", label: "FTP", icon: BookOpen },
-  { href: "/admin/training", label: "Training", icon: GraduationCap },
-  { href: "/admin/sop", label: "SOP", icon: FileText },
-  { href: "/admin/radio-codes", label: "Radio Codes", icon: Radio },
-  { href: "/admin/templates", label: "Templates", icon: Settings },
-  { href: "/admin/restore", label: "Restore", icon: Trash2 },
-  { href: "/admin/roles", label: "Roles", icon: Shield },
-  { href: "/admin/clock-log", label: "Clock Log", icon: Clock },
-  { href: "/admin/hr", label: "HR", icon: Heart },
-  { href: "/admin/signoffs", label: "Sign-offs", icon: GraduationCap },
-  { href: "/admin/notification-settings", label: "Notify Settings", icon: Settings },
-  { href: "/admin/notifications", label: "Notifications", icon: Bell },
-  { href: "/admin/messaging", label: "Bot Messaging", icon: MessageSquare },
-  { href: "/admin/shifts", label: "Shifts", icon: CalendarDays },
-  { href: "/admin/incidents", label: "Incidents", icon: FileWarning },
-  { href: "/admin/audit", label: "Audit Log", icon: ScrollText },
+  { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, permission: "roster.view" },
+  { href: "/admin/roster", label: "Roster", icon: Users, permission: "roster.view" },
+  { href: "/admin/onboarding", label: "Onboarding", icon: UserPlus, permission: "onboarding.view" },
+  { href: "/admin/recruit", label: "Recruit", icon: Mail, permission: "onboarding.view" },
+  { href: "/admin/ftp", label: "FTP", icon: BookOpen, permission: "onboarding.view" },
+  { href: "/admin/training", label: "Training", icon: GraduationCap, permission: "training.view" },
+  { href: "/admin/sop", label: "SOP", icon: FileText, permission: "sop.edit" },
+  { href: "/admin/radio-codes", label: "Radio Codes", icon: Radio, permission: "radio.edit" },
+  { href: "/admin/templates", label: "Templates", icon: Settings, permission: "templates" },
+  { href: "/admin/restore", label: "Restore", icon: Trash2, permission: "roster.delete" },
+  { href: "/admin/roles", label: "Roles", icon: Shield, permission: "roles.manage" },
+  { href: "/admin/clock-log", label: "Clock Log", icon: Clock, permission: "clock.view" },
+  { href: "/admin/hr", label: "HR", icon: Heart, permission: "hr.view" },
+  { href: "/admin/signoffs", label: "Sign-offs", icon: GraduationCap, permission: "training.signoff.manage" },
+  { href: "/admin/notification-settings", label: "Notify Settings", icon: Settings, permission: "notifications" },
+  { href: "/admin/notifications", label: "Notifications", icon: Bell, permission: "notifications" },
+  { href: "/admin/messaging", label: "Bot Messaging", icon: MessageSquare, permission: "notifications" },
+  { href: "/admin/shifts", label: "Shifts", icon: CalendarDays, permission: "shifts.view" },
+  { href: "/admin/incidents", label: "Incidents", icon: FileWarning, permission: "incidents.view" },
+  { href: "/admin/audit", label: "Audit Log", icon: ScrollText, permission: "audit.view" },
 ];
 
 export default function AdminLayout({
@@ -80,6 +82,33 @@ export default function AdminLayout({
     return null;
   }
 
+  // UX only — the real boundary is the permission check on each API route.
+  // These pages are static shells that hold no data until those calls return.
+  const permissions = session.user.permissions ?? [];
+  const visibleNav = session.user.isSuperAdmin
+    ? navItems
+    : navItems.filter((item) => permissions.includes(item.permission));
+
+  if (visibleNav.length === 0) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-6">
+        <div className="text-center max-w-sm">
+          <h1 className="font-[family-name:var(--font-oswald)] text-xl font-bold text-white uppercase">
+            No panel access
+          </h1>
+          <p className="text-gray-500 text-sm mt-2">
+            {session.user.name ?? "Your account"} is signed in as{" "}
+            <span className="text-gray-300">{session.user.adminRole ?? "EMS Member"}</span>, which has
+            no admin sections assigned. Ask an administrator if you need access.
+          </p>
+          <Link href="/" className="inline-block mt-4 text-sm text-[#dc2626] hover:underline">
+            Back to Roster
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   const sidebarContent = (
     <>
       <div className="p-4 border-b border-[#1e1e28]">
@@ -108,7 +137,7 @@ export default function AdminLayout({
       </div>
 
       <nav className="flex-1 p-2 overflow-y-auto">
-        {navItems.map((item) => {
+        {visibleNav.map((item) => {
           const isActive = pathname === item.href;
           return (
             <Link

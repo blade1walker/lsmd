@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { postToAcceptWebhook, sendDiscordDM, getNotificationSettings } from "@/lib/discord-webhook";
+import { requireAuth, isDenied } from "@/lib/api-auth";
 
 export async function POST(req: NextRequest) {
+  // Sends an arbitrary message to an arbitrary Discord ID through the bot.
+  // Unauthenticated, this is a spam relay pointed at your bot token.
+  const auth = await requireAuth("notifications");
+  if (isDenied(auth)) return auth.error;
+
   try {
     const { discordId, characterName, message, type } = await req.json();
     const settings = await getNotificationSettings();

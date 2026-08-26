@@ -44,6 +44,10 @@ async function main() {
             "sop.view", "sop.edit",
             "training.view", "training.manage", "training.signoff.manage",
             "clock.view", "notifications", "templates", "radio.edit",
+            "onboarding.view", "onboarding.approve",
+            "shifts.view", "shifts.manage",
+            "incidents.view", "incidents.manage",
+            "audit.view", "roles.manage",
           ],
         },
         {

@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth, isDenied } from "@/lib/api-auth";
 import { apiError } from "@/lib/api-error";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await requireAuth("incidents.view");
+  if (isDenied(auth)) return auth.error;
+
   try {
     const { id } = await params;
     const incident = await prisma.incidentReport.findUnique({
@@ -25,6 +29,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 }
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await requireAuth("incidents.manage");
+  if (isDenied(auth)) return auth.error;
+
   try {
     const { id } = await params;
     const body = await request.json();
@@ -40,6 +47,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await requireAuth("incidents.manage");
+  if (isDenied(auth)) return auth.error;
+
   try {
     const { id } = await params;
     await prisma.incidentMember.deleteMany({ where: { incidentId: id } });

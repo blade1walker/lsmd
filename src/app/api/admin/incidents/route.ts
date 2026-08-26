@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth, isDenied } from "@/lib/api-auth";
 import { apiError } from "@/lib/api-error";
 
 export async function GET(request: Request) {
+  const auth = await requireAuth("incidents.view");
+  if (isDenied(auth)) return auth.error;
+
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
@@ -26,6 +30,9 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const auth = await requireAuth("incidents.manage");
+  if (isDenied(auth)) return auth.error;
+
   try {
     const body = await request.json();
     const { type, location, description, priority, reportedById, reportedBy, assignedToId, assignedTo } = body;

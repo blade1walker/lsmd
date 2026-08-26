@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth, isDenied } from "@/lib/api-auth";
 import { apiError } from "@/lib/api-error";
 import { postToLOAWebhook, sendDiscordDM, getNotificationSettings } from "@/lib/discord-webhook";
 
@@ -7,6 +8,9 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await requireAuth("hr.loa");
+  if (isDenied(auth)) return auth.error;
+
   try {
     const { id } = await params;
     const body = await request.json();
@@ -88,6 +92,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await requireAuth("hr.loa");
+  if (isDenied(auth)) return auth.error;
+
   try {
     const { id } = await params;
     await prisma.lOA.delete({ where: { id } });

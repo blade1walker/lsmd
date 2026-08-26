@@ -1,13 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth, isDenied } from "@/lib/api-auth";
 import { apiError } from "@/lib/api-error";
 import { SECTION_HINTS } from "@/lib/constants";
 import { getNextCallSign } from "@/lib/callsign";
 
+/** Fields safe to expose to an anonymous caller — the same ones the public roster already shows. */
+const PUBLIC_MEMBER_FIELDS = {
+  id: true,
+  name: true,
+  rank: true,
+  callSign: true,
+  dept: true,
+  activity: true,
+  order: true,
+  sectionId: true,
+  category: true,
+  tempRank: true,
+  ftoRole: true,
+} as const;
+
+/**
+ * Stays reachable without a session because the public LOA request page needs
+ * to list members. Anonymous callers get a reduced projection: the full row
+ * carries discordId, stateId and timezone, which the public roster never shows.
+ */
 export async function GET() {
   try {
+    const auth = await requireAuth("roster.view");
+    const full = !isDenied(auth);
+
     const sections = await prisma.section.findMany({
-      include: { members: { orderBy: { order: "asc" } } },
+      include: {
+        members: {
+          orderBy: { order: "asc" },
+          ...(full ? {} : { select: PUBLIC_MEMBER_FIELDS }),
+        },
+      },
       orderBy: { order: "asc" },
     });
     return NextResponse.json(sections);
@@ -17,6 +46,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const auth = await requireAuth("roster.add");
+  if (isDenied(auth)) return auth.error;
+
   try {
     const body = await req.json();
 

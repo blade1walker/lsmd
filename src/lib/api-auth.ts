@@ -1,42 +1,51 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "./auth";
 import { NextResponse } from "next/server";
+import { authOptions } from "./auth";
+import { resolveAccess, hasPermission, type Access } from "./access";
 
-interface AuthUser {
-  discordId: string;
-  isAdmin: boolean;
-  isSuperAdmin: boolean;
-  permissions: string[];
+export type AuthResult = { access: Access } | { error: NextResponse };
+
+export function isDenied(result: AuthResult): result is { error: NextResponse } {
+  return "error" in result;
 }
 
-export async function requireAuth(): Promise<{ user: AuthUser } | { error: NextResponse }> {
+/**
+ * The authorization check for route handlers. Enforced here rather than in the
+ * UI or in proxy.ts because this is the closest point to the data — the admin
+ * pages are static shells that fetch everything through these endpoints, so a
+ * check that only guards the UI guards nothing.
+ *
+ * Re-resolves access from the database rather than trusting the JWT claims, so
+ * a revoked role or a roster removal takes effect on the next request.
+ */
+export async function requireAuth(permission?: string): Promise<AuthResult> {
   const session = await getServerSession(authOptions);
-  
+
   if (!session?.user?.discordId) {
     return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
   }
 
-  const user: AuthUser = {
-    discordId: session.user.discordId,
-    isAdmin: session.user.isAdmin ?? false,
-    isSuperAdmin: session.user.isSuperAdmin ?? false,
-    permissions: session.user.permissions ?? [],
-  };
+  const access = await resolveAccess(session.user.discordId);
 
-  if (!user.isAdmin && !user.isSuperAdmin) {
-    return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
+  if (!access.allowed) {
+    return {
+      error: NextResponse.json(
+        { error: "Forbidden", detail: "This account is not on the roster." },
+        { status: 403 }
+      ),
+    };
   }
 
-  return { user };
-}
-
-export function hasPermission(user: AuthUser, permission: string): boolean {
-  return user.isSuperAdmin || user.permissions.includes(permission);
-}
-
-export function requirePermission(user: AuthUser, permission: string): NextResponse | null {
-  if (!hasPermission(user, permission)) {
-    return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
+  if (permission && !hasPermission(access, permission)) {
+    return {
+      error: NextResponse.json(
+        { error: "Forbidden", detail: `Requires the "${permission}" permission.` },
+        { status: 403 }
+      ),
+    };
   }
-  return null;
+
+  return { access };
 }
+
+export { hasPermission };

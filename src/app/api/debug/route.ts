@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
+import { requireAuth, isDenied } from "@/lib/api-auth";
 
 export async function GET() {
+  // Reports which env vars are set, the NEXTAUTH_URL value, and raw database
+  // connection errors. That is a configuration map of the deployment, so it
+  // must not be world-readable.
+  const auth = await requireAuth("roles.manage");
+  if (isDenied(auth)) return auth.error;
+
   const hasDbUrl = !!process.env.DATABASE_URL;
   const hasNextauthSecret = !!process.env.NEXTAUTH_SECRET;
   const hasNextauthUrl = !!process.env.NEXTAUTH_URL;

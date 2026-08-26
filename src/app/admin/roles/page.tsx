@@ -11,10 +11,12 @@ import { fetchList, errorMessage } from "@/lib/fetch-json";
 
 interface AdminRole { id: string; name: string; permissions: string[]; }
 interface AdminUser { id: string; discordId: string; discordName: string; roleId?: string | null; role?: AdminRole | null; }
+interface RosterMember { id: string; name: string; callSign?: string | null; rank: string; discordId?: string | null; }
 
 export default function AdminRolesPage() {
   const [roles, setRoles] = useState<AdminRole[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [members, setMembers] = useState<RosterMember[]>([]);
   const [showAddRole, setShowAddRole] = useState(false);
   const [showAddUser, setShowAddUser] = useState(false);
   const [roleForm, setRoleForm] = useState({ name: "", permissions: [] as string[] });
@@ -25,23 +27,32 @@ export default function AdminRolesPage() {
   const fetchData = useCallback(async () => {
     setError(null);
     try {
-      const [roleList, userList] = await Promise.all([
+      const [roleList, userList, sections] = await Promise.all([
         fetchList<AdminRole>("/api/admin/roles"),
         fetchList<AdminUser>("/api/admin/users"),
+        fetchList<{ members: RosterMember[] }>("/api/members"),
       ]);
       setRoles(roleList);
       setUsers(userList);
+      setMembers(sections.flatMap((s) => s.members ?? []));
     } catch (err) {
       console.error("Failed to fetch:", err);
       setError(errorMessage(err));
       setRoles([]);
       setUsers([]);
+      setMembers([]);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  // Members already carrying an explicit role are managed in the list below;
+  // the rest fall back to the default role until one is assigned here.
+  const assignedIds = new Set(users.map((u) => u.discordId));
+  const linkableMembers = members.filter((m) => m.discordId && !assignedIds.has(m.discordId));
+  const unlinkedCount = members.filter((m) => !m.discordId).length;
 
   const handleAddRole = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,8 +183,33 @@ export default function AdminRolesPage() {
         <DialogContent>
           <DialogHeader><DialogTitle>Add Admin User</DialogTitle></DialogHeader>
           <form onSubmit={handleAddUser} className="space-y-4">
-            <div><Label>Discord ID</Label><Input value={userForm.discordId} onChange={(e) => setUserForm((p) => ({ ...p, discordId: e.target.value }))} required /></div>
-            <div><Label>Discord Name</Label><Input value={userForm.discordName} onChange={(e) => setUserForm((p) => ({ ...p, discordName: e.target.value }))} required /></div>
+            <div>
+              <Label>Roster Member</Label>
+              <select
+                value={userForm.discordId}
+                onChange={(e) => {
+                  const m = linkableMembers.find((x) => x.discordId === e.target.value);
+                  setUserForm((p) => ({
+                    ...p,
+                    discordId: e.target.value,
+                    discordName: m ? `${m.name}${m.callSign ? ` (${m.callSign})` : ""}` : "",
+                  }));
+                }}
+                className="flex h-9 w-full rounded-md border border-[#1e1e1e] bg-[#111111] px-3 py-1 text-sm text-white"
+                required
+              >
+                <option value="">Select a member</option>
+                {linkableMembers.map((m) => (
+                  <option key={m.id} value={m.discordId!}>
+                    {m.name} {m.callSign ? `(${m.callSign})` : ""} — {m.rank}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                Only members with a Discord ID on their roster entry can sign in.
+                {unlinkedCount > 0 && ` ${unlinkedCount} member${unlinkedCount === 1 ? " has" : "s have"} none set.`}
+              </p>
+            </div>
             <div>
               <Label>Role</Label>
               <select

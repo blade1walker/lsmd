@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth, isDenied } from "@/lib/api-auth";
 
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ recordId: string }> }
 ) {
+  const auth = await requireAuth("training.signoff.manage");
+  if (isDenied(auth)) return auth.error;
+
   try {
     const { recordId } = await params;
     await prisma.fTOSignOffRecord.delete({ where: { id: recordId } });

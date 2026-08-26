@@ -1,13 +1,31 @@
 "use client";
 
 import { signIn } from "next-auth/react";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
+
+const ERROR_MESSAGES: Record<string, string> = {
+  NotInRoster:
+    "That Discord account is not linked to anyone on the roster. Ask an administrator to add your Discord ID to your roster entry.",
+  AccessDenied: "That account is not permitted to sign in.",
+  Configuration: "Sign-in is misconfigured. Contact an administrator.",
+};
+
+function LoginError() {
+  const params = useSearchParams();
+  const error = params.get("error");
+  if (!error) return null;
+
+  return (
+    <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+      {ERROR_MESSAGES[error] ?? "Sign-in failed. Please try again."}
+    </div>
+  );
+}
 
 export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   const handleDiscordLogin = async () => {
     setLoading(true);
@@ -36,6 +54,9 @@ export default function AdminLoginPage() {
         </div>
 
         <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl p-6">
+          <Suspense fallback={null}>
+            <LoginError />
+          </Suspense>
           <button
             onClick={handleDiscordLogin}
             disabled={loading}
@@ -48,7 +69,7 @@ export default function AdminLoginPage() {
           </button>
 
           <div className="mt-4 text-center text-xs text-gray-500">
-            Only authorized admin accounts can access this panel
+            Sign-in is limited to accounts linked to a roster entry
           </div>
         </div>
 

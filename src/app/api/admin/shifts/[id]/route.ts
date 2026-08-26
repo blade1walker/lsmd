@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth, isDenied } from "@/lib/api-auth";
 import { apiError } from "@/lib/api-error";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await requireAuth("shifts.manage");
+  if (isDenied(auth)) return auth.error;
+
   try {
     const { id } = await params;
     const body = await request.json();
@@ -18,6 +22,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await requireAuth("shifts.manage");
+  if (isDenied(auth)) return auth.error;
+
   try {
     const { id } = await params;
     await prisma.shift.delete({ where: { id } });

@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth, isDenied } from "@/lib/api-auth";
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await requireAuth("radio.edit");
+  if (isDenied(auth)) return auth.error;
+
   try {
     const { id } = await params;
     const body = await request.json();
@@ -25,6 +29,9 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await requireAuth("radio.edit");
+  if (isDenied(auth)) return auth.error;
+
   try {
     const { id } = await params;
     await prisma.radioCode.delete({ where: { id } });

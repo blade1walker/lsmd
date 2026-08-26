@@ -1,10 +1,20 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth, isDenied, hasPermission } from "@/lib/api-auth";
 
 export async function POST(request: Request) {
+  const auth = await requireAuth();
+  if (isDenied(auth)) return auth.error;
+
   try {
     const body = await request.json();
     const { memberId } = body;
+
+    // memberId arrives in the body, so without this check any signed-in user
+    // could clock any member in and falsify their activity hours.
+    if (auth.access.memberId !== memberId && !hasPermission(auth.access, "clock.view")) {
+      return NextResponse.json({ error: "Cannot clock in for another member" }, { status: 403 });
+    }
 
     const existingEntry = await prisma.clockEntry.findFirst({
       where: {

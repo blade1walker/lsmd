@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
 import { prisma } from "@/lib/prisma";
+import { requireAuth, isDenied } from "@/lib/api-auth";
 
 function escapeCsvField(field: string | null | undefined): string {
   if (field == null) return "";
@@ -20,10 +20,10 @@ function toCsv(headers: string[], rows: (string | null | undefined)[][]): string
 }
 
 export async function GET(request: Request) {
-  const token = await getToken({ req: request as any, secret: process.env.NEXTAUTH_SECRET });
-  if (!token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // The CSV carries discordId, stateId and joining dates, so a bare "is there
+  // a token" check was not enough — that passed for any signed-in account.
+  const auth = await requireAuth("roster.view");
+  if (isDenied(auth)) return auth.error;
 
   const { searchParams } = new URL(request.url);
   const type = searchParams.get("type");

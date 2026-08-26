@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth, isDenied } from "@/lib/api-auth";
 
 const FIELD_MAP: Record<string, string> = {
   coc: "cadetPhase1COC",
@@ -45,6 +46,9 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ memberId: string }> }
 ) {
+  const auth = await requireAuth("training.view");
+  if (isDenied(auth)) return auth.error;
+
   try {
     const { memberId } = await params;
 
@@ -77,6 +81,9 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ memberId: string }> }
 ) {
+  const auth = await requireAuth("training.manage");
+  if (isDenied(auth)) return auth.error;
+
   try {
     const { memberId } = await params;
     const body = await request.json();

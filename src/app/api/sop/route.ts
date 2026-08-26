@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth, isDenied } from "@/lib/api-auth";
 import { apiError } from "@/lib/api-error";
 
 export async function GET() {
@@ -12,6 +13,9 @@ export async function GET() {
 }
 
 export async function PUT(req: Request) {
+  const auth = await requireAuth("sop.edit");
+  if (isDenied(auth)) return auth.error;
+
   try {
     const { content } = await req.json();
     const existing = await prisma.sopContent.findFirst();

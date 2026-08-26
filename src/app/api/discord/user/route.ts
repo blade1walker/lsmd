@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth, isDenied } from "@/lib/api-auth";
 
 export async function POST(req: NextRequest) {
+  const auth = await requireAuth("notifications");
+  if (isDenied(auth)) return auth.error;
+
   try {
     const { userId } = await req.json();
 

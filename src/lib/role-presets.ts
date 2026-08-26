@@ -12,6 +12,13 @@ export interface RolePreset {
 }
 
 /**
+ * Role every roster member resolves to when no AdminUser row assigns them
+ * something else. Nothing is written on login — the default is applied at
+ * session time, so "reset to default" is just deleting the AdminUser row.
+ */
+export const DEFAULT_MEMBER_ROLE = "EMS Member";
+
+/**
  * Declared here rather than inline in a script so the permission strings are
  * checked against `Permission` at compile time — a typo in a permission is
  * otherwise silent, since nothing validates the string array on write.
@@ -49,6 +56,14 @@ export const ROLE_PRESETS: RolePreset[] = [
       "training.view",
       "training.manage",
       "training.signoff.manage",
+      "shifts.view",
+      "incidents.view",
     ],
   },
 ];
+
+/** Permissions granted to a roster member with no explicit role assignment. */
+export function defaultMemberPermissions(): string[] {
+  const preset = ROLE_PRESETS.find((r) => r.name === DEFAULT_MEMBER_ROLE);
+  return [...(preset?.permissions ?? [])];
+}

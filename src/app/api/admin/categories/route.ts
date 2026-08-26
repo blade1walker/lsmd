@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth, isDenied } from "@/lib/api-auth";
 import { apiError } from "@/lib/api-error";
 
 export async function GET() {
@@ -15,6 +16,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const auth = await requireAuth("templates");
+  if (isDenied(auth)) return auth.error;
+
   try {
     const body = await request.json();
     const { name, color, order } = body;
@@ -34,6 +38,9 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
+  const auth = await requireAuth("templates");
+  if (isDenied(auth)) return auth.error;
+
   try {
     const body = await request.json();
     const { id, ...data } = body;
@@ -50,6 +57,9 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const auth = await requireAuth("templates");
+  if (isDenied(auth)) return auth.error;
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
