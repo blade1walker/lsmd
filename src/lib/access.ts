@@ -1,6 +1,7 @@
 import { prisma } from "./prisma";
 import { SUPER_ADMIN_IDS, ALL_PERMISSIONS } from "./constants";
 import { DEFAULT_MEMBER_ROLE, defaultMemberPermissions } from "./role-presets";
+import { memberDisplayLabel } from "./utils";
 
 export type DenialReason = "not-in-roster" | "no-discord-id";
 
@@ -90,4 +91,34 @@ export async function resolveAccess(discordId: string | null | undefined): Promi
 
 export function hasPermission(access: Pick<Access, "isSuperAdmin" | "permissions">, permission: string) {
   return access.isSuperAdmin || access.permissions.includes(permission);
+}
+
+/**
+ * Refreshes an existing AdminUser row's display label from the roster on
+ * every login. AdminUser.discordName is a one-time snapshot taken when a
+ * role is assigned (via the roster member picker in /admin/roles) and has
+ * no edit control of its own, so without this it silently drifts from the
+ * roster after a rename, promotion, or call sign change.
+ *
+ * A no-op when no AdminUser row exists for this discordId — this never
+ * creates one, matching the virtual-default model in resolveAccess, where
+ * a roster member with no row simply resolves to the default role.
+ */
+export async function syncAdminUserFromRoster(discordId: string): Promise<void> {
+  const member = await prisma.member.findFirst({
+    where: { discordId },
+    select: { name: true, callSign: true },
+  });
+  if (!member) return;
+
+  const label = memberDisplayLabel(member);
+
+  try {
+    await prisma.adminUser.updateMany({
+      where: { discordId, NOT: { discordName: label } },
+      data: { discordName: label },
+    });
+  } catch (error) {
+    console.error("Failed to sync admin user from roster:", error);
+  }
 }

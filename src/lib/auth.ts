@@ -1,6 +1,6 @@
 import { NextAuthOptions } from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
-import { resolveAccess } from "./access";
+import { resolveAccess, syncAdminUserFromRoster } from "./access";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -33,13 +33,20 @@ export const authOptions: NextAuthOptions = {
         return false;
       }
 
-      const access = await resolveAccess(account?.providerAccountId);
-      if (access.allowed) return true;
+      const discordId = account?.providerAccountId;
+      const access = await resolveAccess(discordId);
 
-      console.warn(
-        `Sign-in denied for Discord ID ${account?.providerAccountId ?? "unknown"}: ${access.denialReason}`
-      );
-      return "/admin/login?error=NotInRoster";
+      if (!access.allowed) {
+        console.warn(`Sign-in denied for Discord ID ${discordId ?? "unknown"}: ${access.denialReason}`);
+        return "/admin/login?error=NotInRoster";
+      }
+
+      // signIn() fires only on an actual authentication event, unlike jwt()
+      // below which re-runs on every session check — so this is the one place
+      // that means "someone just logged in" rather than "a page was loaded".
+      if (discordId) await syncAdminUserFromRoster(discordId);
+
+      return true;
     },
 
     async jwt({ token, account }) {

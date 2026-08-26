@@ -9,6 +9,7 @@ import { ALL_PERMISSIONS } from "@/lib/constants";
 import { DEFAULT_MEMBER_ROLE } from "@/lib/role-presets";
 import { ErrorState } from "@/components/ui/error-state";
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
+import { memberDisplayLabel } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface AdminRole { id: string; name: string; permissions: string[]; }
@@ -20,6 +21,7 @@ export default function AdminRolesPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [members, setMembers] = useState<RosterMember[]>([]);
   const [showAddRole, setShowAddRole] = useState(false);
+  const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
   const [showAddUser, setShowAddUser] = useState(false);
   const [roleForm, setRoleForm] = useState({ name: "", permissions: [] as string[] });
   const [userForm, setUserForm] = useState({ discordId: "", discordName: "", roleId: "" });
@@ -57,16 +59,43 @@ export default function AdminRolesPage() {
   const linkableMembers = members.filter((m) => m.discordId && !assignedIds.has(m.discordId));
   const unlinkedCount = members.filter((m) => !m.discordId).length;
 
-  const handleAddRole = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await fetch("/api/admin/roles", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(roleForm),
-    });
+  const openAddRole = () => {
+    setEditingRoleId(null);
     setRoleForm({ name: "", permissions: [] });
-    setShowAddRole(false);
-    fetchData();
+    setShowAddRole(true);
+  };
+
+  const openEditRole = (role: AdminRole) => {
+    setEditingRoleId(role.id);
+    setRoleForm({ name: role.name, permissions: [...role.permissions] });
+    setShowAddRole(true);
+  };
+
+  const handleSaveRole = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingRoleId) {
+        await fetchJson("/api/admin/roles", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: editingRoleId, ...roleForm }),
+        });
+        toast.success(`${roleForm.name} updated`);
+      } else {
+        await fetchJson("/api/admin/roles", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(roleForm),
+        });
+        toast.success(`${roleForm.name} created`);
+      }
+      setRoleForm({ name: "", permissions: [] });
+      setEditingRoleId(null);
+      setShowAddRole(false);
+      fetchData();
+    } catch (err) {
+      toast.error(errorMessage(err));
+    }
   };
 
   const handleAddUser = async (e: React.FormEvent) => {
@@ -141,19 +170,26 @@ export default function AdminRolesPage() {
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-[family-name:var(--font-oswald)] text-lg font-semibold text-white uppercase">Roles</h2>
-              <Button size="sm" onClick={() => setShowAddRole(true)}>Add Role</Button>
+              <Button size="sm" onClick={openAddRole}>Add Role</Button>
             </div>
             <div className="space-y-2">
               {roles.map((r) => (
                 <div key={r.id} className="p-3 bg-card border border-[#1e1e1e] rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-white font-medium text-sm">{r.name}</span>
-                    <Button size="sm" variant="ghost" className="h-6 text-xs text-red-400" onClick={() => handleDeleteRole(r.id)}>×</Button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button size="sm" variant="ghost" className="h-6 text-xs text-gray-400" onClick={() => openEditRole(r)}>Edit</Button>
+                      <Button size="sm" variant="ghost" className="h-6 text-xs text-red-400" onClick={() => handleDeleteRole(r.id)}>×</Button>
+                    </div>
                   </div>
                   <div className="flex flex-wrap gap-1">
-                    {r.permissions.map((p) => (
-                      <span key={p} className="text-xs bg-white/5 text-gray-400 px-1.5 py-0.5 rounded">{p}</span>
-                    ))}
+                    {r.permissions.length === 0 ? (
+                      <span className="text-xs text-gray-600">No permissions</span>
+                    ) : (
+                      r.permissions.map((p) => (
+                        <span key={p} className="text-xs bg-white/5 text-gray-400 px-1.5 py-0.5 rounded">{p}</span>
+                      ))
+                    )}
                   </div>
                 </div>
               ))}
@@ -195,10 +231,16 @@ export default function AdminRolesPage() {
         </div>
       )}
 
-      <Dialog open={showAddRole} onOpenChange={setShowAddRole}>
+      <Dialog
+        open={showAddRole}
+        onOpenChange={(open) => {
+          setShowAddRole(open);
+          if (!open) setEditingRoleId(null);
+        }}
+      >
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Add Role</DialogTitle></DialogHeader>
-          <form onSubmit={handleAddRole} className="space-y-4">
+          <DialogHeader><DialogTitle>{editingRoleId ? "Edit Role" : "Add Role"}</DialogTitle></DialogHeader>
+          <form onSubmit={handleSaveRole} className="space-y-4">
             <div><Label>Role Name</Label><Input value={roleForm.name} onChange={(e) => setRoleForm((p) => ({ ...p, name: e.target.value }))} required /></div>
             <div>
               <Label className="mb-2 block">Permissions</Label>
@@ -222,8 +264,17 @@ export default function AdminRolesPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => setShowAddRole(false)}>Cancel</Button>
-              <Button type="submit">Add</Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setShowAddRole(false);
+                  setEditingRoleId(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button type="submit">{editingRoleId ? "Save" : "Add"}</Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -242,7 +293,7 @@ export default function AdminRolesPage() {
                   setUserForm((p) => ({
                     ...p,
                     discordId: e.target.value,
-                    discordName: m ? `${m.name}${m.callSign ? ` (${m.callSign})` : ""}` : "",
+                    discordName: m ? memberDisplayLabel(m) : "",
                   }));
                 }}
                 className="flex h-9 w-full rounded-md border border-[#1e1e1e] bg-[#111111] px-3 py-1 text-sm text-white"
