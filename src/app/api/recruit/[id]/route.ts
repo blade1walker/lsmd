@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { apiError } from "@/lib/api-error";
 import { postToAcceptWebhook, sendDiscordDM, getNotificationSettings } from "@/lib/discord-webhook";
 
 export async function PATCH(
@@ -62,11 +63,8 @@ export async function PATCH(
     }
 
     return NextResponse.json(request);
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: "Failed to update recruit", detail: error.message?.slice(0, 200) },
-      { status: 500 }
-    );
+  } catch (error) {
+      return apiError("Failed to update recruit", error);
   }
 }
 
@@ -78,10 +76,7 @@ export async function DELETE(
     const { id } = await params;
     await prisma.recruitRequest.delete({ where: { id } });
     return NextResponse.json({ ok: true });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: "Failed to delete recruit", detail: error.message?.slice(0, 200) },
-      { status: 500 }
-    );
+  } catch (error) {
+      return apiError("Failed to delete recruit", error);
   }
 }

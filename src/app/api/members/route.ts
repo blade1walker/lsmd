@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { apiError } from "@/lib/api-error";
 import { SECTION_HINTS } from "@/lib/constants";
 import { getNextCallSign } from "@/lib/callsign";
 
@@ -10,11 +11,8 @@ export async function GET() {
       orderBy: { order: "asc" },
     });
     return NextResponse.json(sections);
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: "Database connection failed", detail: error.message?.slice(0, 200) },
-      { status: 500 }
-    );
+  } catch (error) {
+      return apiError("Database connection failed", error);
   }
 }
 
@@ -41,10 +39,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(member, { status: 201 });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: "Failed to create member", detail: error.message?.slice(0, 200) },
-      { status: 500 }
-    );
+  } catch (error) {
+      return apiError("Failed to create member", error);
   }
 }

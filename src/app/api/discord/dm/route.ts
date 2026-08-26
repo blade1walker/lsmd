@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { apiError } from "@/lib/api-error";
 
 export async function POST(req: NextRequest) {
   try {
@@ -58,10 +59,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: "Failed to send DM", detail: error.message?.slice(0, 200) },
-      { status: 500 }
-    );
+  } catch (error) {
+      return apiError("Failed to send DM", error);
   }
 }

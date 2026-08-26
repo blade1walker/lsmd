@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { apiError } from "@/lib/api-error";
 import { SECTION_HINTS } from "@/lib/constants";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -28,11 +29,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     return NextResponse.json(member);
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: "Failed to update member", detail: error.message?.slice(0, 200) },
-      { status: 500 }
-    );
+  } catch (error) {
+      return apiError("Failed to update member", error);
   }
 }
 
@@ -55,10 +53,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
     await prisma.member.delete({ where: { id } });
     return NextResponse.json({ ok: true });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: "Failed to delete member", detail: error.message?.slice(0, 200) },
-      { status: 500 }
-    );
+  } catch (error) {
+      return apiError("Failed to delete member", error);
   }
 }

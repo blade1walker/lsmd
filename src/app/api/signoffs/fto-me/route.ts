@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { apiError } from "@/lib/api-error";
 
 export async function GET() {
   try {
@@ -7,8 +8,8 @@ export async function GET() {
       where: { ftoRole: { not: null } },
     });
     return NextResponse.json(members);
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error fetching FTO members:", error);
-    return NextResponse.json({ error: "Failed to fetch FTO members", detail: error.message?.slice(0, 200) }, { status: 500 });
+    return apiError("Failed to fetch FTO members", error);
   }
 }

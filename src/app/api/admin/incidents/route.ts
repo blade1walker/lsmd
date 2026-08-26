@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { apiError } from "@/lib/api-error";
 
 export async function GET(request: Request) {
   try {
@@ -20,8 +21,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(incidents);
   } catch (error) {
-    console.error("Error fetching incidents:", error);
-    return NextResponse.json({ error: "Failed to fetch incidents" }, { status: 500 });
+    return apiError("Failed to fetch incidents", error);
   }
 }
 
@@ -51,7 +51,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json(incident, { status: 201 });
   } catch (error) {
-    console.error("Error creating incident:", error);
-    return NextResponse.json({ error: "Failed to create incident" }, { status: 500 });
+    return apiError("Failed to create incident", error);
   }
 }

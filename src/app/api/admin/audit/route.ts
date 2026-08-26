@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { apiError } from "@/lib/api-error";
 
 export async function GET(request: Request) {
   try {
@@ -21,10 +22,7 @@ export async function GET(request: Request) {
     ]);
 
     return NextResponse.json({ logs, total });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: "Failed to fetch audit logs", detail: error.message?.slice(0, 200) },
-      { status: 500 }
-    );
+  } catch (error) {
+      return apiError("Failed to fetch audit logs", error);
   }
 }

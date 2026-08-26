@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { apiError } from "@/lib/api-error";
 import { sendDiscordDM, getNotificationSettings } from "@/lib/discord-webhook";
 
 export async function PATCH(
@@ -47,11 +48,8 @@ export async function PATCH(
     }
 
     return NextResponse.json(request);
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: "Failed to update FTP request", detail: error.message?.slice(0, 200) },
-      { status: 500 }
-    );
+  } catch (error) {
+      return apiError("Failed to update FTP request", error);
   }
 }
 
@@ -63,10 +61,7 @@ export async function DELETE(
     const { id } = await params;
     await prisma.fTPRequest.delete({ where: { id } });
     return NextResponse.json({ ok: true });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: "Failed to delete FTP request", detail: error.message?.slice(0, 200) },
-      { status: 500 }
-    );
+  } catch (error) {
+      return apiError("Failed to delete FTP request", error);
   }
 }

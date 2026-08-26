@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { apiError } from "@/lib/api-error";
 
 export async function GET() {
   try {
@@ -8,11 +9,8 @@ export async function GET() {
       orderBy: { order: "asc" },
     });
     return NextResponse.json(sections);
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: "Database connection failed", detail: error.message?.slice(0, 200) },
-      { status: 500 }
-    );
+  } catch (error) {
+      return apiError("Database connection failed", error);
   }
 }
 
@@ -21,10 +19,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const section = await prisma.section.create({ data: body });
     return NextResponse.json(section, { status: 201 });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: "Failed to create section", detail: error.message?.slice(0, 200) },
-      { status: 500 }
-    );
+  } catch (error) {
+      return apiError("Failed to create section", error);
   }
 }

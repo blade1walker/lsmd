@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { apiError } from "@/lib/api-error";
 
 export async function GET() {
   try {
@@ -100,10 +101,7 @@ export async function GET() {
       membersByActivity: membersByActivity.map((a) => ({ activity: a.activity, count: a._count })),
       topClockers,
     });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: "Failed to fetch dashboard data", detail: error.message?.slice(0, 200) },
-      { status: 500 }
-    );
+  } catch (error) {
+      return apiError("Failed to fetch dashboard data", error);
   }
 }

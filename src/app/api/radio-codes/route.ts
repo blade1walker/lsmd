@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { apiError } from "@/lib/api-error";
 
 export async function GET() {
   try {
@@ -7,10 +8,7 @@ export async function GET() {
       orderBy: { order: "asc" },
     });
     return NextResponse.json(codes);
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: "Database connection failed", detail: error.message?.slice(0, 200) },
-      { status: 500 }
-    );
+  } catch (error) {
+      return apiError("Database connection failed", error);
   }
 }

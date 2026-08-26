@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { apiError } from "@/lib/api-error";
 
 export async function GET() {
   try {
@@ -9,8 +10,7 @@ export async function GET() {
 
     return NextResponse.json(users);
   } catch (error) {
-    console.error("Error fetching admin users:", error);
-    return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
+    return apiError("Failed to fetch users", error);
   }
 }
 
@@ -29,8 +29,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(user, { status: 201 });
   } catch (error) {
-    console.error("Error creating admin user:", error);
-    return NextResponse.json({ error: "Failed to create user" }, { status: 500 });
+    return apiError("Failed to create user", error);
   }
 }
 
@@ -46,8 +45,7 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json(user);
   } catch (error) {
-    console.error("Error updating admin user:", error);
-    return NextResponse.json({ error: "Failed to update user" }, { status: 500 });
+    return apiError("Failed to update user", error);
   }
 }
 
@@ -63,7 +61,6 @@ export async function DELETE(request: Request) {
     await prisma.adminUser.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting admin user:", error);
-    return NextResponse.json({ error: "Failed to delete user" }, { status: 500 });
+    return apiError("Failed to delete user", error);
   }
 }

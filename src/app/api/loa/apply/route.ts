@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { apiError } from "@/lib/api-error";
 import { postToLOAWebhook } from "@/lib/discord-webhook";
 
 export async function POST(req: NextRequest) {
@@ -34,10 +35,7 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(loa, { status: 201 });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: "Failed to apply for LOA", detail: error.message?.slice(0, 200) },
-      { status: 500 }
-    );
+  } catch (error) {
+      return apiError("Failed to apply for LOA", error);
   }
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { apiError } from "@/lib/api-error";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -12,8 +13,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     return NextResponse.json(shift);
   } catch (error) {
-    console.error("Error updating shift:", error);
-    return NextResponse.json({ error: "Failed to update shift" }, { status: 500 });
+    return apiError("Failed to update shift", error);
   }
 }
 
@@ -23,7 +23,6 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
     await prisma.shift.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting shift:", error);
-    return NextResponse.json({ error: "Failed to delete shift" }, { status: 500 });
+    return apiError("Failed to delete shift", error);
   }
 }

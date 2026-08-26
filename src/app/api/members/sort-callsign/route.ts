@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { apiError } from "@/lib/api-error";
 import { getRankWeight } from "@/lib/constants";
 
 export async function POST() {
@@ -16,8 +17,8 @@ export async function POST() {
     }
 
     return NextResponse.json({ ok: true });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error sorting callsigns:", error);
-    return NextResponse.json({ error: "Failed to sort callsigns", detail: error.message?.slice(0, 200) }, { status: 500 });
+    return apiError("Failed to sort callsigns", error);
   }
 }

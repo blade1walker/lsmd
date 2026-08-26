@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { apiError } from "@/lib/api-error";
 import { postToEnrollWebhook, sendDiscordDM, getNotificationSettings } from "@/lib/discord-webhook";
 import { SECTION_HINTS } from "@/lib/constants";
 import { getNextCallSign } from "@/lib/callsign";
@@ -85,11 +86,8 @@ export async function PATCH(
     }
 
     return NextResponse.json(request);
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: "Failed to update onboarding request", detail: error.message?.slice(0, 200) },
-      { status: 500 }
-    );
+  } catch (error) {
+      return apiError("Failed to update onboarding request", error);
   }
 }
 
@@ -101,10 +99,7 @@ export async function DELETE(
     const { id } = await params;
     await prisma.onboardingRequest.delete({ where: { id } });
     return NextResponse.json({ ok: true });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: "Failed to delete onboarding request", detail: error.message?.slice(0, 200) },
-      { status: 500 }
-    );
+  } catch (error) {
+      return apiError("Failed to delete onboarding request", error);
   }
 }

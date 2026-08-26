@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { apiError } from "@/lib/api-error";
 
 export async function GET() {
   try {
@@ -9,8 +10,7 @@ export async function GET() {
 
     return NextResponse.json(logs);
   } catch (error) {
-    console.error("Error fetching deletion logs:", error);
-    return NextResponse.json({ error: "Failed to fetch logs" }, { status: 500 });
+    return apiError("Failed to fetch logs", error);
   }
 }
 
@@ -50,8 +50,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error restoring entity:", error);
-    return NextResponse.json({ error: "Failed to restore" }, { status: 500 });
+    return apiError("Failed to restore", error);
   }
 }
 
@@ -67,7 +66,6 @@ export async function DELETE(request: Request) {
     await prisma.deletionLog.delete({ where: { id: logId } });
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error dismissing log:", error);
-    return NextResponse.json({ error: "Failed to dismiss" }, { status: 500 });
+    return apiError("Failed to dismiss", error);
   }
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { apiError } from "@/lib/api-error";
 import { postToLOAWebhook, sendDiscordDM, getNotificationSettings } from "@/lib/discord-webhook";
 
 export async function PATCH(
@@ -78,11 +79,8 @@ export async function PATCH(
     }
 
     return NextResponse.json(loa);
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: "Failed to update LOA", detail: error.message?.slice(0, 200) },
-      { status: 500 }
-    );
+  } catch (error) {
+      return apiError("Failed to update LOA", error);
   }
 }
 
@@ -94,10 +92,7 @@ export async function DELETE(
     const { id } = await params;
     await prisma.lOA.delete({ where: { id } });
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: "Failed to delete LOA", detail: error.message?.slice(0, 200) },
-      { status: 500 }
-    );
+  } catch (error) {
+      return apiError("Failed to delete LOA", error);
   }
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { apiError } from "@/lib/api-error";
 
 export async function GET() {
   try {
@@ -13,10 +14,7 @@ export async function GET() {
     });
 
     return NextResponse.json(loas);
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: "Failed to fetch LOAs", detail: error.message?.slice(0, 200) },
-      { status: 500 }
-    );
+  } catch (error) {
+      return apiError("Failed to fetch LOAs", error);
   }
 }

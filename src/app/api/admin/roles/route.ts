@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { apiError } from "@/lib/api-error";
 
 export async function GET() {
   try {
@@ -9,8 +10,7 @@ export async function GET() {
 
     return NextResponse.json(roles);
   } catch (error) {
-    console.error("Error fetching roles:", error);
-    return NextResponse.json({ error: "Failed to fetch roles" }, { status: 500 });
+    return apiError("Failed to fetch roles", error);
   }
 }
 
@@ -28,8 +28,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(role, { status: 201 });
   } catch (error) {
-    console.error("Error creating role:", error);
-    return NextResponse.json({ error: "Failed to create role" }, { status: 500 });
+    return apiError("Failed to create role", error);
   }
 }
 
@@ -45,8 +44,7 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json(role);
   } catch (error) {
-    console.error("Error updating role:", error);
-    return NextResponse.json({ error: "Failed to update role" }, { status: 500 });
+    return apiError("Failed to update role", error);
   }
 }
 
@@ -62,7 +60,6 @@ export async function DELETE(request: Request) {
     await prisma.adminRole.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting role:", error);
-    return NextResponse.json({ error: "Failed to delete role" }, { status: 500 });
+    return apiError("Failed to delete role", error);
   }
 }

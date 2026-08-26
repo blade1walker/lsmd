@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { apiError } from "@/lib/api-error";
 
 export async function GET() {
   try {
@@ -14,8 +15,7 @@ export async function GET() {
 
     return NextResponse.json(shifts);
   } catch (error) {
-    console.error("Error fetching shifts:", error);
-    return NextResponse.json({ error: "Failed to fetch shifts" }, { status: 500 });
+    return apiError("Failed to fetch shifts", error);
   }
 }
 
@@ -30,7 +30,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json(shift, { status: 201 });
   } catch (error) {
-    console.error("Error creating shift:", error);
-    return NextResponse.json({ error: "Failed to create shift" }, { status: 500 });
+    return apiError("Failed to create shift", error);
   }
 }

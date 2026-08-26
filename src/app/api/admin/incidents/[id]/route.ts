@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { apiError } from "@/lib/api-error";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -19,8 +20,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 
     return NextResponse.json(incident);
   } catch (error) {
-    console.error("Error fetching incident:", error);
-    return NextResponse.json({ error: "Failed to fetch incident" }, { status: 500 });
+    return apiError("Failed to fetch incident", error);
   }
 }
 
@@ -35,8 +35,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     return NextResponse.json(incident);
   } catch (error) {
-    console.error("Error updating incident:", error);
-    return NextResponse.json({ error: "Failed to update incident" }, { status: 500 });
+    return apiError("Failed to update incident", error);
   }
 }
 
@@ -47,7 +46,6 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
     await prisma.incidentReport.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting incident:", error);
-    return NextResponse.json({ error: "Failed to delete incident" }, { status: 500 });
+    return apiError("Failed to delete incident", error);
   }
 }

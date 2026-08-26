@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { apiError } from "@/lib/api-error";
 
 export async function GET(
   _req: NextRequest,
@@ -58,10 +59,7 @@ export async function GET(
       loaHistory,
       auditLogs,
     });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: "Failed to fetch member profile", detail: error.message?.slice(0, 200) },
-      { status: 500 }
-    );
+  } catch (error) {
+      return apiError("Failed to fetch member profile", error);
   }
 }

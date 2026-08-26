@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { apiError } from "@/lib/api-error";
 
 export async function GET() {
   try {
@@ -9,8 +10,7 @@ export async function GET() {
 
     return NextResponse.json(categories);
   } catch (error) {
-    console.error("Error fetching categories:", error);
-    return NextResponse.json({ error: "Failed to fetch categories" }, { status: 500 });
+    return apiError("Failed to fetch categories", error);
   }
 }
 
@@ -29,8 +29,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(category, { status: 201 });
   } catch (error) {
-    console.error("Error creating category:", error);
-    return NextResponse.json({ error: "Failed to create category" }, { status: 500 });
+    return apiError("Failed to create category", error);
   }
 }
 
@@ -46,8 +45,7 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json(category);
   } catch (error) {
-    console.error("Error updating category:", error);
-    return NextResponse.json({ error: "Failed to update category" }, { status: 500 });
+    return apiError("Failed to update category", error);
   }
 }
 
@@ -63,7 +61,6 @@ export async function DELETE(request: Request) {
     await prisma.categoryTemplate.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting category:", error);
-    return NextResponse.json({ error: "Failed to delete category" }, { status: 500 });
+    return apiError("Failed to delete category", error);
   }
 }

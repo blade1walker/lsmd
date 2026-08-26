@@ -10,9 +10,15 @@ export class ApiError extends Error {
 
 function messageFrom(body: unknown, status: number): string {
   if (body && typeof body === "object") {
-    const { error, detail } = body as { error?: unknown; detail?: unknown };
+    const { error, detail, hint } = body as {
+      error?: unknown;
+      detail?: unknown;
+      hint?: unknown;
+    };
     if (typeof error === "string") {
-      return typeof detail === "string" ? `${error}: ${detail}` : error;
+      // `hint` is the actionable half (e.g. "run npm run db:push"), so keep it
+      // even when it makes the message long — it is what the reader acts on.
+      return [error, detail, hint].filter((p) => typeof p === "string").join(" — ");
     }
   }
   return `Request failed with status ${status}`;
