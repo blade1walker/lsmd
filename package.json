@@ -12,6 +12,7 @@
     "db:seed": "npx tsx prisma/seed.ts",
     "db:seed-roles": "npx tsx scripts/seed-roles.ts",
     "db:check": "npx tsx scripts/db-check.ts",
+    "db:radio-codes": "npx tsx scripts/update-radio-codes.ts",
     "db:reset": "npx prisma db push --force-reset && npm run db:seed",
     "postinstall": "prisma generate"
   },

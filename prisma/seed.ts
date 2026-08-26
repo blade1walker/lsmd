@@ -2,6 +2,7 @@ import "dotenv/config";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { ROLE_PRESETS } from "../src/lib/role-presets";
+import { RADIO_CODES } from "../src/lib/radio-codes";
 
 const prisma = (() => {
   const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
@@ -126,27 +127,15 @@ async function main() {
   if (radioCount === 0) {
     console.log("Creating default radio codes...");
     await prisma.radioCode.createMany({
-      data: [
-        { code: "10-4", description: "Acknowledged / OK", section: "ten", order: 0 },
-        { code: "10-6", description: "Busy", section: "ten", order: 1 },
-        { code: "10-7", description: "Out of Service", section: "ten", order: 2 },
-        { code: "10-8", description: "In Service", section: "ten", order: 3 },
-        { code: "10-9", description: "Repeat", section: "ten", order: 4 },
-        { code: "10-10", description: "Off Duty", section: "ten", order: 5 },
-        { code: "10-12", description: "Standby", section: "ten", order: 6 },
-        { code: "10-20", description: "Location", section: "ten", order: 7 },
-        { code: "10-22", description: "Disregard", section: "ten", order: 8 },
-        { code: "10-50", description: "Accident", section: "ten", order: 9 },
-        { code: "10-52", description: "Medical Emergency", section: "ten", order: 10, highlighted: true },
-        { code: "10-54", description: "Livestock on Roadway", section: "ten", order: 11 },
-        { code: "10-76", description: "En Route", section: "ten", order: 12 },
-        { code: "10-97", description: "Check Signal / Radio Test", section: "ten", order: 13 },
-        { code: "10-99", description: "Emergency / Officer Down", section: "ten", order: 14, highlighted: true },
-        { code: "CODE 4", description: "No Further Assistance Needed", section: "code", order: 15 },
-        { code: "CODE 3", description: "Emergency Response (Lights & Sirens)", section: "code", order: 16, highlighted: true },
-      ],
+      data: RADIO_CODES.map((c, i) => ({
+        code: c.code,
+        description: c.description,
+        section: c.section,
+        order: i,
+        highlighted: c.highlighted ?? false,
+      })),
     });
-    console.log("  Created 17 radio codes");
+    console.log("  Created " + RADIO_CODES.length + " radio codes");
   }
 
   // Sign-off Definitions
