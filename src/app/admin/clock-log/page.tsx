@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ErrorState } from "@/components/ui/error-state";
+import { fetchList, errorMessage } from "@/lib/fetch-json";
 
 interface ClockEntry {
   id: string;
@@ -21,24 +23,29 @@ export default function AdminClockLogPage() {
   const [entries, setEntries] = useState<ClockEntry[]>([]);
   const [totals, setTotals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+    setError(null);
     try {
-      const [logRes, totalsRes] = await Promise.all([
-        fetch("/api/clock/log"),
-        fetch("/api/clock/totals"),
+      const [log, totalsList] = await Promise.all([
+        fetchList<ClockEntry>("/api/clock/log"),
+        fetchList<any>("/api/clock/totals"),
       ]);
-      setEntries(await logRes.json());
-      setTotals(await totalsRes.json());
-    } catch (error) {
-      console.error("Error fetching data:", error);
+      setEntries(log);
+      setTotals(totalsList);
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      setError(errorMessage(err));
+      setEntries([]);
+      setTotals([]);
     }
     setLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const formatDuration = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -52,6 +59,10 @@ export default function AdminClockLogPage() {
         <div className="text-gray-500">Loading clock log...</div>
       </div>
     );
+  }
+
+  if (error) {
+    return <ErrorState title="Failed to load clock log" message={error} onRetry={fetchData} />;
   }
 
   return (

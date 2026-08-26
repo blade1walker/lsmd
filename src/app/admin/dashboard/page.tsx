@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ErrorState } from "@/components/ui/error-state";
+import { fetchJson, errorMessage } from "@/lib/fetch-json";
 import { motion } from "framer-motion";
 import {
   Users,
@@ -101,21 +103,25 @@ const ACTIVITY_COLORS: Record<string, string> = {
 
 export default function AdminDashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch("/api/admin/dashboard");
-        const json = await res.json();
-        setData(json);
-      } catch (err) {
-        console.error("Failed to load dashboard:", err);
-      }
-      setLoading(false);
-    };
-    fetchData();
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      setData(await fetchJson<DashboardData>("/api/admin/dashboard"));
+    } catch (err) {
+      console.error("Failed to load dashboard:", err);
+      setError(errorMessage(err));
+      setData(null);
+    }
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   if (loading) {
     return (
@@ -138,20 +144,24 @@ export default function AdminDashboardPage() {
     );
   }
 
-  if (!data) {
+  if (!data?.stats) {
     return (
-      <div className="text-center py-16 text-gray-500">Failed to load dashboard</div>
+      <ErrorState
+        title="Failed to load dashboard"
+        message={error ?? "The dashboard data could not be retrieved."}
+        onRetry={fetchData}
+      />
     );
   }
 
   const { stats, recentPromotions, membersByRank, membersByActivity, topClockers } = data;
 
-  const activityChartData = membersByActivity.map((a) => ({
+  const activityChartData = (membersByActivity ?? []).map((a) => ({
     name: a.activity,
     value: a.count,
   }));
 
-  const rankChartData = membersByRank.map((r) => ({
+  const rankChartData = (membersByRank ?? []).map((r) => ({
     rank: r.rank,
     count: r.count,
   }));
@@ -357,13 +367,13 @@ export default function AdminDashboardPage() {
           <h2 className="font-[family-name:var(--font-oswald)] text-lg font-bold text-white uppercase mb-4">
             Recent Promotions
           </h2>
-          {recentPromotions.length === 0 ? (
+          {(recentPromotions ?? []).length === 0 ? (
             <div className="text-center py-8 text-gray-500 text-sm">
               No recent promotions
             </div>
           ) : (
             <div className="space-y-3">
-              {recentPromotions.map((promo) => (
+              {(recentPromotions ?? []).map((promo) => (
                 <div
                   key={promo.id}
                   className="flex items-center gap-3 p-3 bg-[#0a0a0f] rounded-lg"
@@ -403,13 +413,13 @@ export default function AdminDashboardPage() {
           <h2 className="font-[family-name:var(--font-oswald)] text-lg font-bold text-white uppercase mb-4">
             Top Clock Hours
           </h2>
-          {topClockers.length === 0 ? (
+          {(topClockers ?? []).length === 0 ? (
             <div className="text-center py-8 text-gray-500 text-sm">
               No clock entries yet
             </div>
           ) : (
             <div className="space-y-3">
-              {topClockers.map((entry, i) => (
+              {(topClockers ?? []).map((entry, i) => (
                 <div
                   key={i}
                   className="flex items-center gap-3 p-3 bg-[#0a0a0f] rounded-lg"

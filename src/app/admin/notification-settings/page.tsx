@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Save, RotateCcw, ChevronDown, ChevronUp, MessageSquare, Webhook, Bot, Settings } from "lucide-react";
 import * as XLSX from "xlsx";
+import { toast } from "sonner";
+import { fetchJson, errorMessage } from "@/lib/fetch-json";
 
 interface Settings {
   recruitWebhook: boolean;
@@ -100,7 +102,7 @@ export default function AdminNotificationSettingsPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await fetch("/api/admin/notification-settings", {
+      await fetchJson("/api/admin/notification-settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(settings),
@@ -109,6 +111,7 @@ export default function AdminNotificationSettingsPage() {
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
       console.error(err);
+      toast.error(errorMessage(err));
     }
     setSaving(false);
   };

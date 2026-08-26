@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
 import { RotateCcw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { ErrorState } from "@/components/ui/error-state";
+import { fetchList, errorMessage } from "@/lib/fetch-json";
 
 interface DeletionLog {
   id: string;
@@ -20,21 +22,23 @@ interface DeletionLog {
 export default function AdminRestorePage() {
   const [logs, setLogs] = useState<DeletionLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
+    setError(null);
     try {
-      const res = await fetch("/api/admin/deleted");
-      const data = await res.json();
-      setLogs(data);
-    } catch (error) {
+      setLogs(await fetchList<DeletionLog>("/api/admin/deleted"));
+    } catch (err) {
+      setError(errorMessage(err));
+      setLogs([]);
       toast.error("Failed to load deletion logs");
     }
     setLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     fetchLogs();
-  }, []);
+  }, [fetchLogs]);
 
   const handleRestore = async (logId: string) => {
     try {
@@ -72,6 +76,10 @@ export default function AdminRestorePage() {
         </div>
       </div>
     );
+  }
+
+  if (error) {
+    return <ErrorState title="Failed to load deleted items" message={error} onRetry={fetchLogs} />;
   }
 
   return (

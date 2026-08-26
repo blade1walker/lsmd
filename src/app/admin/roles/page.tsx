@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ALL_PERMISSIONS } from "@/lib/constants";
+import { ErrorState } from "@/components/ui/error-state";
+import { fetchList, errorMessage } from "@/lib/fetch-json";
 
 interface AdminRole { id: string; name: string; permissions: string[]; }
 interface AdminUser { id: string; discordId: string; discordName: string; roleId?: string | null; role?: AdminRole | null; }
@@ -18,17 +20,22 @@ export default function AdminRolesPage() {
   const [roleForm, setRoleForm] = useState({ name: "", permissions: [] as string[] });
   const [userForm, setUserForm] = useState({ discordId: "", discordName: "", roleId: "" });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
+    setError(null);
     try {
-      const [rolesRes, usersRes] = await Promise.all([
-        fetch("/api/admin/roles"),
-        fetch("/api/admin/users"),
+      const [roleList, userList] = await Promise.all([
+        fetchList<AdminRole>("/api/admin/roles"),
+        fetchList<AdminUser>("/api/admin/users"),
       ]);
-      setRoles(await rolesRes.json());
-      setUsers(await usersRes.json());
+      setRoles(roleList);
+      setUsers(userList);
     } catch (err) {
       console.error("Failed to fetch:", err);
+      setError(errorMessage(err));
+      setRoles([]);
+      setUsers([]);
     } finally {
       setLoading(false);
     }
@@ -78,6 +85,8 @@ export default function AdminRolesPage() {
 
       {loading ? (
         <div className="text-center py-16 text-gray-500">Loading...</div>
+      ) : error ? (
+        <ErrorState title="Failed to load roles" message={error} onRetry={fetchData} />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>

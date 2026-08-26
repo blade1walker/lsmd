@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Download } from "lucide-react";
 import { RANK_NAMES, SECTION_HINTS } from "@/lib/constants";
 import { toast } from "sonner";
+import { ErrorState } from "@/components/ui/error-state";
+import { fetchList, errorMessage } from "@/lib/fetch-json";
 
 interface Section {
   id: string;
@@ -36,13 +38,15 @@ export default function AdminRosterPage() {
   const [search, setSearch] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
+    setError(null);
     try {
-      const res = await fetch("/api/members");
-      const data = await res.json();
-      setSections(data);
+      setSections(await fetchList<Section>("/api/members"));
     } catch (err) {
+      setError(errorMessage(err));
+      setSections([]);
       toast.error("Failed to load roster data");
     } finally {
       setLoading(false);
@@ -159,6 +163,8 @@ export default function AdminRosterPage() {
             </div>
           ))}
         </div>
+      ) : error ? (
+        <ErrorState title="Failed to load roster" message={error} onRetry={fetchData} />
       ) : (
         <div className="space-y-8">
           {filteredSections.map((section) => (

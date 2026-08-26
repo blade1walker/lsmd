@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { ErrorState } from "@/components/ui/error-state";
+import { fetchList, errorMessage } from "@/lib/fetch-json";
 
 interface SignOffDefinition {
   id: string;
@@ -38,23 +40,29 @@ export default function AdminSignoffsPage() {
   const [newDefinition, setNewDefinition] = useState("");
   const [activeTab, setActiveTab] = useState<"definitions" | "records">("definitions");
 
-  const fetchData = async () => {
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchData = useCallback(async () => {
+    setError(null);
     try {
-      const [defRes, recRes] = await Promise.all([
-        fetch("/api/signoffs"),
-        fetch("/api/signoffs/records"),
+      const [defList, recList] = await Promise.all([
+        fetchList<SignOffDefinition>("/api/signoffs"),
+        fetchList<FTOSignOffRecord>("/api/signoffs/records"),
       ]);
-      setDefinitions(await defRes.json());
-      setRecords(await recRes.json());
-    } catch (error) {
+      setDefinitions(defList);
+      setRecords(recList);
+    } catch (err) {
+      setError(errorMessage(err));
+      setDefinitions([]);
+      setRecords([]);
       toast.error("Failed to load sign-offs");
     }
     setLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const handleAddDefinition = async () => {
     if (!newDefinition) return;
@@ -98,6 +106,10 @@ export default function AdminSignoffsPage() {
         <Skeleton className="h-96 rounded-xl" />
       </div>
     );
+  }
+
+  if (error) {
+    return <ErrorState title="Failed to load sign-offs" message={error} onRetry={fetchData} />;
   }
 
   return (

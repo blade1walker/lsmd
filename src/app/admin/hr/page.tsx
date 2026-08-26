@@ -5,6 +5,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Check, X, Clock, CheckCircle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { ErrorState } from "@/components/ui/error-state";
+import { fetchList, errorMessage } from "@/lib/fetch-json";
 
 interface LOA {
   id: string;
@@ -48,18 +50,24 @@ export default function AdminHrPage() {
   const [removals, setRemovals] = useState<RemovalRequest[]>([]);
   const [inactivities, setInactivities] = useState<InactivityRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
+    setError(null);
     try {
-      const [loaRes, removalRes, inactRes] = await Promise.all([
-        fetch("/api/loa"),
-        fetch("/api/removal-requests"),
-        fetch("/api/inactivity-requests"),
+      const [loaList, removalList, inactList] = await Promise.all([
+        fetchList<LOA>("/api/loa"),
+        fetchList<RemovalRequest>("/api/removal-requests"),
+        fetchList<InactivityRequest>("/api/inactivity-requests"),
       ]);
-      setLoas(await loaRes.json());
-      setRemovals(await removalRes.json());
-      setInactivities(await inactRes.json());
-    } catch (error) {
+      setLoas(loaList);
+      setRemovals(removalList);
+      setInactivities(inactList);
+    } catch (err) {
+      setError(errorMessage(err));
+      setLoas([]);
+      setRemovals([]);
+      setInactivities([]);
       toast.error("Failed to load HR data");
     }
     setLoading(false);
@@ -120,7 +128,6 @@ export default function AdminHrPage() {
     switch (status) {
       case "Pending": return "bg-yellow-500/10 text-yellow-400";
       case "Active":
-      case "Approved":
       case "Approved": return "bg-green-500/10 text-green-400";
       case "Declined":
       case "Rejected": return "bg-red-500/10 text-red-400";
@@ -144,6 +151,10 @@ export default function AdminHrPage() {
         </div>
       </div>
     );
+  }
+
+  if (error) {
+    return <ErrorState title="Failed to load HR data" message={error} onRetry={fetchData} />;
   }
 
   return (

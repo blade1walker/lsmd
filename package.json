@@ -10,6 +10,7 @@
     "db:push": "npx prisma db push",
     "db:generate": "npx prisma generate",
     "db:seed": "npx tsx prisma/seed.ts",
+    "db:seed-roles": "npx tsx scripts/seed-roles.ts",
     "db:reset": "npx prisma db push --force-reset && npm run db:seed",
     "postinstall": "prisma generate"
   },

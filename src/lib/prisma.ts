@@ -14,6 +14,22 @@ function createPrismaClient() {
   return new PrismaClient({ adapter });
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+function getClient(): PrismaClient {
+  if (!globalForPrisma.prisma) {
+    globalForPrisma.prisma = createPrismaClient();
+  }
+  return globalForPrisma.prisma;
+}
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+// The client is built on first property access rather than at import time.
+// Next.js imports every route module while collecting page data during
+// `next build`, and that step runs without the runtime environment, so
+// constructing eagerly here fails the whole build when DATABASE_URL is only
+// present at runtime.
+export const prisma = new Proxy({} as PrismaClient, {
+  get(_target, prop) {
+    const client = getClient();
+    const value = Reflect.get(client as object, prop);
+    return typeof value === "function" ? value.bind(client) : value;
+  },
+});

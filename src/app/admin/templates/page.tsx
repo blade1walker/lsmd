@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { ErrorState } from "@/components/ui/error-state";
+import { fetchList, errorMessage } from "@/lib/fetch-json";
 
 interface TempRank {
   id: string;
@@ -25,26 +27,31 @@ export default function AdminTemplatesPage() {
   const [tempRanks, setTempRanks] = useState<TempRank[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [newTempRank, setNewTempRank] = useState("");
   const [newCategory, setNewCategory] = useState({ name: "", color: "#dc2626" });
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+    setError(null);
     try {
-      const [ranksRes, catsRes] = await Promise.all([
-        fetch("/api/admin/temp-ranks"),
-        fetch("/api/admin/categories"),
+      const [rankList, catList] = await Promise.all([
+        fetchList<TempRank>("/api/admin/temp-ranks"),
+        fetchList<Category>("/api/admin/categories"),
       ]);
-      setTempRanks(await ranksRes.json());
-      setCategories(await catsRes.json());
-    } catch (error) {
+      setTempRanks(rankList);
+      setCategories(catList);
+    } catch (err) {
+      setError(errorMessage(err));
+      setTempRanks([]);
+      setCategories([]);
       toast.error("Failed to load templates");
     }
     setLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const handleAddTempRank = async () => {
     if (!newTempRank) return;
@@ -115,6 +122,10 @@ export default function AdminTemplatesPage() {
         </div>
       </div>
     );
+  }
+
+  if (error) {
+    return <ErrorState title="Failed to load templates" message={error} onRetry={fetchData} />;
   }
 
   return (

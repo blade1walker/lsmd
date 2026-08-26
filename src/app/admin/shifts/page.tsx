@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { ErrorState } from "@/components/ui/error-state";
+import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
+import { toast } from "sonner";
 
 interface Member {
   id: string;
@@ -35,41 +38,55 @@ interface Shift {
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const COLOR_OPTIONS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4"];
 
+function startOfWeek(from: Date): Date {
+  const d = new Date(from);
+  const day = d.getDay();
+  d.setDate(d.getDate() - day + (day === 0 ? -6 : 1));
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
 export default function AdminShiftsPage() {
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [showAssign, setShowAssign] = useState(false);
   const [selectedShift, setSelectedShift] = useState<string>("");
   const [selectedDay, setSelectedDay] = useState<string>("");
   const [form, setForm] = useState({ name: "", startTime: "08:00", endTime: "16:00", days: [] as string[], color: "#3b82f6" });
   const [assignForm, setAssignForm] = useState({ memberId: "", date: "" });
-  const [currentWeekStart, setCurrentWeekStart] = useState(() => {
-    const d = new Date();
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    return new Date(d.setDate(diff));
-  });
+  // Resolved after mount, not in the initial state: this page is statically
+  // prerendered, so deriving "this week" during render bakes the build date
+  // into the HTML and mismatches whatever week the browser is actually in.
+  const [currentWeekStart, setCurrentWeekStart] = useState<Date | null>(null);
+
+  useEffect(() => {
+    setCurrentWeekStart(startOfWeek(new Date()));
+  }, []);
 
   const weekDates = DAYS.map((_, i) => {
+    if (!currentWeekStart) return "";
     const d = new Date(currentWeekStart);
     d.setDate(d.getDate() + i);
     return d.toISOString().split("T")[0];
   });
 
   const fetchData = useCallback(async () => {
+    setError(null);
     try {
-      const [shiftsRes, sectionsRes] = await Promise.all([
-        fetch("/api/admin/shifts"),
-        fetch("/api/members"),
+      const [shiftList, sections] = await Promise.all([
+        fetchList<Shift>("/api/admin/shifts"),
+        fetchList<{ members: Member[] }>("/api/members"),
       ]);
-      const sections = await sectionsRes.json();
-      const allMembers = sections.flatMap((s: { members: Member[] }) => s.members);
-      setShifts(await shiftsRes.json());
-      setMembers(allMembers);
+      setShifts(shiftList);
+      setMembers(sections.flatMap((s) => s.members ?? []));
     } catch (err) {
       console.error("Failed to fetch:", err);
+      setError(errorMessage(err));
+      setShifts([]);
+      setMembers([]);
     } finally {
       setLoading(false);
     }
@@ -79,41 +96,59 @@ export default function AdminShiftsPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    await fetch("/api/admin/shifts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    setForm({ name: "", startTime: "08:00", endTime: "16:00", days: [], color: "#3b82f6" });
-    setShowCreate(false);
-    fetchData();
+    try {
+      await fetchJson("/api/admin/shifts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      toast.success("Shift created");
+      setForm({ name: "", startTime: "08:00", endTime: "16:00", days: [], color: "#3b82f6" });
+      setShowCreate(false);
+      fetchData();
+    } catch (err) {
+      toast.error(errorMessage(err));
+    }
   };
 
   const handleAssign = async (e: React.FormEvent) => {
     e.preventDefault();
-    await fetch("/api/admin/shifts/assign", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ shiftId: selectedShift, memberId: assignForm.memberId, date: assignForm.date }),
-    });
-    setAssignForm({ memberId: "", date: "" });
-    setShowAssign(false);
-    fetchData();
+    try {
+      await fetchJson("/api/admin/shifts/assign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ shiftId: selectedShift, memberId: assignForm.memberId, date: assignForm.date }),
+      });
+      setAssignForm({ memberId: "", date: "" });
+      setShowAssign(false);
+      fetchData();
+    } catch (err) {
+      toast.error(errorMessage(err));
+    }
   };
 
   const handleRemoveAssignment = async (shiftId: string, memberId: string, date: string) => {
-    await fetch("/api/admin/shifts/assign", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ shiftId, memberId, date }),
-    });
-    fetchData();
+    try {
+      await fetchJson("/api/admin/shifts/assign", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ shiftId, memberId, date }),
+      });
+      fetchData();
+    } catch (err) {
+      toast.error(errorMessage(err));
+    }
   };
 
   const handleDeleteShift = async (id: string) => {
     if (!confirm("Delete this shift?")) return;
-    await fetch(`/api/admin/shifts/${id}`, { method: "DELETE" });
-    fetchData();
+    try {
+      await fetchJson(`/api/admin/shifts/${id}`, { method: "DELETE" });
+      toast.success("Shift deleted");
+      fetchData();
+    } catch (err) {
+      toast.error(errorMessage(err));
+    }
   };
 
   const openAssignDialog = (shiftId: string, day: string) => {
@@ -136,13 +171,20 @@ export default function AdminShiftsPage() {
   };
 
   const navigateWeek = (direction: number) => {
-    const d = new Date(currentWeekStart);
-    d.setDate(d.getDate() + direction * 7);
-    setCurrentWeekStart(d);
+    setCurrentWeekStart((prev) => {
+      if (!prev) return prev;
+      const d = new Date(prev);
+      d.setDate(d.getDate() + direction * 7);
+      return d;
+    });
   };
 
-  if (loading) {
+  if (loading || !currentWeekStart) {
     return <div className="flex items-center justify-center h-64"><div className="text-gray-500">Loading shifts...</div></div>;
+  }
+
+  if (error) {
+    return <ErrorState title="Failed to load shifts" message={error} onRetry={fetchData} />;
   }
 
   return (

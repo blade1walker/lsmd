@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ErrorState } from "@/components/ui/error-state";
+import { fetchJson, errorMessage } from "@/lib/fetch-json";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -148,21 +150,25 @@ export default function MemberProfilePage() {
   const params = useParams();
   const memberId = params.memberId as string;
   const [data, setData] = useState<MemberProfileData | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const res = await fetch(`/api/members/${memberId}/profile`);
-        const json = await res.json();
-        setData(json);
-      } catch (err) {
-        console.error("Failed to load profile:", err);
-      }
-      setLoading(false);
-    };
-    fetchProfile();
+  const fetchProfile = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      setData(await fetchJson<MemberProfileData>(`/api/members/${memberId}/profile`));
+    } catch (err) {
+      console.error("Failed to load profile:", err);
+      setError(errorMessage(err));
+      setData(null);
+    }
+    setLoading(false);
   }, [memberId]);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
 
   if (loading) {
     return (
@@ -176,13 +182,29 @@ export default function MemberProfilePage() {
     );
   }
 
-  if (!data) {
+  if (!data?.member) {
     return (
-      <div className="text-center py-16 text-gray-500">Failed to load member profile</div>
+      <div>
+        <Link
+          href="/admin/roster"
+          className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white mb-4"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Roster
+        </Link>
+        <ErrorState
+          title="Failed to load member profile"
+          message={error ?? "This member could not be found."}
+          onRetry={fetchProfile}
+        />
+      </div>
     );
   }
 
-  const { member, trainingRecord, clockEntries, loaHistory, auditLogs } = data;
+  const { member, trainingRecord } = data;
+  const clockEntries = data.clockEntries ?? [];
+  const loaHistory = data.loaHistory ?? [];
+  const auditLogs = data.auditLogs ?? [];
 
   const trainingCheckpoints: Array<{ label: string; checked: boolean; by: string | null }> = [];
   for (const phase of TRAINING_CHECKPOINTS) {

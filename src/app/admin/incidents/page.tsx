@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { ErrorState } from "@/components/ui/error-state";
+import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
+import { toast } from "sonner";
 
 interface Incident {
   id: string;
@@ -42,6 +45,7 @@ const STATUSES = ["Open", "Pending", "Closed"];
 export default function AdminIncidentsPage() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   const [showDetail, setShowDetail] = useState(false);
@@ -58,16 +62,18 @@ export default function AdminIncidentsPage() {
   const [updateForm, setUpdateForm] = useState({ status: "", outcome: "", assignedTo: "" });
 
   const fetchIncidents = useCallback(async () => {
+    setError(null);
     try {
       const params = new URLSearchParams();
       if (filterStatus) params.set("status", filterStatus);
       if (filterType) params.set("type", filterType);
       if (filterPriority) params.set("priority", filterPriority);
 
-      const res = await fetch(`/api/admin/incidents?${params}`);
-      setIncidents(await res.json());
+      setIncidents(await fetchList<Incident>(`/api/admin/incidents?${params}`));
     } catch (err) {
       console.error("Failed to fetch incidents:", err);
+      setError(errorMessage(err));
+      setIncidents([]);
     } finally {
       setLoading(false);
     }
@@ -77,47 +83,69 @@ export default function AdminIncidentsPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    await fetch("/api/admin/incidents", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, reportedById: "admin" }),
-    });
-    setForm({ type: "Traffic Stop", location: "", description: "", priority: "Normal", reportedBy: "" });
-    setShowCreate(false);
-    fetchIncidents();
+    try {
+      await fetchJson("/api/admin/incidents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, reportedById: "admin" }),
+      });
+      toast.success("Incident created");
+      setForm({ type: "Traffic Stop", location: "", description: "", priority: "Normal", reportedBy: "" });
+      setShowCreate(false);
+      fetchIncidents();
+    } catch (err) {
+      toast.error(errorMessage(err));
+    }
   };
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedIncident) return;
-    await fetch(`/api/admin/incidents/${selectedIncident.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updateForm),
-    });
-    setShowDetail(false);
-    setSelectedIncident(null);
-    fetchIncidents();
+    try {
+      await fetchJson(`/api/admin/incidents/${selectedIncident.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updateForm),
+      });
+      toast.success("Incident updated");
+      setShowDetail(false);
+      setSelectedIncident(null);
+      fetchIncidents();
+    } catch (err) {
+      toast.error(errorMessage(err));
+    }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this incident?")) return;
-    await fetch(`/api/admin/incidents/${id}`, { method: "DELETE" });
-    setShowDetail(false);
-    setSelectedIncident(null);
-    fetchIncidents();
+    try {
+      await fetchJson(`/api/admin/incidents/${id}`, { method: "DELETE" });
+      toast.success("Incident deleted");
+      setShowDetail(false);
+      setSelectedIncident(null);
+      fetchIncidents();
+    } catch (err) {
+      toast.error(errorMessage(err));
+    }
   };
 
   const openDetail = async (incident: Incident) => {
-    const res = await fetch(`/api/admin/incidents/${incident.id}`);
-    const full = await res.json();
-    setSelectedIncident(full);
-    setUpdateForm({ status: full.status, outcome: full.outcome ?? "", assignedTo: full.assignedTo ?? "" });
-    setShowDetail(true);
+    try {
+      const full = await fetchJson<Incident>(`/api/admin/incidents/${incident.id}`);
+      setSelectedIncident(full);
+      setUpdateForm({ status: full.status, outcome: full.outcome ?? "", assignedTo: full.assignedTo ?? "" });
+      setShowDetail(true);
+    } catch (err) {
+      toast.error(errorMessage(err));
+    }
   };
 
   if (loading) {
     return <div className="flex items-center justify-center h-64"><div className="text-gray-500">Loading incidents...</div></div>;
+  }
+
+  if (error) {
+    return <ErrorState title="Failed to load incidents" message={error} onRetry={fetchIncidents} />;
   }
 
   return (

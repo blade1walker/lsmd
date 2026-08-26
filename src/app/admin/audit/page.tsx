@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { ErrorState } from "@/components/ui/error-state";
+import { fetchJson, errorMessage } from "@/lib/fetch-json";
 
 interface AuditEntry {
   id: string;
@@ -17,29 +19,41 @@ export default function AdminAuditPage() {
   const [logs, setLogs] = useState<AuditEntry[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
   const limit = 50;
 
-  useEffect(() => {
-    const fetchLogs = async () => {
-      try {
-        const res = await fetch(`/api/admin/audit?limit=${limit}&offset=${offset}`);
-        const data = await res.json();
-        setLogs(data.logs);
-        setTotal(data.total);
-      } catch (err) {
-        console.error("Failed to fetch audit logs:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchLogs();
+  const fetchLogs = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await fetchJson<{ logs: AuditEntry[]; total: number }>(
+        `/api/admin/audit?limit=${limit}&offset=${offset}`
+      );
+      setLogs(data.logs ?? []);
+      setTotal(data.total ?? 0);
+    } catch (err) {
+      console.error("Failed to fetch audit logs:", err);
+      setError(errorMessage(err));
+      setLogs([]);
+      setTotal(0);
+    } finally {
+      setLoading(false);
+    }
   }, [offset]);
+
+  useEffect(() => {
+    fetchLogs();
+  }, [fetchLogs]);
 
   const totalPages = Math.ceil(total / limit);
 
   if (loading) {
     return <div className="flex items-center justify-center h-64"><div className="text-gray-500">Loading audit logs...</div></div>;
+  }
+
+  if (error) {
+    return <ErrorState title="Failed to load audit log" message={error} onRetry={fetchLogs} />;
   }
 
   return (

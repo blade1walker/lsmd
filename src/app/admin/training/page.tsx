@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
 import { CheckCircle, Circle, Edit } from "lucide-react";
@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ErrorState } from "@/components/ui/error-state";
+import { fetchList, errorMessage } from "@/lib/fetch-json";
 import { toast } from "sonner";
 
 interface TrainingRecord {
@@ -60,21 +62,23 @@ export default function AdminTrainingPage() {
   const [loading, setLoading] = useState(true);
   const [editingRecord, setEditingRecord] = useState<TrainingRecord | null>(null);
   const [signedBy, setSignedBy] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchRecords = async () => {
+  const fetchRecords = useCallback(async () => {
+    setError(null);
     try {
-      const res = await fetch("/api/training/summary");
-      const data = await res.json();
-      setRecords(data);
-    } catch (error) {
+      setRecords(await fetchList<TrainingRecord>("/api/training/summary"));
+    } catch (err) {
+      setError(errorMessage(err));
+      setRecords([]);
       toast.error("Failed to load training records");
     }
     setLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     fetchRecords();
-  }, []);
+  }, [fetchRecords]);
 
   const handleToggleCheckpoint = async (
     recordId: string,
@@ -136,6 +140,10 @@ export default function AdminTrainingPage() {
         </div>
       </div>
     );
+  }
+
+  if (error) {
+    return <ErrorState title="Failed to load training records" message={error} onRetry={fetchRecords} />;
   }
 
   return (

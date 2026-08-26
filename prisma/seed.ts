@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { ROLE_PRESETS } from "../src/lib/role-presets";
 
 const prisma = (() => {
   const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
@@ -70,9 +71,10 @@ async function main() {
           name: "Viewer",
           permissions: ["roster.view"],
         },
+        ...ROLE_PRESETS.map((r) => ({ name: r.name, permissions: [...r.permissions] })),
       ],
     });
-    console.log("  Created 5 admin roles");
+    console.log("  Created " + (5 + ROLE_PRESETS.length) + " admin roles");
   }
 
   // Temp Rank Templates
