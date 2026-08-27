@@ -33,7 +33,7 @@ export const ROLE_PRESETS: RolePreset[] = [
   {
     name: "Assistant HR",
     description: "Handles LOA, inactivity and onboarding review.",
-    sections: ["Roster", "HR", "Onboarding"],
+    sections: ["Roster", "HR", "Onboarding", "SOP"],
     permissions: [
       "roster.view",
       "hr.view",
@@ -43,8 +43,25 @@ export const ROLE_PRESETS: RolePreset[] = [
       "removal.request",
       "onboarding.view",
       "onboarding.approve",
+      "sop.view",
+      "sop.edit",
     ],
     aliases: ["HR Assistant"],
+  },
+  {
+    name: "HR Admin",
+    description: "Full HR review authority, including removal approval.",
+    sections: ["Roster", "HR", "SOP"],
+    permissions: [
+      "roster.view",
+      "hr.view",
+      "hr.loa",
+      "hr.inactivity",
+      "hr.inactivity.approve",
+      "removal.request",
+      "sop.view",
+      "sop.edit",
+    ],
   },
   {
     name: "FTP",
@@ -53,6 +70,7 @@ export const ROLE_PRESETS: RolePreset[] = [
     permissions: [
       "roster.view",
       "sop.view",
+      "sop.edit",
       "training.view",
       "training.manage",
       "training.signoff.manage",

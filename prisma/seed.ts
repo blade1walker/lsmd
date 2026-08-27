@@ -57,13 +57,6 @@ async function main() {
           ],
         },
         {
-          name: "HR Admin",
-          permissions: [
-            "hr.view", "hr.loa", "hr.inactivity", "hr.inactivity.approve",
-            "roster.view", "removal.request",
-          ],
-        },
-        {
           name: "Roster Admin",
           permissions: [
             "roster.view", "roster.add", "roster.edit", "roster.promote",
@@ -77,7 +70,7 @@ async function main() {
         ...ROLE_PRESETS.map((r) => ({ name: r.name, permissions: [...r.permissions] })),
       ],
     });
-    console.log("  Created " + (5 + ROLE_PRESETS.length) + " admin roles");
+    console.log("  Created " + (4 + ROLE_PRESETS.length) + " admin roles");
   }
 
   // Temp Rank Templates
