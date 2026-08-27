@@ -62,6 +62,7 @@ export const authOptions: NextAuthOptions = {
         token.isSuperAdmin = access.isSuperAdmin;
         token.isMember = access.isMember;
         token.memberId = access.memberId;
+        token.memberRank = access.memberRank;
         token.adminRole = access.roleName;
         token.permissions = access.permissions;
       }
@@ -76,6 +77,7 @@ export const authOptions: NextAuthOptions = {
         session.user.isSuperAdmin = token.isSuperAdmin as boolean;
         session.user.isMember = token.isMember as boolean;
         session.user.memberId = (token.memberId as string | null) ?? null;
+        session.user.memberRank = (token.memberRank as string | null) ?? null;
         session.user.adminRole = token.adminRole as string | null;
         session.user.permissions = (token.permissions as string[]) ?? [];
       }

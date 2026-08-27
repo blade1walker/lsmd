@@ -76,6 +76,23 @@ export function getRankWeight(rank: string): number {
   return found?.weight ?? 0;
 }
 
+/**
+ * Rank comparison by weight. An unrecognised rank weighs 0, so it fails every
+ * threshold rather than passing one by accident.
+ */
+export function isRankAtLeast(rank: string | null | undefined, minRank: string): boolean {
+  if (!rank) return false;
+  return getRankWeight(rank) >= getRankWeight(minRank);
+}
+
+/** Minimum roster rank permitted to apply for the Field Training Program. */
+export const FTP_MIN_RANK = "Paramedic";
+
+/** Ranks that meet FTP_MIN_RANK, highest first — for explaining the rule in the UI. */
+export const FTP_ELIGIBLE_RANKS = RANKS
+  .filter((r) => r.weight >= getRankWeight(FTP_MIN_RANK))
+  .map((r) => r.name);
+
 export function canSeeRosterPages(permissions: string[]): boolean {
   return permissions.includes("roster.view");
 }

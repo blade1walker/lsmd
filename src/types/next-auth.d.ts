@@ -14,6 +14,8 @@ declare module "next-auth" {
       /** Carries a roster Member row. */
       isMember?: boolean;
       memberId?: string | null;
+      /** Roster rank, for rules that gate on seniority (e.g. FTP eligibility). */
+      memberRank?: string | null;
       adminRole?: string | null;
       permissions?: string[];
       discordName?: string;
@@ -28,6 +30,7 @@ declare module "next-auth/jwt" {
     isSuperAdmin?: boolean;
     isMember?: boolean;
     memberId?: string | null;
+    memberRank?: string | null;
     adminRole?: string | null;
     permissions?: string[];
     discordName?: string;

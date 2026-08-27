@@ -15,6 +15,8 @@ export interface Access {
   isMember: boolean;
   memberId: string | null;
   memberName: string | null;
+  /** Roster rank, for rules that gate on seniority (e.g. FTP eligibility). */
+  memberRank: string | null;
   /** Explicitly assigned role, or the default when they are only a roster member. */
   roleName: string | null;
   permissions: string[];
@@ -29,6 +31,7 @@ function denied(discordId: string, denialReason: DenialReason): Access {
     isMember: false,
     memberId: null,
     memberName: null,
+    memberRank: null,
     roleName: null,
     permissions: [],
   };
@@ -52,7 +55,7 @@ export async function resolveAccess(discordId: string | null | undefined): Promi
   const [member, adminUser] = await Promise.all([
     prisma.member.findFirst({
       where: { discordId },
-      select: { id: true, name: true },
+      select: { id: true, name: true, rank: true },
     }),
     prisma.adminUser.findUnique({
       where: { discordId },
@@ -69,6 +72,7 @@ export async function resolveAccess(discordId: string | null | undefined): Promi
       isMember: !!member,
       memberId: member?.id ?? null,
       memberName: member?.name ?? null,
+      memberRank: member?.rank ?? null,
       roleName: adminUser?.role?.name ?? "Super Admin",
       permissions: [...ALL_PERMISSIONS],
     };
@@ -84,6 +88,7 @@ export async function resolveAccess(discordId: string | null | undefined): Promi
     isMember: true,
     memberId: member.id,
     memberName: member.name,
+    memberRank: member.rank,
     roleName: adminUser?.role?.name ?? DEFAULT_MEMBER_ROLE,
     permissions: adminUser?.role?.permissions ?? defaultMemberPermissions(),
   };

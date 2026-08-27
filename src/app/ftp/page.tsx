@@ -2,44 +2,81 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSession, signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, GraduationCap } from "lucide-react";
+import { CheckCircle, GraduationCap, AlertTriangle } from "lucide-react";
+import { fetchJson, errorMessage } from "@/lib/fetch-json";
+import { FTP_MIN_RANK, isRankAtLeast } from "@/lib/constants";
 
-const DEPARTMENTS = [
-  "EMS",
-];
+function Shell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen bg-[#0a0a0a]">
+      <header className="border-b border-[#1e1e1e]">
+        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
+          <Link href="/" className="text-sm text-gray-400 hover:text-white">
+            ← Back to Roster
+          </Link>
+          <span className="font-[family-name:var(--font-oswald)] text-white font-semibold text-sm">
+            EMS
+          </span>
+        </div>
+      </header>
+      <main className="max-w-2xl mx-auto px-4 py-12">{children}</main>
+    </div>
+  );
+}
 
 export default function FTPPage() {
-  const [characterName, setCharacterName] = useState("");
-  const [discordId, setDiscordId] = useState("");
-  const [currentRole, setCurrentRole] = useState("");
+  const { data: session, status } = useSession();
   const [previousExperience, setPreviousExperience] = useState("");
-  const [department, setDepartment] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async () => {
-    if (!characterName || !discordId || !currentRole || !department) return;
     setLoading(true);
+    setError(null);
     try {
-      const res = await fetch("/api/ftp", {
+      await fetchJson("/api/ftp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ characterName, discordId, currentRole, previousExperience, department }),
+        body: JSON.stringify({ previousExperience }),
       });
-      if (res.ok) setSubmitted(true);
+      setSubmitted(true);
     } catch (err) {
-      console.error(err);
+      setError(errorMessage(err));
     }
     setLoading(false);
   };
 
+  if (status === "loading") {
+    return <div className="min-h-screen bg-[#0a0a0a]" />;
+  }
+
+  if (!session) {
+    return (
+      <Shell>
+        <div className="text-center py-16">
+          <GraduationCap className="w-12 h-12 text-[#dc2626] mx-auto mb-4" />
+          <h1 className="font-[family-name:var(--font-oswald)] text-2xl font-bold text-white mb-2 uppercase">
+            Field Training Program
+          </h1>
+          <p className="text-gray-500 mb-6">
+            Sign in with Discord to apply. Your rank is read from the roster.
+          </p>
+          <Button onClick={() => signIn("discord")} className="bg-[#5865F2] hover:bg-[#4752C4]">
+            Sign in with Discord
+          </Button>
+        </div>
+      </Shell>
+    );
+  }
+
   if (submitted) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-8">
-        <div className="text-center max-w-md">
+      <Shell>
+        <div className="text-center py-16">
           <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
           <h1 className="font-[family-name:var(--font-oswald)] text-2xl font-bold text-white mb-2">
             Application Submitted
@@ -53,101 +90,82 @@ export default function FTPPage() {
             </Button>
           </Link>
         </div>
-      </div>
+      </Shell>
     );
   }
 
+  const rank = session.user.memberRank ?? null;
+  // Mirrors the server rule so an ineligible member is told up front instead of
+  // filling the form and being rejected. The API check is the one that counts.
+  const eligible = isRankAtLeast(rank, FTP_MIN_RANK);
+
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
-      <header className="border-b border-[#1e1e1e]">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
-          <Link href="/" className="text-sm text-gray-400 hover:text-white">
-            ← Back to Roster
-          </Link>
-          <span className="font-[family-name:var(--font-oswald)] text-white font-semibold text-sm">
-            EMS
+    <Shell>
+      <div className="flex items-center gap-2 mb-2">
+        <GraduationCap className="w-5 h-5 text-[#dc2626]" />
+        <h1 className="font-[family-name:var(--font-oswald)] text-2xl font-bold text-white uppercase">
+          Field Training Program
+        </h1>
+      </div>
+      <p className="text-gray-500 text-sm mb-8">
+        Open to {FTP_MIN_RANK} and above. Your name, rank and department are taken from your roster
+        entry.
+      </p>
+
+      {!eligible && (
+        <div className="mb-6 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-sm text-yellow-200 flex gap-3">
+          <AlertTriangle className="w-5 h-5 shrink-0 text-yellow-400" />
+          <span>
+            {rank
+              ? `The Field Training Program is open to ${FTP_MIN_RANK} and above. Your current rank is ${rank}.`
+              : "Your Discord account is not linked to a roster member, so it has no rank."}
           </span>
         </div>
-      </header>
+      )}
 
-      <main className="max-w-2xl mx-auto px-4 py-12">
-        <div className="flex items-center gap-2 mb-2">
-          <GraduationCap className="w-5 h-5 text-[#dc2626]" />
-          <h1 className="font-[family-name:var(--font-oswald)] text-2xl font-bold text-white uppercase">
-            Field Training Program
-          </h1>
+      {error && (
+        <div className="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300 flex gap-3">
+          <AlertTriangle className="w-5 h-5 shrink-0 text-red-400" />
+          <span className="break-words">{error}</span>
         </div>
-        <p className="text-gray-500 text-sm mb-8">
-          Apply for the Field Training Program to become a certified trainer. Fill in your details below.
-        </p>
+      )}
 
-        <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl p-6 space-y-4">
+      <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl p-6 space-y-4">
+        <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
-            <Label className="text-gray-400 text-sm">Character Name *</Label>
-            <Input
-              value={characterName}
-              onChange={(e) => setCharacterName(e.target.value)}
-              placeholder="Enter your character name"
-              className="mt-1 bg-[#0a0a0a] border-[#1e1e1e]"
-            />
+            <span className="text-gray-500">Applicant</span>
+            <div className="text-white mt-0.5">{session.user.name ?? "—"}</div>
           </div>
-
           <div>
-            <Label className="text-gray-400 text-sm">Discord ID *</Label>
-            <Input
-              value={discordId}
-              onChange={(e) => setDiscordId(e.target.value)}
-              placeholder="Your Discord user ID"
-              className="mt-1 bg-[#0a0a0a] border-[#1e1e1e]"
-            />
-          </div>
-
-          <div>
-            <Label className="text-gray-400 text-sm">Current Role *</Label>
-            <Input
-              value={currentRole}
-              onChange={(e) => setCurrentRole(e.target.value)}
-              placeholder="e.g., EMT, Paramedic, etc."
-              className="mt-1 bg-[#0a0a0a] border-[#1e1e1e]"
-            />
-          </div>
-
-          <div>
-            <Label className="text-gray-400 text-sm">Previous FTP Experience</Label>
-            <textarea
-              value={previousExperience}
-              onChange={(e) => setPreviousExperience(e.target.value)}
-              placeholder="Describe any previous training experience..."
-              rows={3}
-              className="mt-1 w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#dc2626] resize-none"
-            />
-          </div>
-
-          <div>
-            <Label className="text-gray-400 text-sm">Department *</Label>
-            <select
-              value={department}
-              onChange={(e) => setDepartment(e.target.value)}
-              className="mt-1 w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#dc2626]"
-            >
-              <option value="">Select department</option>
-              {DEPARTMENTS.map((d) => (
-                <option key={d} value={d}>{d}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="pt-4">
-            <Button
-              onClick={handleSubmit}
-              disabled={loading || !characterName || !discordId || !currentRole || !department}
-              className="w-full bg-[#dc2626] text-black hover:bg-[#b91c1c]"
-            >
-              {loading ? "Submitting..." : "Submit Application"}
-            </Button>
+            <span className="text-gray-500">Rank</span>
+            <div className={`mt-0.5 ${eligible ? "text-white" : "text-yellow-300"}`}>
+              {rank ?? "No roster entry"}
+            </div>
           </div>
         </div>
-      </main>
-    </div>
+
+        <div>
+          <Label className="text-gray-400 text-sm">Previous FTP Experience</Label>
+          <textarea
+            value={previousExperience}
+            onChange={(e) => setPreviousExperience(e.target.value)}
+            placeholder="Describe any previous training experience..."
+            rows={4}
+            disabled={!eligible}
+            className="mt-1 w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#dc2626] resize-none disabled:opacity-50"
+          />
+        </div>
+
+        <div className="pt-2">
+          <Button
+            onClick={handleSubmit}
+            disabled={loading || !eligible}
+            className="w-full bg-[#dc2626] text-black hover:bg-[#b91c1c]"
+          >
+            {loading ? "Submitting..." : "Submit Application"}
+          </Button>
+        </div>
+      </div>
+    </Shell>
   );
 }
