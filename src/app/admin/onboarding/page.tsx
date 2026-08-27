@@ -46,7 +46,6 @@ export default function AdminOnboardingPage() {
       body: JSON.stringify({
         status: "Approved",
         assignedRank: rank,
-        reviewedBy: "Admin",
       }),
     });
     setReviewingId(null);
@@ -57,7 +56,7 @@ export default function AdminOnboardingPage() {
     await fetch(`/api/onboarding/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: "Declined", reviewedBy: "Admin" }),
+      body: JSON.stringify({ status: "Declined" }),
     });
     fetchData();
   };

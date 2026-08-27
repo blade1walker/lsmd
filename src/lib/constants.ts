@@ -62,6 +62,7 @@ export const ALL_PERMISSIONS = [
   "onboarding.view",
   "onboarding.approve",
   "roles.manage",
+  "audit.view",
 ] as const;
 
 export type Permission = (typeof ALL_PERMISSIONS)[number];

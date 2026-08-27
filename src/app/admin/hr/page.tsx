@@ -95,7 +95,7 @@ export default function AdminHrPage() {
       const res = await fetch(`/api/removal-requests/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status, reviewedBy: "Admin" }),
+        body: JSON.stringify({ status }),
       });
       if (!res.ok) throw new Error("Failed");
       toast.success(`Removal ${status.toLowerCase()}`);

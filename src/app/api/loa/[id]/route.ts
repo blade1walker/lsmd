@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied } from "@/lib/api-auth";
+import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
 import { apiError } from "@/lib/api-error";
+import { logAudit } from "@/lib/audit";
 import { postToLOAWebhook, sendDiscordDM, getNotificationSettings } from "@/lib/discord-webhook";
 
 export async function PATCH(
@@ -79,6 +80,17 @@ export async function PATCH(
       await prisma.member.update({
         where: { id: loa.memberId },
         data: { activity: "Active" },
+      });
+    }
+
+    if (status === "Approved" || status === "Declined") {
+      await logAudit({
+        action: status === "Approved" ? "approve" : "decline",
+        entityType: "LOA",
+        entityId: loa.id,
+        entityLabel: loa.member.name,
+        details: { reason: loa.reason || null },
+        performedBy: actorLabel(auth.access),
       });
     }
 

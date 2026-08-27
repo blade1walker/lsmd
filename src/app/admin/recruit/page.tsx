@@ -194,7 +194,7 @@ export default function AdminRecruitPage() {
       const res = await fetch(`/api/recruit/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status, reviewNote, customMessage, reviewedBy: "HR" }),
+        body: JSON.stringify({ status, reviewNote, customMessage }),
       });
       if (res.ok) {
         setRequests((prev) =>

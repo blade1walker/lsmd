@@ -46,7 +46,7 @@ async function main() {
             "training.view", "training.manage", "training.signoff.manage",
             "clock.view", "notifications", "templates", "radio.edit",
             "onboarding.view", "onboarding.approve",
-            "roles.manage",
+            "roles.manage", "audit.view",
           ],
         },
         {

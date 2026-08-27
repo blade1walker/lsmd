@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied } from "@/lib/api-auth";
+import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
 import { apiError } from "@/lib/api-error";
+import { logAudit } from "@/lib/audit";
 import { postToEnrollWebhook, sendDiscordDM, getNotificationSettings } from "@/lib/discord-webhook";
 import { SECTION_HINTS } from "@/lib/constants";
 import { getNextCallSign } from "@/lib/callsign";
@@ -16,11 +17,14 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await req.json();
-    const { status, assignedRank, reviewedBy, reviewNote } = body;
+    const { status, assignedRank, reviewNote } = body;
+    const performedBy = actorLabel(auth.access);
 
+    // reviewedBy is always the authenticated caller, not whatever the client
+    // sends — the previous code took reviewedBy straight from the request body.
     const request = await prisma.onboardingRequest.update({
       where: { id },
-      data: { status, assignedRank, reviewedBy, reviewNote },
+      data: { status, assignedRank, reviewedBy: performedBy, reviewNote },
     });
 
     if (status === "Approved" && assignedRank) {
@@ -87,6 +91,17 @@ export async function PATCH(
           .replace(/{name}/g, request.name);
         await sendDiscordDM(request.discordId, msg);
       }
+    }
+
+    if (status === "Approved" || status === "Declined") {
+      await logAudit({
+        action: status === "Approved" ? "approve" : "decline",
+        entityType: "OnboardingRequest",
+        entityId: request.id,
+        entityLabel: request.name,
+        details: { assignedRank: assignedRank || null },
+        performedBy,
+      });
     }
 
     return NextResponse.json(request);

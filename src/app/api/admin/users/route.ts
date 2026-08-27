@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied } from "@/lib/api-auth";
+import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
 import { apiError } from "@/lib/api-error";
+import { logAudit } from "@/lib/audit";
 
 export async function GET() {
   const auth = await requireAuth("roles.manage");
@@ -32,6 +33,16 @@ export async function POST(request: Request) {
         discordName,
         roleId,
       },
+      include: { role: true },
+    });
+
+    await logAudit({
+      action: "create",
+      entityType: "AdminUser",
+      entityId: user.id,
+      entityLabel: user.discordName,
+      details: { role: user.role?.name ?? null },
+      performedBy: actorLabel(auth.access),
     });
 
     return NextResponse.json(user, { status: 201 });
@@ -48,10 +59,25 @@ export async function PATCH(request: Request) {
     const body = await request.json();
     const { id, ...data } = body;
 
+    const before = await prisma.adminUser.findUnique({ where: { id }, include: { role: true } });
     const user = await prisma.adminUser.update({
       where: { id },
       data,
+      include: { role: true },
     });
+
+    if (before?.roleId !== user.roleId) {
+      await logAudit({
+        action: "update",
+        entityType: "AdminUser",
+        entityId: user.id,
+        entityLabel: user.discordName,
+        details: {
+          role: `${before?.role?.name ?? "EMS Member (default)"} -> ${user.role?.name ?? "EMS Member (default)"}`,
+        },
+        performedBy: actorLabel(auth.access),
+      });
+    }
 
     return NextResponse.json(user);
   } catch (error) {
@@ -71,7 +97,16 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "ID required" }, { status: 400 });
     }
 
-    await prisma.adminUser.delete({ where: { id } });
+    const user = await prisma.adminUser.delete({ where: { id } });
+
+    await logAudit({
+      action: "delete",
+      entityType: "AdminUser",
+      entityId: user.id,
+      entityLabel: user.discordName,
+      performedBy: actorLabel(auth.access),
+    });
+
     return NextResponse.json({ success: true });
   } catch (error) {
     return apiError("Failed to delete user", error);

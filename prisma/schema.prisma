@@ -339,3 +339,18 @@ model NotificationSettings {
   webhookUrls          Json?
   botSettings          Json?
 }
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  action      String
+  entityType  String
+  entityId    String
+  entityLabel String
+  details     Json     @default("{}")
+  performedBy String
+  createdAt   DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([performedBy])
+  @@index([createdAt])
+}

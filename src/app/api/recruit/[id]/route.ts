@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied } from "@/lib/api-auth";
+import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
 import { apiError } from "@/lib/api-error";
+import { logAudit } from "@/lib/audit";
 import { postToAcceptWebhook, sendDiscordDM, getNotificationSettings } from "@/lib/discord-webhook";
 
 export async function PATCH(
@@ -14,8 +15,19 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await req.json();
-    const { status, reviewedBy, reviewNote, customMessage, discordId, discordUsername, steamId, characterName, user } = body;
+    const { status, reviewNote, customMessage, discordId, discordUsername, steamId, characterName, user } = body;
+    const performedBy = actorLabel(auth.access);
 
+    // The admin edit modal resends the request's current status alongside
+    // field corrections (discordId, steamId, ...), not just a fresh approval —
+    // so "status is present" is not the same as "status is changing". Without
+    // this, saving an unrelated edit on an already-approved request would
+    // re-send the approval DM/webhook and re-log a duplicate approval.
+    const before = await prisma.recruitRequest.findUnique({ where: { id }, select: { status: true } });
+    const statusChanged = !!status && status !== before?.status;
+
+    // reviewedBy is always the authenticated caller, not whatever the client
+    // sends — the previous code took reviewedBy straight from the request body.
     const request = await prisma.recruitRequest.update({
       where: { id },
       data: {
@@ -25,12 +37,12 @@ export async function PATCH(
         ...(characterName !== undefined && { characterName: characterName || null }),
         ...(user !== undefined && { user: user || null }),
         ...(status && { status }),
-        ...(reviewedBy && { reviewedBy }),
+        ...(statusChanged && { reviewedBy: performedBy }),
         ...(reviewNote !== undefined && { reviewNote }),
       },
     });
 
-    if (status && status !== "Pending") {
+    if (statusChanged && status !== "Pending") {
       const settings = await getNotificationSettings();
       const inviteLink = settings.botSettings?.stateInvite || settings.webhookUrls?.recruit || process.env.DISCORD_STATE_INVITE || "https://discord.gg/YOUR_INVITE";
 
@@ -64,6 +76,16 @@ export async function PATCH(
           await sendDiscordDM(request.discordId, msg);
         }
       }
+    }
+
+    if (statusChanged && (status === "Approved" || status === "Declined")) {
+      await logAudit({
+        action: status === "Approved" ? "approve" : "decline",
+        entityType: "RecruitRequest",
+        entityId: request.id,
+        entityLabel: request.characterName || request.discordId,
+        performedBy,
+      });
     }
 
     return NextResponse.json(request);

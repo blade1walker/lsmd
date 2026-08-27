@@ -49,3 +49,8 @@ export async function requireAuth(permission?: string): Promise<AuthResult> {
 }
 
 export { hasPermission };
+
+/** Human-readable actor for audit entries — the roster name/callsign, falling back to the raw Discord ID for a super admin with no roster entry. */
+export function actorLabel(access: Access): string {
+  return access.memberName ?? access.discordId;
+}

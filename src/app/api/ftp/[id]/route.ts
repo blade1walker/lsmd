@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied } from "@/lib/api-auth";
+import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
 import { apiError } from "@/lib/api-error";
+import { logAudit } from "@/lib/audit";
 import { sendDiscordDM, getNotificationSettings } from "@/lib/discord-webhook";
 
 export async function PATCH(
@@ -14,11 +15,12 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await req.json();
-    const { status, reviewedBy, reviewNote } = body;
+    const { status, reviewNote } = body;
+    const performedBy = actorLabel(auth.access);
 
     const request = await prisma.fTPRequest.update({
       where: { id },
-      data: { status, reviewedBy, reviewNote },
+      data: { status, reviewedBy: performedBy, reviewNote },
     });
 
     const settings = await getNotificationSettings();
@@ -49,6 +51,16 @@ export async function PATCH(
           `Dear ${request.characterName},\n\nWe regret to inform you that your FTP application has been **Declined**.\n\nIf you have questions, please contact HR.`
         );
       }
+    }
+
+    if (status === "Approved" || status === "Declined") {
+      await logAudit({
+        action: status === "Approved" ? "approve" : "decline",
+        entityType: "FTPRequest",
+        entityId: request.id,
+        entityLabel: request.characterName,
+        performedBy,
+      });
     }
 
     return NextResponse.json(request);

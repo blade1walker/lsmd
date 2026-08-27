@@ -22,6 +22,7 @@ import {
   BookOpen,
   ChevronLeft,
   MessageSquare,
+  ScrollText,
   Menu,
 } from "lucide-react";
 
@@ -45,6 +46,7 @@ const navItems = [
   { href: "/admin/notification-settings", label: "Notify Settings", icon: Settings, permission: "notifications" },
   { href: "/admin/notifications", label: "Notifications", icon: Bell, permission: "notifications" },
   { href: "/admin/messaging", label: "Bot Messaging", icon: MessageSquare, permission: "notifications" },
+  { href: "/admin/audit", label: "Audit Log", icon: ScrollText, permission: "audit.view" },
 ];
 
 export default function AdminLayout({
