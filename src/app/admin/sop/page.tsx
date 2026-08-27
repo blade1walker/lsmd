@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ErrorState } from "@/components/ui/error-state";
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
+import { LEGACY_DOC_ID } from "@/lib/sop";
 import { Save, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -48,6 +49,9 @@ export default function AdminSopPage() {
   const selectedDoc = docs.find((d) => d.id === selectedId) ?? null;
   const content = selectedDoc ? drafts[selectedDoc.id] ?? selectedDoc.content : "";
   const isDirty = !!selectedDoc && drafts[selectedDoc.id] !== undefined && drafts[selectedDoc.id] !== selectedDoc.content;
+  // Served from the legacy SopContent row because SopDocument does not exist
+  // yet; it is synthetic, so it cannot be edited, renamed or deleted.
+  const isLegacy = selectedDoc?.id === LEGACY_DOC_ID;
 
   const handleSave = async () => {
     if (!selectedDoc) return;
@@ -165,7 +169,7 @@ export default function AdminSopPage() {
               ))}
             </select>
 
-            {selectedDoc && (
+            {selectedDoc && !isLegacy && (
               <Input
                 key={selectedDoc.id}
                 defaultValue={selectedDoc.title}
@@ -183,14 +187,14 @@ export default function AdminSopPage() {
               variant="ghost"
               className="text-red-400 ml-auto"
               onClick={handleDelete}
-              disabled={!selectedDoc}
+              disabled={!selectedDoc || isLegacy}
             >
               <Trash2 className="w-4 h-4 mr-1" />
               Delete
             </Button>
             <Button
               onClick={handleSave}
-              disabled={saving || !selectedDoc || !isDirty}
+              disabled={saving || !selectedDoc || !isDirty || isLegacy}
               className="bg-[#dc2626] text-black hover:bg-[#b91c1c]"
             >
               <Save className="w-4 h-4 mr-2" />
@@ -198,12 +202,25 @@ export default function AdminSopPage() {
             </Button>
           </div>
 
+          {isLegacy && (
+            <div className="mb-4 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-sm text-yellow-200">
+              <p className="font-medium">Read-only — the SopDocument table does not exist yet.</p>
+              <p className="text-yellow-200/80 mt-1">
+                Your existing SOP is shown below from the old storage. Run{" "}
+                <code className="bg-black/30 px-1 rounded">npm run db:push</code> then{" "}
+                <code className="bg-black/30 px-1 rounded">npm run db:migrate-sop</code> against the
+                database to enable editing and multiple documents.
+              </p>
+            </div>
+          )}
+
           <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl overflow-hidden">
             <div className="px-4 py-3 border-b border-[#1e1e1e] flex items-center gap-2">
               <span className="text-xs text-gray-500">Markdown</span>
             </div>
             <textarea
               value={content}
+              readOnly={isLegacy}
               onChange={(e) =>
                 selectedDoc && setDrafts((prev) => ({ ...prev, [selectedDoc.id]: e.target.value }))
               }

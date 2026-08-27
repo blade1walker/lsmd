@@ -15,7 +15,7 @@
     "db:radio-codes": "npx tsx scripts/update-radio-codes.ts",
     "db:migrate-sop": "npx tsx scripts/migrate-sop.ts",
     "db:reset": "npx prisma db push --force-reset && npm run db:seed",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate && node scripts/deploy-schema.mjs"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

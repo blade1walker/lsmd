@@ -3,6 +3,19 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
+import { LEGACY_DOC_ID } from "@/lib/sop";
+
+/** The legacy fallback document is synthetic, so writes to it cannot succeed. */
+const legacyReadOnly = () =>
+  NextResponse.json(
+    {
+      error: "This SOP is read-only",
+      detail:
+        "The SopDocument table does not exist yet, so the previous SOP is being shown read-only. " +
+        "Run `npm run db:push`, then `npm run db:migrate-sop`, to enable editing.",
+    },
+    { status: 409 }
+  );
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAuth("sop.edit");
@@ -10,6 +23,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   try {
     const { id } = await params;
+    if (id === LEGACY_DOC_ID) return legacyReadOnly();
+
     const { title, content, order } = await req.json();
 
     if (title !== undefined && !String(title).trim()) {
@@ -50,6 +65,8 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
   try {
     const { id } = await params;
+    if (id === LEGACY_DOC_ID) return legacyReadOnly();
+
     const doc = await prisma.sopDocument.delete({ where: { id } });
 
     await logAudit({
