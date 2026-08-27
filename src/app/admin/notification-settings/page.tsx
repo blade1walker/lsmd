@@ -30,6 +30,8 @@ interface Settings {
   loaWebhookDecline: string;
   loaDMApprove: string;
   loaDMDecline: string;
+  promotionWebhook: boolean;
+  promotionWebhookMessage: string;
   testWebhook: boolean;
   testDM: boolean;
   webhookUrls: { recruit?: string; onboarding?: string; ftp?: string; loa?: string; accept?: string } | null;
@@ -57,6 +59,8 @@ const DEFAULTS: Settings = {
   loaWebhookDecline: "LOA Declined for {name}",
   loaDMApprove: "Your Leave of Absence has been **Approved**.\n\nStart: {startDate}\nEnd: {endDate}\nReason: {reason}",
   loaDMDecline: "Your Leave of Absence request has been **Declined**.\n\nIf you have questions, please contact HR.",
+  promotionWebhook: true,
+  promotionWebhookMessage: "🎉 Congratulations {name} ({callSign})! You have been promoted from **{fromRank}** to **{toRank}**!",
   testWebhook: true,
   testDM: true,
   webhookUrls: null,
@@ -68,6 +72,7 @@ const VARIABLES_HELP: Record<string, string[]> = {
   onboarding: ["{name}", "{rank}", "{callSign}", "{stateId}", "{inviteLink}"],
   ftp: ["{name}", "{inviteLink}"],
   loa: ["{name}", "{startDate}", "{endDate}", "{reason}"],
+  promotion: ["{name}", "{callSign}", "{fromRank}", "{toRank}"],
 };
 
 export default function AdminNotificationSettingsPage() {
@@ -324,6 +329,26 @@ export default function AdminNotificationSettingsPage() {
                 <MessageField label="Webhook - Declined" value={settings.loaWebhookDecline} onChange={(v) => setSettings({ ...settings, loaWebhookDecline: v })} />
                 <MessageField label="DM - Approved" value={settings.loaDMApprove} onChange={(v) => setSettings({ ...settings, loaDMApprove: v })} />
                 <MessageField label="DM - Declined" value={settings.loaDMDecline} onChange={(v) => setSettings({ ...settings, loaDMDecline: v })} />
+              </div>
+            )}
+          </div>
+
+          {/* Promotion */}
+          <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-[#1e1e1e] flex items-center justify-between cursor-pointer hover:bg-white/5" onClick={() => setExpanded(expanded === "promotion" ? null : "promotion")}>
+              <div>
+                <h3 className="font-[family-name:var(--font-oswald)] text-sm font-semibold text-white uppercase">Promotion</h3>
+                <p className="text-gray-500 text-xs mt-0.5">Posted to the channel whenever a member's rank increases</p>
+              </div>
+              {expanded === "promotion" ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
+            </div>
+            <div className="divide-y divide-[#1e1e1e]/50">
+              <Toggle label="Webhook" checked={settings.promotionWebhook} onChange={(v) => setSettings({ ...settings, promotionWebhook: v })} />
+            </div>
+            {expanded === "promotion" && (
+              <div className="border-t border-[#1e1e1e] p-4 space-y-4">
+                <p className="text-gray-500 text-xs"><strong>Variables:</strong> {"{name}"} {"{callSign}"} {"{fromRank}"} {"{toRank}"}</p>
+                <MessageField label="Webhook - Promoted" value={settings.promotionWebhookMessage} onChange={(v) => setSettings({ ...settings, promotionWebhookMessage: v })} />
               </div>
             )}
           </div>

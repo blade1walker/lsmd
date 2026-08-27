@@ -3,7 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
-import { SECTION_HINTS } from "@/lib/constants";
+import { SECTION_HINTS, getRankWeight } from "@/lib/constants";
+import { getNextCallSign } from "@/lib/callsign";
+import { getNotificationSettings, postToPromotionWebhook } from "@/lib/discord-webhook";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAuth("roster.edit");
@@ -16,7 +18,25 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (body.dateOfJoining) body.dateOfJoining = new Date(body.dateOfJoining);
     if (body.lastPromotion) body.lastPromotion = new Date(body.lastPromotion);
 
-    const before = await prisma.member.findUnique({ where: { id }, select: { rank: true, activity: true } });
+    const before = await prisma.member.findUnique({
+      where: { id },
+      select: { rank: true, activity: true, callSign: true },
+    });
+
+    // A promotion is any rank change to a strictly higher weight, whether it
+    // came from the dedicated Promote button (which never sends callSign) or
+    // an inline edit (which always resends the current one, changed or not).
+    const isPromotion =
+      !!before && !!body.rank && body.rank !== before.rank && getRankWeight(body.rank) > getRankWeight(before.rank);
+
+    // Reassign the call sign for the new rank on promotion — unless the same
+    // request also set a different call sign on purpose, which takes
+    // precedence over the automatic one.
+    if (isPromotion && (body.callSign === undefined || body.callSign === before.callSign)) {
+      const nextCallSign = await getNextCallSign(body.rank);
+      if (nextCallSign) body.callSign = nextCallSign;
+    }
+
     const member = await prisma.member.update({
       where: { id },
       data: body,
@@ -47,6 +67,35 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       },
       performedBy: actorLabel(auth.access),
     });
+
+    if (isPromotion && before) {
+      const performedBy = actorLabel(auth.access);
+
+      // PromotionNotification already existed in the schema and is already
+      // read by the dashboard's "Recent Promotions" widget and the in-app
+      // notifications page — nothing ever wrote a row, so both were
+      // permanently empty until now.
+      await prisma.promotionNotification.create({
+        data: {
+          memberId: member.id,
+          memberName: member.name,
+          callSign: member.callSign,
+          fromRank: before.rank,
+          toRank: member.rank,
+          promotedBy: performedBy,
+        },
+      });
+
+      const settings = await getNotificationSettings();
+      if (settings.promotionWebhook) {
+        const message = settings.promotionWebhookMessage
+          .replace(/{name}/g, member.name)
+          .replace(/{callSign}/g, member.callSign ?? "N/A")
+          .replace(/{fromRank}/g, before.rank)
+          .replace(/{toRank}/g, member.rank);
+        await postToPromotionWebhook(message);
+      }
+    }
 
     return NextResponse.json(member);
   } catch (error) {

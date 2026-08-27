@@ -31,6 +31,8 @@ export async function getNotificationSettings() {
       loaWebhookDecline: string;
       loaDMApprove: string;
       loaDMDecline: string;
+      promotionWebhook: boolean;
+      promotionWebhookMessage: string;
       testWebhook: boolean;
       testDM: boolean;
       webhookUrls: any;
@@ -58,6 +60,8 @@ export async function getNotificationSettings() {
       loaWebhookDecline: "LOA Declined for {name}",
       loaDMApprove: "Your Leave of Absence has been **Approved**.\n\nStart: {startDate}\nEnd: {endDate}\nReason: {reason}",
       loaDMDecline: "Your Leave of Absence request has been **Declined**.\n\nIf you have questions, please contact HR.",
+      promotionWebhook: true,
+      promotionWebhookMessage: "🎉 Congratulations {name} ({callSign})! You have been promoted from **{fromRank}** to **{toRank}**!",
       testWebhook: true,
       testDM: true,
       webhookUrls: null,
@@ -118,6 +122,22 @@ export async function postToEnrollWebhook(embed: {
 }) {
   const webhookUrl = process.env.DISCORD_ENROLL_WEBHOOK_URL;
   if (webhookUrl) await postToWebhook(webhookUrl, embed);
+}
+
+/** Plain content post, matching postToAcceptWebhook's shape — a rank change reads better as a one-line channel message than an embed. */
+export async function postToPromotionWebhook(content: string) {
+  const webhookUrl = process.env.DISCORD_PROMOTION_WEBHOOK_URL;
+  if (!webhookUrl) return;
+
+  try {
+    await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: "Nexus EMS HR", content }),
+    });
+  } catch (err) {
+    console.error("Failed to post to promotion webhook:", err);
+  }
 }
 
 export async function postToAcceptWebhook(content: string, imageUrl?: string) {
