@@ -24,6 +24,7 @@ interface Settings {
   ftpDM: boolean;
   ftpDMApprove: string;
   ftpDMDecline: string;
+  ftpWebhookApprove: string;
   loaWebhook: boolean;
   loaDM: boolean;
   loaWebhookApprove: string;
@@ -51,8 +52,9 @@ const DEFAULTS: Settings = {
   onboardingDMDecline: "Dear {name},\n\nWe regret to inform you that your application has been **Declined**.\n\nIf you have questions, please contact HR.",
   ftpWebhook: false,
   ftpDM: true,
-  ftpDMApprove: "Congratulations, {name}! 🎉\n\nYour Field Training Program (FTP) application has been **Accepted**!\n\nYou will be assigned an FTP role and a trainer will reach out to you shortly.\n\nJoin our state Discord server:\n{inviteLink}",
+  ftpDMApprove: "Congratulations, {name}! 🎉\n\nYour Field Training Program (FTP) application has been **Accepted**! You have been assigned the FTP role and a trainer will reach out to you shortly.\n\nJoin our state Discord server:\n{inviteLink}",
   ftpDMDecline: "Dear {name},\n\nWe regret to inform you that your FTP application has been **Declined**.\n\nIf you have questions, please contact HR.",
+  ftpWebhookApprove: "🎓 {name} ({callSign}) has enrolled in the Field Training Program!",
   loaWebhook: true,
   loaDM: false,
   loaWebhookApprove: "LOA Approved for {name}",
@@ -70,7 +72,7 @@ const DEFAULTS: Settings = {
 const VARIABLES_HELP: Record<string, string[]> = {
   recruit: ["<@ID>", "{name}", "{inviteLink}"],
   onboarding: ["{name}", "{rank}", "{callSign}", "{stateId}", "{inviteLink}"],
-  ftp: ["{name}", "{inviteLink}"],
+  ftp: ["{name}", "{inviteLink}", "{callSign}"],
   loa: ["{name}", "{startDate}", "{endDate}", "{reason}"],
   promotion: ["{name}", "{callSign}", "{fromRank}", "{toRank}"],
 };
@@ -302,7 +304,8 @@ export default function AdminNotificationSettingsPage() {
             </div>
             {expanded === "ftp" && (
               <div className="border-t border-[#1e1e1e] p-4 space-y-4">
-                <p className="text-gray-500 text-xs"><strong>Variables:</strong> {"{name}"} {"{inviteLink}"}</p>
+                <p className="text-gray-500 text-xs"><strong>Variables:</strong> {"{name}"} {"{inviteLink}"} {"{callSign}"} (webhook only)</p>
+                <MessageField label="Webhook - Enrolled" value={settings.ftpWebhookApprove} onChange={(v) => setSettings({ ...settings, ftpWebhookApprove: v })} />
                 <MessageField label="DM - Approved" value={settings.ftpDMApprove} onChange={(v) => setSettings({ ...settings, ftpDMApprove: v })} />
                 <MessageField label="DM - Declined" value={settings.ftpDMDecline} onChange={(v) => setSettings({ ...settings, ftpDMDecline: v })} />
               </div>

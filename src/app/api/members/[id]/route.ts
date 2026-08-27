@@ -6,6 +6,7 @@ import { logAudit } from "@/lib/audit";
 import { SECTION_HINTS, getRankWeight } from "@/lib/constants";
 import { getNextCallSign } from "@/lib/callsign";
 import { getNotificationSettings, postToPromotionWebhook } from "@/lib/discord-webhook";
+import { removeFtpDiscordRole } from "@/lib/discord-roles";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAuth("roster.edit");
@@ -20,7 +21,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     const before = await prisma.member.findUnique({
       where: { id },
-      select: { rank: true, activity: true, callSign: true },
+      select: { rank: true, activity: true, callSign: true, category: true, discordId: true },
     });
 
     // A promotion is any rank change to a strictly higher weight, whether it
@@ -64,9 +65,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         fields: changedFields.join(", "),
         rank: before && body.rank && before.rank !== body.rank ? `${before.rank} -> ${body.rank}` : null,
         activity: before && body.activity && before.activity !== body.activity ? `${before.activity} -> ${body.activity}` : null,
+        category: before && body.category !== undefined && before.category !== body.category ? `${before.category ?? "none"} -> ${body.category ?? "none"}` : null,
       },
       performedBy: actorLabel(auth.access),
     });
+
+    // The roster is the source of truth for FTP status; Discord follows it.
+    // Triggers on any transition off "FTP" — the inline category edit and any
+    // future "remove FTP" action alike — not just a dedicated button.
+    const leftFtp = before?.category === "FTP" && body.category !== undefined && body.category !== "FTP";
+    if (leftFtp && member.discordId) {
+      await removeFtpDiscordRole(member.discordId);
+    }
 
     if (isPromotion && before) {
       const performedBy = actorLabel(auth.access);
@@ -126,6 +136,10 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     });
 
     await prisma.member.delete({ where: { id } });
+
+    if (member.category === "FTP" && member.discordId) {
+      await removeFtpDiscordRole(member.discordId);
+    }
 
     await logAudit({
       action: "delete",

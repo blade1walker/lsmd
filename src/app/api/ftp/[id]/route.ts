@@ -3,7 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
-import { sendDiscordDM, getNotificationSettings } from "@/lib/discord-webhook";
+import { sendDiscordDM, postToFtpWebhook, getNotificationSettings } from "@/lib/discord-webhook";
+import { addFtpDiscordRole } from "@/lib/discord-roles";
 
 export async function PATCH(
   req: NextRequest,
@@ -35,21 +36,32 @@ export async function PATCH(
           where: { id: member.id },
           data: { category: "FTP" },
         });
+
+        // Grants the Discord server role — a no-op until DISCORD_GUILD_ID and
+        // DISCORD_FTP_ROLE_ID are configured. Not fatal if it fails: the
+        // roster is the source of truth, Discord is kept in sync with it.
+        await addFtpDiscordRole(request.discordId);
       }
 
+      const inviteLink = settings.botSettings?.stateInvite || process.env.DISCORD_STATE_INVITE || "https://discord.gg/YOUR_INVITE";
+
       if (settings.ftpDM) {
-        const inviteLink = settings.botSettings?.stateInvite || process.env.DISCORD_STATE_INVITE || "https://discord.gg/YOUR_INVITE";
-        await sendDiscordDM(
-          request.discordId,
-          `Congratulations, ${request.characterName}! 🎉\n\nYour Field Training Program (FTP) application has been **Accepted**!\n\nYou will be assigned an FTP role and a trainer will reach out to you shortly.\n\nJoin our state Discord server:\n${inviteLink}`
-        );
+        const msg = settings.ftpDMApprove
+          .replace(/{name}/g, request.characterName)
+          .replace(/{inviteLink}/g, inviteLink);
+        await sendDiscordDM(request.discordId, msg);
+      }
+
+      if (settings.ftpWebhook) {
+        const msg = settings.ftpWebhookApprove
+          .replace(/{name}/g, request.characterName)
+          .replace(/{callSign}/g, member?.callSign ?? "N/A");
+        await postToFtpWebhook(msg);
       }
     } else if (status === "Declined") {
       if (settings.ftpDM) {
-        await sendDiscordDM(
-          request.discordId,
-          `Dear ${request.characterName},\n\nWe regret to inform you that your FTP application has been **Declined**.\n\nIf you have questions, please contact HR.`
-        );
+        const msg = settings.ftpDMDecline.replace(/{name}/g, request.characterName);
+        await sendDiscordDM(request.discordId, msg);
       }
     }
 

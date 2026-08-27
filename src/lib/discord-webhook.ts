@@ -25,6 +25,7 @@ export async function getNotificationSettings() {
       ftpDM: boolean;
       ftpDMApprove: string;
       ftpDMDecline: string;
+      ftpWebhookApprove: string;
       loaWebhook: boolean;
       loaDM: boolean;
       loaWebhookApprove: string;
@@ -52,8 +53,9 @@ export async function getNotificationSettings() {
       onboardingDMDecline: "Dear {name},\n\nWe regret to inform you that your application has been **Declined**.\n\nIf you have questions, please contact HR.",
       ftpWebhook: false,
       ftpDM: true,
-      ftpDMApprove: "Congratulations, {name}! 🎉\n\nYour Field Training Program (FTP) application has been **Accepted**!\n\nYou will be assigned an FTP role and a trainer will reach out to you shortly.\n\nJoin our state Discord server:\n{inviteLink}",
+      ftpDMApprove: "Congratulations, {name}! 🎉\n\nYour Field Training Program (FTP) application has been **Accepted**! You have been assigned the FTP role and a trainer will reach out to you shortly.\n\nJoin our state Discord server:\n{inviteLink}",
       ftpDMDecline: "Dear {name},\n\nWe regret to inform you that your FTP application has been **Declined**.\n\nIf you have questions, please contact HR.",
+      ftpWebhookApprove: "🎓 {name} ({callSign}) has enrolled in the Field Training Program!",
       loaWebhook: true,
       loaDM: false,
       loaWebhookApprove: "LOA Approved for {name}",
@@ -122,6 +124,21 @@ export async function postToEnrollWebhook(embed: {
 }) {
   const webhookUrl = process.env.DISCORD_ENROLL_WEBHOOK_URL;
   if (webhookUrl) await postToWebhook(webhookUrl, embed);
+}
+
+export async function postToFtpWebhook(content: string) {
+  const webhookUrl = process.env.DISCORD_FTP_WEBHOOK_URL;
+  if (!webhookUrl) return;
+
+  try {
+    await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: "Nexus EMS HR", content }),
+    });
+  } catch (err) {
+    console.error("Failed to post to FTP webhook:", err);
+  }
 }
 
 /** Plain content post, matching postToAcceptWebhook's shape — a rank change reads better as a one-line channel message than an embed. */
