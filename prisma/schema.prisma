@@ -60,9 +60,21 @@ model ClockEntry {
   member      Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
 }
 
+// Superseded by SopDocument, which supports more than one SOP. Kept rather
+// than dropped so `db push` does not destroy the content a live database
+// still holds — scripts/migrate-sop.ts copies it into SopDocument.
 model SopContent {
   id        String   @id @default("sop-main")
   content   String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SopDocument {
+  id        String   @id @default(cuid())
+  title     String
+  content   String   @default("")
+  order     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

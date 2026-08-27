@@ -109,13 +109,14 @@ async function main() {
     console.log("  Created 4 category templates");
   }
 
-  // SOP Content
-  const sopCount = await prisma.sopContent.count();
-  if (sopCount === 0) {
+  // SOP Documents
+  const sopDocCount = await prisma.sopDocument.count();
+  if (sopDocCount === 0) {
     console.log("Creating default SOP...");
-    await prisma.sopContent.create({
+    await prisma.sopDocument.create({
       data: {
-        id: "sop-main",
+        title: "General SOP",
+        order: 0,
         content: "# LSMD Standard Operating Procedure\n\nWelcome to the Los Santos Medical Department SOP.\n\n*Edit this content from the Admin Panel > SOP Editor.*",
       },
     });
