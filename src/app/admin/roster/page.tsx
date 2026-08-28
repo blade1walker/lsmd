@@ -33,9 +33,14 @@ interface Section {
   }>;
 }
 
+interface DepartmentOption { id: string; name: string; }
+
 export default function AdminRosterPage() {
   const [sections, setSections] = useState<Section[]>([]);
+  const [departmentOptions, setDepartmentOptions] = useState<DepartmentOption[]>([]);
   const [search, setSearch] = useState("");
+  const [rankFilter, setRankFilter] = useState("");
+  const [deptFilter, setDeptFilter] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +48,12 @@ export default function AdminRosterPage() {
   const fetchData = useCallback(async () => {
     setError(null);
     try {
-      setSections(await fetchList<Section>("/api/members"));
+      const [sectionList, deptList] = await Promise.all([
+        fetchList<Section>("/api/members"),
+        fetchList<DepartmentOption>("/api/admin/departments"),
+      ]);
+      setSections(sectionList);
+      setDepartmentOptions(deptList);
     } catch (err) {
       setError(errorMessage(err));
       setSections([]);
@@ -104,6 +114,8 @@ export default function AdminRosterPage() {
     .map((s) => ({
       ...s,
       members: s.members.filter((m) => {
+        if (rankFilter && m.rank !== rankFilter) return false;
+        if (deptFilter && m.dept !== deptFilter) return false;
         if (!search) return true;
         const q = search.toLowerCase();
         return (
@@ -116,6 +128,12 @@ export default function AdminRosterPage() {
     .filter((s) => s.members.length > 0);
 
   const allMembers = sections.flatMap((s) => s.members);
+  const filteredCount = filteredSections.reduce((n, s) => n + s.members.length, 0);
+  // The dropdown always includes every managed department name (even ones no
+  // member currently has) plus, defensively, any raw dept string already on
+  // a member that predates the department list — so the filter can still
+  // find them.
+  const deptNames = [...new Set([...departmentOptions.map((d) => d.name), ...allMembers.map((m) => m.dept)])].sort();
 
   return (
     <div>
@@ -124,15 +142,39 @@ export default function AdminRosterPage() {
           <h1 className="font-[family-name:var(--font-oswald)] text-2xl font-bold text-white uppercase">
             Roster Management
           </h1>
-          <p className="text-gray-500 text-sm mt-1">{allMembers.length} total members</p>
+          <p className="text-gray-500 text-sm mt-1">
+            {rankFilter || deptFilter
+              ? `${filteredCount} of ${allMembers.length} members`
+              : `${allMembers.length} total members`}
+          </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <Input
             placeholder="Search members..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-64"
+            className="w-56"
           />
+          <select
+            value={rankFilter}
+            onChange={(e) => setRankFilter(e.target.value)}
+            className="h-9 rounded-md border border-[#1e1e1e] bg-[#111111] px-3 text-sm text-white"
+          >
+            <option value="">All ranks</option>
+            {RANK_NAMES.map((r) => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
+          <select
+            value={deptFilter}
+            onChange={(e) => setDeptFilter(e.target.value)}
+            className="h-9 rounded-md border border-[#1e1e1e] bg-[#111111] px-3 text-sm text-white"
+          >
+            <option value="">All departments</option>
+            {deptNames.map((d) => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
           <Button
             variant="outline"
             onClick={() => window.open("/api/admin/export?type=members", "_blank")}
@@ -181,6 +223,7 @@ export default function AdminRosterPage() {
                       <th className="text-left py-3 px-4 text-gray-500 font-medium">Rank</th>
                       <th className="text-left py-3 px-4 text-gray-500 font-medium">Status</th>
                       <th className="text-left py-3 px-4 text-gray-500 font-medium">Temp Rank</th>
+                      <th className="text-left py-3 px-4 text-gray-500 font-medium">Department</th>
                       <th className="text-left py-3 px-4 text-gray-500 font-medium">Category</th>
                       <th className="text-left py-3 px-4 text-gray-500 font-medium">Actions</th>
                     </tr>
@@ -190,6 +233,7 @@ export default function AdminRosterPage() {
                       <MemberRow
                         key={member.id}
                         member={member}
+                        departments={departmentOptions.map((d) => d.name)}
                         onUpdate={handleUpdate}
                         onDelete={handleDelete}
                         onPromote={handlePromote}
@@ -208,6 +252,7 @@ export default function AdminRosterPage() {
         open={showAdd}
         onOpenChange={setShowAdd}
         sections={sections}
+        departments={departmentOptions.map((d) => d.name)}
         onAdd={() => fetchData()}
       />
     </div>

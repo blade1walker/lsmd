@@ -28,13 +28,14 @@ interface Member {
 
 interface MemberRowProps {
   member: Member;
+  departments: string[];
   onUpdate: (id: string, data: Partial<Member>) => void;
   onDelete: (id: string) => void;
   onPromote: (id: string) => void;
   onDemote: (id: string) => void;
 }
 
-export default function MemberRow({ member, onUpdate, onDelete, onPromote, onDemote }: MemberRowProps) {
+export default function MemberRow({ member, departments, onUpdate, onDelete, onPromote, onDemote }: MemberRowProps) {
   const [editing, setEditing] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({
@@ -42,6 +43,7 @@ export default function MemberRow({ member, onUpdate, onDelete, onPromote, onDem
     callSign: member.callSign ?? "",
     rank: member.rank,
     activity: member.activity,
+    dept: member.dept,
     timezone: member.timezone ?? "",
     tempRank: member.tempRank ?? "",
     category: member.category ?? "",
@@ -55,6 +57,7 @@ export default function MemberRow({ member, onUpdate, onDelete, onPromote, onDem
       callSign: editForm.callSign || null,
       rank: editForm.rank,
       activity: editForm.activity,
+      dept: editForm.dept,
       timezone: editForm.timezone || null,
       tempRank: editForm.tempRank || null,
       category: editForm.category || null,
@@ -110,6 +113,28 @@ export default function MemberRow({ member, onUpdate, onDelete, onPromote, onDem
           />
         </td>
         <td className="py-2 px-4">
+          {departments.length > 0 ? (
+            <Select
+              value={editForm.dept}
+              onChange={(e) => setEditForm((p) => ({ ...p, dept: e.target.value }))}
+              className="h-8 text-xs"
+            >
+              {!departments.includes(editForm.dept) && (
+                <option value={editForm.dept}>{editForm.dept}</option>
+              )}
+              {departments.map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </Select>
+          ) : (
+            <Input
+              value={editForm.dept}
+              onChange={(e) => setEditForm((p) => ({ ...p, dept: e.target.value }))}
+              className="h-8 text-xs"
+            />
+          )}
+        </td>
+        <td className="py-2 px-4">
           <div className="flex items-center gap-1">
             <Button size="sm" className="h-7 text-xs" onClick={handleSave}>Save</Button>
             <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setEditing(false)}>Cancel</Button>
@@ -144,6 +169,9 @@ export default function MemberRow({ member, onUpdate, onDelete, onPromote, onDem
       </td>
       <td className="py-3 px-4 text-gray-400 text-xs">
         {member.tempRank ?? "—"}
+      </td>
+      <td className="py-3 px-4 text-gray-400 text-xs">
+        {member.dept}
       </td>
       <td className="py-3 px-4">
         {member.category ? (

@@ -12,22 +12,26 @@ interface AddMemberDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   sections: Array<{ id: string; name: string }>;
+  departments: string[];
   onAdd: (member: Record<string, unknown>) => void;
 }
 
-export default function AddMemberDialog({ open, onOpenChange, sections, onAdd }: AddMemberDialogProps) {
-  const [form, setForm] = useState({
-    name: "",
-    rank: "Medical Intern",
-    callSign: "",
-    sectionId: "",
-    activity: "Active",
-    timezone: "",
-    discordId: "",
-    ftoRole: "",
-    tempRank: "",
-    category: "",
-  });
+const BLANK_FORM = {
+  name: "",
+  rank: "Medical Intern",
+  callSign: "",
+  sectionId: "",
+  activity: "Active",
+  dept: "",
+  timezone: "",
+  discordId: "",
+  ftoRole: "",
+  tempRank: "",
+  category: "",
+};
+
+export default function AddMemberDialog({ open, onOpenChange, sections, departments, onAdd }: AddMemberDialogProps) {
+  const [form, setForm] = useState(BLANK_FORM);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,12 +45,13 @@ export default function AddMemberDialog({ open, onOpenChange, sections, onAdd }:
         body: JSON.stringify({
           ...form,
           sectionId: form.sectionId || undefined,
+          dept: form.dept || undefined,
         }),
       });
       if (res.ok) {
         const member = await res.json();
         onAdd(member);
-        setForm({ name: "", rank: "Medical Intern", callSign: "", sectionId: "", activity: "Active", timezone: "", discordId: "", ftoRole: "", tempRank: "", category: "" });
+        setForm(BLANK_FORM);
         onOpenChange(false);
       }
     } catch (err) {
@@ -119,6 +124,21 @@ export default function AddMemberDialog({ open, onOpenChange, sections, onAdd }:
               >
                 {ACTIVITY_STATUSES.map((s) => (
                   <option key={s} value={s}>{s}</option>
+                ))}
+              </Select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="dept">Department</Label>
+              <Select
+                id="dept"
+                value={form.dept}
+                onChange={(e) => setForm((p) => ({ ...p, dept: e.target.value }))}
+              >
+                <option value="">Default (LSMD)</option>
+                {departments.map((d) => (
+                  <option key={d} value={d}>{d}</option>
                 ))}
               </Select>
             </div>

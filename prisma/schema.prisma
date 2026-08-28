@@ -211,6 +211,20 @@ model CategoryTemplate {
   order Int    @default(0)
 }
 
+/**
+ * A named department a roster Member can belong to (Member.dept is a plain
+ * string, matched by name — not a foreign key, so existing values like the
+ * "LSMD" default keep working without a migration). documentLink is one
+ * link an admin can attach — SOPs, a roster doc, whatever that department
+ * wants pinned.
+ */
+model DepartmentTemplate {
+  id           String  @id @default(cuid())
+  name         String  @unique
+  documentLink String?
+  order        Int     @default(0)
+}
+
 model AdminUser {
   id          String    @id @default(cuid())
   discordId   String    @unique
