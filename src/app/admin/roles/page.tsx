@@ -9,7 +9,8 @@ import { ALL_PERMISSIONS } from "@/lib/constants";
 import { ErrorState } from "@/components/ui/error-state";
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
 import { memberDisplayLabel } from "@/lib/utils";
-import { inheritedPermissions } from "@/lib/role-hierarchy";
+import { inheritedPermissions, effectiveRolePermissions } from "@/lib/role-hierarchy";
+import { defaultMemberPermissions } from "@/lib/role-presets";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
 
@@ -63,6 +64,10 @@ export default function AdminRolesPage() {
   // extra permissions granted directly to them, outside of a role.
   const [editingAccessUser, setEditingAccessUser] = useState<AdminUser | null>(null);
   const [accessForm, setAccessForm] = useState({ roleIds: [] as string[], extraPermissions: [] as string[] });
+
+  const [userSearch, setUserSearch] = useState("");
+  // "" = every user, "default" = only those with no role assigned, else a role id.
+  const [userRoleFilter, setUserRoleFilter] = useState("");
 
   const fetchData = useCallback(async () => {
     setError(null);
@@ -190,6 +195,19 @@ export default function AdminRolesPage() {
 
   const sortedRoles = [...roles].sort((a, b) => a.order - b.order);
 
+  const filteredUsers = users.filter((u) => {
+    if (userRoleFilter === "default" && u.roles.length > 0) return false;
+    if (userRoleFilter && userRoleFilter !== "default" && !u.roles.some((r) => r.id === userRoleFilter)) return false;
+
+    const q = userSearch.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      u.discordName.toLowerCase().includes(q) ||
+      u.discordId.includes(q) ||
+      u.roles.some((r) => r.name.toLowerCase().includes(q))
+    );
+  });
+
   const handleMoveRole = async (roleId: string, direction: -1 | 1) => {
     const index = sortedRoles.findIndex((r) => r.id === roleId);
     const otherIndex = index + direction;
@@ -226,10 +244,23 @@ export default function AdminRolesPage() {
     }
   };
 
+  // The role hierarchy means a person's real access can be broader than the
+  // roles they hold by name — this counts what they actually end up with:
+  // every assigned role's own permissions, everything cascaded up from
+  // roles below it, and any extras granted directly.
   const summarizeAccess = (user: AdminUser) => {
     const roleNames = user.roles.map((r) => r.name);
     const base = roleNames.length ? roleNames.join(", ") : "EMS Member (default)";
-    return user.extraPermissions.length > 0 ? `${base} +${user.extraPermissions.length} extra` : base;
+    // Mirrors resolveAccess()'s own fallback: with no roles assigned, the
+    // default role's fixed permission list applies rather than the (empty)
+    // hierarchy cascade, which only has something to cascade from an actual
+    // assigned role.
+    const rolePermissions = user.roles.length
+      ? effectiveRolePermissions(user.roles, roles)
+      : defaultMemberPermissions();
+    const effective = new Set([...rolePermissions, ...user.extraPermissions]);
+    const suffix = user.extraPermissions.length > 0 ? ` +${user.extraPermissions.length} extra` : "";
+    return `${base} — ${effective.size} permission${effective.size === 1 ? "" : "s"}${suffix}`;
   };
 
   return (
@@ -315,12 +346,36 @@ export default function AdminRolesPage() {
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-1">
               <h2 className="font-[family-name:var(--font-oswald)] text-lg font-semibold text-white uppercase">Admin Users</h2>
               <Button size="sm" onClick={() => setShowAddUser(true)}>Add User</Button>
             </div>
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              <Input
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+                placeholder="Search name, Discord ID, or role..."
+                className="h-8 text-xs flex-1 min-w-[160px]"
+              />
+              <select
+                value={userRoleFilter}
+                onChange={(e) => setUserRoleFilter(e.target.value)}
+                className="h-8 rounded-md border border-[#1e1e1e] bg-[#111111] px-2 text-xs text-white"
+              >
+                <option value="">All roles</option>
+                <option value="default">No role (default)</option>
+                {sortedRoles.map((r) => (
+                  <option key={r.id} value={r.id}>{r.name}</option>
+                ))}
+              </select>
+            </div>
+            {(userSearch || userRoleFilter) && (
+              <p className="text-xs text-gray-600 mb-2">
+                {filteredUsers.length} of {users.length} shown
+              </p>
+            )}
             <div className="space-y-2">
-              {users.map((u) => (
+              {filteredUsers.map((u) => (
                 <div key={u.id} className="flex items-center justify-between gap-3 p-3 bg-card border border-[#1e1e1e] rounded-lg">
                   <div className="min-w-0">
                     <div className="text-white font-medium text-sm truncate">{u.discordName}</div>
@@ -342,6 +397,9 @@ export default function AdminRolesPage() {
                 </div>
               ))}
               {users.length === 0 && <p className="text-gray-600 text-sm">No admin users</p>}
+              {users.length > 0 && filteredUsers.length === 0 && (
+                <p className="text-gray-600 text-sm">No admin users match this search/filter</p>
+              )}
             </div>
           </div>
         </div>

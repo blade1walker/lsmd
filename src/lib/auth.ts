@@ -1,6 +1,6 @@
 import { NextAuthOptions } from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
-import { resolveAccess, syncAdminUserFromRoster } from "./access";
+import { resolveAccess, provisionAdminUser, syncAdminUserFromRoster } from "./access";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -44,7 +44,10 @@ export const authOptions: NextAuthOptions = {
       // signIn() fires only on an actual authentication event, unlike jwt()
       // below which re-runs on every session check — so this is the one place
       // that means "someone just logged in" rather than "a page was loaded".
-      if (discordId) await syncAdminUserFromRoster(discordId);
+      if (discordId) {
+        await provisionAdminUser(discordId);
+        await syncAdminUserFromRoster(discordId);
+      }
 
       return true;
     },
