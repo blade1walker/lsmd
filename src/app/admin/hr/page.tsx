@@ -51,6 +51,12 @@ export default function AdminHrPage() {
   const [inactivities, setInactivities] = useState<InactivityRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Guards against a double-click (or a slow response tempting a second
+  // click) firing the same approve/decline twice before the button
+  // re-renders disabled — the server-side atomic guard is what actually
+  // prevents a duplicate webhook either way, this just avoids the pointless
+  // second request in the common case.
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     setError(null);
@@ -76,6 +82,8 @@ export default function AdminHrPage() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleLoaAction = async (id: string, status: string) => {
+    if (processingId) return;
+    setProcessingId(id);
     try {
       const res = await fetch(`/api/loa/${id}`, {
         method: "PATCH",
@@ -87,10 +95,14 @@ export default function AdminHrPage() {
       fetchData();
     } catch {
       toast.error("Failed to update LOA");
+    } finally {
+      setProcessingId(null);
     }
   };
 
   const handleRemovalAction = async (id: string, status: string) => {
+    if (processingId) return;
+    setProcessingId(id);
     try {
       const res = await fetch(`/api/removal-requests/${id}`, {
         method: "PATCH",
@@ -102,10 +114,14 @@ export default function AdminHrPage() {
       fetchData();
     } catch {
       toast.error("Failed to update removal request");
+    } finally {
+      setProcessingId(null);
     }
   };
 
   const handleInactivityAction = async (id: string, status: string) => {
+    if (processingId) return;
+    setProcessingId(id);
     try {
       const res = await fetch(`/api/inactivity-requests/${id}`, {
         method: "PATCH",
@@ -117,6 +133,8 @@ export default function AdminHrPage() {
       fetchData();
     } catch {
       toast.error("Failed to update inactivity request");
+    } finally {
+      setProcessingId(null);
     }
   };
 
@@ -209,6 +227,7 @@ export default function AdminHrPage() {
                     <Button
                       size="sm"
                       onClick={() => handleLoaAction(loa.id, "Approved")}
+                      disabled={processingId === loa.id}
                       className="bg-green-600 hover:bg-green-700 text-white"
                     >
                       <Check className="w-4 h-4 mr-1" /> Approve
@@ -217,6 +236,7 @@ export default function AdminHrPage() {
                       size="sm"
                       variant="ghost"
                       onClick={() => handleLoaAction(loa.id, "Declined")}
+                      disabled={processingId === loa.id}
                       className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
                     >
                       <X className="w-4 h-4 mr-1" /> Decline
@@ -254,10 +274,10 @@ export default function AdminHrPage() {
                   </div>
                   <span className={`px-2 py-0.5 rounded-full text-xs ${statusColor(loa.status)}`}>{loa.status}</span>
                   <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => handleLoaAction(loa.id, "Expired")} className="text-gray-400 hover:text-yellow-400">
+                    <Button variant="ghost" size="sm" onClick={() => handleLoaAction(loa.id, "Expired")} disabled={processingId === loa.id} className="text-gray-400 hover:text-yellow-400">
                       <Clock className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleLoaAction(loa.id, "Cancelled")} className="text-gray-400 hover:text-red-400">
+                    <Button variant="ghost" size="sm" onClick={() => handleLoaAction(loa.id, "Cancelled")} disabled={processingId === loa.id} className="text-gray-400 hover:text-red-400">
                       <X className="w-4 h-4" />
                     </Button>
                   </div>
@@ -322,10 +342,10 @@ export default function AdminHrPage() {
                   <span className={`px-2 py-0.5 rounded-full text-xs ${statusColor(removal.status)}`}>{removal.status}</span>
                   {removal.status === "Pending" && (
                     <div className="flex gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => handleRemovalAction(removal.id, "Approved")} className="text-gray-400 hover:text-green-400">
+                      <Button variant="ghost" size="sm" onClick={() => handleRemovalAction(removal.id, "Approved")} disabled={processingId === removal.id} className="text-gray-400 hover:text-green-400">
                         <Check className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleRemovalAction(removal.id, "Rejected")} className="text-gray-400 hover:text-red-400">
+                      <Button variant="ghost" size="sm" onClick={() => handleRemovalAction(removal.id, "Rejected")} disabled={processingId === removal.id} className="text-gray-400 hover:text-red-400">
                         <X className="w-4 h-4" />
                       </Button>
                     </div>
@@ -359,10 +379,10 @@ export default function AdminHrPage() {
                   <span className={`px-2 py-0.5 rounded-full text-xs ${statusColor(req.status)}`}>{req.status}</span>
                   {req.status === "Pending" && (
                     <div className="flex gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => handleInactivityAction(req.id, "Approved")} className="text-gray-400 hover:text-green-400">
+                      <Button variant="ghost" size="sm" onClick={() => handleInactivityAction(req.id, "Approved")} disabled={processingId === req.id} className="text-gray-400 hover:text-green-400">
                         <Check className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleInactivityAction(req.id, "Rejected")} className="text-gray-400 hover:text-red-400">
+                      <Button variant="ghost" size="sm" onClick={() => handleInactivityAction(req.id, "Rejected")} disabled={processingId === req.id} className="text-gray-400 hover:text-red-400">
                         <X className="w-4 h-4" />
                       </Button>
                     </div>

@@ -24,24 +24,53 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       select: { rank: true, activity: true, callSign: true, category: true, discordId: true },
     });
 
-    // A promotion is any rank change to a strictly higher weight, whether it
-    // came from the dedicated Promote button (which never sends callSign) or
-    // an inline edit (which always resends the current one, changed or not).
-    const isPromotion =
+    // A promotion candidate: any rank change to a strictly higher weight,
+    // whether from the dedicated Promote button (which never sends callSign)
+    // or an inline edit (resends the current one, changed or not). Based on
+    // a snapshot that can go stale before the write below, which is fine —
+    // it only decides whether to attempt the atomic path, not whether the
+    // promotion notification actually fires.
+    const isPromotionCandidate =
       !!before && !!body.rank && body.rank !== before.rank && getRankWeight(body.rank) > getRankWeight(before.rank);
 
     // Reassign the call sign for the new rank on promotion — unless the same
     // request also set a different call sign on purpose, which takes
     // precedence over the automatic one.
-    if (isPromotion && (body.callSign === undefined || body.callSign === before.callSign)) {
+    if (isPromotionCandidate && (body.callSign === undefined || body.callSign === before!.callSign)) {
       const nextCallSign = await getNextCallSign(body.rank);
       if (nextCallSign) body.callSign = nextCallSign;
     }
 
-    const member = await prisma.member.update({
-      where: { id },
-      data: body,
-    });
+    // Atomically claims the promotion: the conditional where clause means
+    // only the request that actually moves rank away from its current value
+    // writes anything and wins the notification below. A double-click, a
+    // slow retry, or two requests racing all resolve to the same final rank,
+    // but at most one of them creates a PromotionNotification row and posts
+    // to the webhook — and a losing request's speculative call sign, chosen
+    // from the same stale snapshot as a winner's, is discarded rather than
+    // written, so two concurrent promotions can't collide on one call sign.
+    let isPromotion = false;
+    if (isPromotionCandidate) {
+      const claim = await prisma.member.updateMany({
+        where: { id, rank: { not: body.rank } },
+        data: body,
+      });
+      isPromotion = claim.count === 1;
+      if (!isPromotion) {
+        // Someone else already made this exact rank change. Still apply any
+        // other fields from this submit (name, timezone, ...) — those are
+        // real edits bundled into the same request, not part of the race.
+        const { rank: _rank, callSign: _callSign, ...rest } = body;
+        if (Object.keys(rest).length > 0) {
+          await prisma.member.update({ where: { id }, data: rest });
+        }
+      }
+    } else {
+      await prisma.member.update({ where: { id }, data: body });
+    }
+
+    const member = await prisma.member.findUnique({ where: { id } });
+    if (!member) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     if (body.rank) {
       for (const [sectionName, ranks] of Object.entries(SECTION_HINTS)) {

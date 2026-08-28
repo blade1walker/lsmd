@@ -42,6 +42,7 @@ export default function AdminFTPPage() {
   };
 
   const handleAction = async (id: string, status: string) => {
+    if (processingId) return;
     setProcessingId(id);
     try {
       const res = await fetch(`/api/ftp/${id}`, {

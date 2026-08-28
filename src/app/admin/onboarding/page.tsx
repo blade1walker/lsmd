@@ -25,6 +25,10 @@ export default function AdminOnboardingPage() {
   const [loading, setLoading] = useState(true);
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [rank, setRank] = useState("Medical Intern");
+  // Guards a double-click (or a slow response tempting a second click) from
+  // firing the same approve/decline twice — the server's atomic guard is
+  // what actually prevents a duplicate webhook/roster-member either way.
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -40,25 +44,37 @@ export default function AdminOnboardingPage() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleApprove = async (id: string) => {
-    await fetch(`/api/onboarding/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        status: "Approved",
-        assignedRank: rank,
-      }),
-    });
-    setReviewingId(null);
-    fetchData();
+    if (processingId) return;
+    setProcessingId(id);
+    try {
+      await fetch(`/api/onboarding/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: "Approved",
+          assignedRank: rank,
+        }),
+      });
+      setReviewingId(null);
+      fetchData();
+    } finally {
+      setProcessingId(null);
+    }
   };
 
   const handleDecline = async (id: string) => {
-    await fetch(`/api/onboarding/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: "Declined" }),
-    });
-    fetchData();
+    if (processingId) return;
+    setProcessingId(id);
+    try {
+      await fetch(`/api/onboarding/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "Declined" }),
+      });
+      fetchData();
+    } finally {
+      setProcessingId(null);
+    }
   };
 
   const pending = requests.filter((r) => r.status === "Pending");
@@ -132,7 +148,7 @@ export default function AdminOnboardingPage() {
                             <option key={r} value={r} className="bg-black text-white">{r}</option>
                           ))}
                         </select>
-                        <Button size="sm" onClick={() => handleApprove(req.id)} className="bg-green-600 hover:bg-green-700 text-white">
+                        <Button size="sm" onClick={() => handleApprove(req.id)} disabled={processingId === req.id} className="bg-green-600 hover:bg-green-700 text-white">
                           <Check className="w-4 h-4 mr-1" /> Confirm
                         </Button>
                         <Button size="sm" variant="ghost" onClick={() => setReviewingId(null)} className="text-gray-400">
@@ -144,7 +160,7 @@ export default function AdminOnboardingPage() {
                         <Button size="sm" onClick={() => setReviewingId(req.id)} className="bg-green-600 hover:bg-green-700 text-white">
                           <Check className="w-4 h-4 mr-1" /> Approve
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={() => handleDecline(req.id)} className="text-red-400 hover:text-red-300 hover:bg-red-500/10">
+                        <Button size="sm" variant="ghost" onClick={() => handleDecline(req.id)} disabled={processingId === req.id} className="text-red-400 hover:text-red-300 hover:bg-red-500/10">
                           <X className="w-4 h-4 mr-1" /> Decline
                         </Button>
                       </>

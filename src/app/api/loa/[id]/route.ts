@@ -17,11 +17,21 @@ export async function PATCH(
     const body = await request.json();
     const { status } = body;
 
-    const loa = await prisma.lOA.update({
-      where: { id },
-      data: { status },
-      include: { member: true },
-    });
+    // Atomically claims the transition: only the request that actually
+    // moves status away from its current value runs the webhook/DM below.
+    // A double-click, a retry, or two requests racing land on the same
+    // final status, but at most one of them posts about it.
+    let wonTransition = true;
+    if (status !== undefined) {
+      const claim = await prisma.lOA.updateMany({
+        where: { id, status: { not: status } },
+        data: { status },
+      });
+      wonTransition = claim.count === 1;
+    }
+
+    const loa = await prisma.lOA.findUnique({ where: { id }, include: { member: true } });
+    if (!loa) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const settings = await getNotificationSettings();
 
@@ -31,50 +41,54 @@ export async function PATCH(
         data: { activity: "LOA" },
       });
 
-      if (settings.loaWebhook) {
-        await postToLOAWebhook({
-          title: "LOA Approved",
-          description: `<@${loa.member.discordId}> **${loa.member.name}** has been granted a Leave of Absence.`,
-          color: 0x22c55e,
-          fields: [
-            { name: "Member", value: loa.member.name, inline: true },
-            { name: "Rank", value: loa.member.rank, inline: true },
-            { name: "Call Sign", value: loa.member.callSign || "N/A", inline: true },
-            { name: "Start Date", value: loa.startDate.toLocaleDateString(), inline: true },
-            { name: "End Date", value: loa.endDate.toLocaleDateString(), inline: true },
-            { name: "Reason", value: loa.reason || "Not specified", inline: false },
-          ],
-        });
-      }
+      if (wonTransition) {
+        if (settings.loaWebhook) {
+          await postToLOAWebhook({
+            title: "LOA Approved",
+            description: `<@${loa.member.discordId}> **${loa.member.name}** has been granted a Leave of Absence.`,
+            color: 0x22c55e,
+            fields: [
+              { name: "Member", value: loa.member.name, inline: true },
+              { name: "Rank", value: loa.member.rank, inline: true },
+              { name: "Call Sign", value: loa.member.callSign || "N/A", inline: true },
+              { name: "Start Date", value: loa.startDate.toLocaleDateString(), inline: true },
+              { name: "End Date", value: loa.endDate.toLocaleDateString(), inline: true },
+              { name: "Reason", value: loa.reason || "Not specified", inline: false },
+            ],
+          });
+        }
 
-      if (settings.loaDM && loa.member.discordId) {
-        await sendDiscordDM(
-          loa.member.discordId,
-          `Your Leave of Absence has been **Approved**.\n\nStart: ${loa.startDate.toLocaleDateString()}\nEnd: ${loa.endDate.toLocaleDateString()}\nReason: ${loa.reason || "Not specified"}`
-        );
+        if (settings.loaDM && loa.member.discordId) {
+          await sendDiscordDM(
+            loa.member.discordId,
+            `Your Leave of Absence has been **Approved**.\n\nStart: ${loa.startDate.toLocaleDateString()}\nEnd: ${loa.endDate.toLocaleDateString()}\nReason: ${loa.reason || "Not specified"}`
+          );
+        }
       }
     } else if (status === "Declined") {
-      if (settings.loaWebhook) {
-        await postToLOAWebhook({
-          title: "LOA Declined",
-          description: `<@${loa.member.discordId}> **${loa.member.name}**'s Leave of Absence request has been declined.`,
-          color: 0xef4444,
-          fields: [
-            { name: "Member", value: loa.member.name, inline: true },
-            { name: "Rank", value: loa.member.rank, inline: true },
-            { name: "Call Sign", value: loa.member.callSign || "N/A", inline: true },
-            { name: "Start Date", value: loa.startDate.toLocaleDateString(), inline: true },
-            { name: "End Date", value: loa.endDate.toLocaleDateString(), inline: true },
-            { name: "Reason", value: loa.reason || "Not specified", inline: false },
-          ],
-        });
-      }
+      if (wonTransition) {
+        if (settings.loaWebhook) {
+          await postToLOAWebhook({
+            title: "LOA Declined",
+            description: `<@${loa.member.discordId}> **${loa.member.name}**'s Leave of Absence request has been declined.`,
+            color: 0xef4444,
+            fields: [
+              { name: "Member", value: loa.member.name, inline: true },
+              { name: "Rank", value: loa.member.rank, inline: true },
+              { name: "Call Sign", value: loa.member.callSign || "N/A", inline: true },
+              { name: "Start Date", value: loa.startDate.toLocaleDateString(), inline: true },
+              { name: "End Date", value: loa.endDate.toLocaleDateString(), inline: true },
+              { name: "Reason", value: loa.reason || "Not specified", inline: false },
+            ],
+          });
+        }
 
-      if (settings.loaDM && loa.member.discordId) {
-        await sendDiscordDM(
-          loa.member.discordId,
-          `Your Leave of Absence request has been **Declined**.\n\nIf you have questions, please contact HR.`
-        );
+        if (settings.loaDM && loa.member.discordId) {
+          await sendDiscordDM(
+            loa.member.discordId,
+            `Your Leave of Absence request has been **Declined**.\n\nIf you have questions, please contact HR.`
+          );
+        }
       }
     } else if (status === "Expired" || status === "Cancelled") {
       await prisma.member.update({
@@ -83,7 +97,7 @@ export async function PATCH(
       });
     }
 
-    if (status === "Approved" || status === "Declined") {
+    if (wonTransition && (status === "Approved" || status === "Declined")) {
       await logAudit({
         action: status === "Approved" ? "approve" : "decline",
         entityType: "LOA",

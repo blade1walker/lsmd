@@ -15,13 +15,24 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
-    const inactivityRequest = await prisma.inactivityRequest.update({
-      where: { id },
-      data: body,
-      include: { member: true },
-    });
+    // Same atomic-claim guard as the other approval routes: only the
+    // request that actually moves status away from its current value logs
+    // the approve/decline.
+    let wonTransition = true;
+    if (body.status !== undefined) {
+      const claim = await prisma.inactivityRequest.updateMany({
+        where: { id, status: { not: body.status } },
+        data: body,
+      });
+      wonTransition = claim.count === 1;
+    } else {
+      await prisma.inactivityRequest.update({ where: { id }, data: body });
+    }
 
-    if (body.status === "Approved" || body.status === "Rejected") {
+    const inactivityRequest = await prisma.inactivityRequest.findUnique({ where: { id }, include: { member: true } });
+    if (!inactivityRequest) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    if (wonTransition && (body.status === "Approved" || body.status === "Rejected")) {
       await logAudit({
         action: body.status === "Approved" ? "approve" : "decline",
         entityType: "InactivityRequest",

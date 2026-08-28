@@ -16,14 +16,27 @@ export async function PATCH(
     const body = await request.json();
     const performedBy = actorLabel(auth.access);
 
+    // Atomically claims the transition, same guard as the other approval
+    // routes: only the request that actually moves status away from its
+    // current value logs the approve/decline — a double-click or a race
+    // shouldn't produce two audit entries for one decision.
+    let wonTransition = true;
+    if (body.status !== undefined) {
+      const claim = await prisma.removalRequest.updateMany({
+        where: { id, status: { not: body.status } },
+        data: { ...body, reviewedBy: performedBy },
+      });
+      wonTransition = claim.count === 1;
+    } else {
+      await prisma.removalRequest.update({ where: { id }, data: { ...body, reviewedBy: performedBy } });
+    }
+
     // reviewedBy always reflects who actually approved this, not whatever the
     // client sends — the previous code trusted a client-supplied string here.
-    const removalRequest = await prisma.removalRequest.update({
-      where: { id },
-      data: { ...body, reviewedBy: performedBy },
-    });
+    const removalRequest = await prisma.removalRequest.findUnique({ where: { id } });
+    if (!removalRequest) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    if (body.status === "Approved" || body.status === "Rejected") {
+    if (wonTransition && (body.status === "Approved" || body.status === "Rejected")) {
       await logAudit({
         action: body.status === "Approved" ? "approve" : "decline",
         entityType: "RemovalRequest",

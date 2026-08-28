@@ -19,14 +19,26 @@ export async function PATCH(
     const { status, reviewNote } = body;
     const performedBy = actorLabel(auth.access);
 
-    const request = await prisma.fTPRequest.update({
-      where: { id },
-      data: { status, reviewedBy: performedBy, reviewNote },
-    });
+    // Atomically claims the transition: only the request that actually moves
+    // status away from its current value grants the Discord role and posts
+    // below — a double-click or a race shouldn't grant/post twice.
+    let wonTransition = true;
+    if (status !== undefined) {
+      const claim = await prisma.fTPRequest.updateMany({
+        where: { id, status: { not: status } },
+        data: { status, reviewedBy: performedBy, reviewNote },
+      });
+      wonTransition = claim.count === 1;
+    } else {
+      await prisma.fTPRequest.update({ where: { id }, data: { reviewedBy: performedBy, reviewNote } });
+    }
+
+    const request = await prisma.fTPRequest.findUnique({ where: { id } });
+    if (!request) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const settings = await getNotificationSettings();
 
-    if (status === "Approved") {
+    if (wonTransition && status === "Approved") {
       const member = await prisma.member.findFirst({
         where: { discordId: request.discordId },
       });
@@ -58,14 +70,14 @@ export async function PATCH(
           .replace(/{callSign}/g, member?.callSign ?? "N/A");
         await postToFtpWebhook(msg);
       }
-    } else if (status === "Declined") {
+    } else if (wonTransition && status === "Declined") {
       if (settings.ftpDM) {
         const msg = settings.ftpDMDecline.replace(/{name}/g, request.characterName);
         await sendDiscordDM(request.discordId, msg);
       }
     }
 
-    if (status === "Approved" || status === "Declined") {
+    if (wonTransition && (status === "Approved" || status === "Declined")) {
       await logAudit({
         action: status === "Approved" ? "approve" : "decline",
         entityType: "FTPRequest",

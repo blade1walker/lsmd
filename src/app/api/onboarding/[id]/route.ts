@@ -20,14 +20,31 @@ export async function PATCH(
     const { status, assignedRank, reviewNote } = body;
     const performedBy = actorLabel(auth.access);
 
-    // reviewedBy is always the authenticated caller, not whatever the client
-    // sends — the previous code took reviewedBy straight from the request body.
-    const request = await prisma.onboardingRequest.update({
-      where: { id },
-      data: { status, assignedRank, reviewedBy: performedBy, reviewNote },
-    });
+    // Atomically claims the status transition: the conditional where clause
+    // means only the request that actually moves status away from its
+    // current value updates anything and wins the side effects below. A
+    // double-click, a retry, or two requests racing all land on the same
+    // final row, but at most one of them creates the roster member below —
+    // duplicating that on a race would be a second ghost member, not just a
+    // second message.
+    let wonTransition = true;
+    if (status !== undefined) {
+      const claim = await prisma.onboardingRequest.updateMany({
+        where: { id, status: { not: status } },
+        data: { status, assignedRank, reviewedBy: performedBy, reviewNote },
+      });
+      wonTransition = claim.count === 1;
+    } else {
+      await prisma.onboardingRequest.update({
+        where: { id },
+        data: { assignedRank, reviewedBy: performedBy, reviewNote },
+      });
+    }
 
-    if (status === "Approved" && assignedRank) {
+    const request = await prisma.onboardingRequest.findUnique({ where: { id } });
+    if (!request) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    if (wonTransition && status === "Approved" && assignedRank) {
       let sectionId: string | null = null;
       for (const [sectionName, ranks] of Object.entries(SECTION_HINTS)) {
         if (ranks.includes(assignedRank)) {
@@ -84,7 +101,7 @@ export async function PATCH(
       }
     }
 
-    if (status === "Declined") {
+    if (wonTransition && status === "Declined") {
       const settings = await getNotificationSettings();
       if (settings.onboardingDM) {
         const msg = settings.onboardingDMDecline
@@ -93,7 +110,7 @@ export async function PATCH(
       }
     }
 
-    if (status === "Approved" || status === "Declined") {
+    if (wonTransition && (status === "Approved" || status === "Declined")) {
       await logAudit({
         action: status === "Approved" ? "approve" : "decline",
         entityType: "OnboardingRequest",

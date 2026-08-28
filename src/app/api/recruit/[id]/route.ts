@@ -20,27 +20,40 @@ export async function PATCH(
 
     // The admin edit modal resends the request's current status alongside
     // field corrections (discordId, steamId, ...), not just a fresh approval —
-    // so "status is present" is not the same as "status is changing". Without
-    // this, saving an unrelated edit on an already-approved request would
-    // re-send the approval DM/webhook and re-log a duplicate approval.
-    const before = await prisma.recruitRequest.findUnique({ where: { id }, select: { status: true } });
-    const statusChanged = !!status && status !== before?.status;
+    // so "status is present" is not the same as "status is changing". The
+    // conditional where clause makes the check and the write atomic: only a
+    // request that actually moves status away from its current value can
+    // match it and win, so a double-click or two requests racing can't both
+    // pass a separate "did it change" read before either has written —
+    // reading it first and writing second, as a sequential statusChanged
+    // check would, leaves exactly that gap open.
+    const commonData = {
+      ...(discordId && { discordId }),
+      ...(discordUsername !== undefined && { discordUsername: discordUsername || null }),
+      ...(steamId && { steamId }),
+      ...(characterName !== undefined && { characterName: characterName || null }),
+      ...(user !== undefined && { user: user || null }),
+      ...(reviewNote !== undefined && { reviewNote }),
+    };
 
-    // reviewedBy is always the authenticated caller, not whatever the client
-    // sends — the previous code took reviewedBy straight from the request body.
-    const request = await prisma.recruitRequest.update({
-      where: { id },
-      data: {
-        ...(discordId && { discordId }),
-        ...(discordUsername !== undefined && { discordUsername: discordUsername || null }),
-        ...(steamId && { steamId }),
-        ...(characterName !== undefined && { characterName: characterName || null }),
-        ...(user !== undefined && { user: user || null }),
-        ...(status && { status }),
-        ...(statusChanged && { reviewedBy: performedBy }),
-        ...(reviewNote !== undefined && { reviewNote }),
-      },
-    });
+    let statusChanged = true;
+    if (status) {
+      const claim = await prisma.recruitRequest.updateMany({
+        where: { id, status: { not: status } },
+        data: { ...commonData, status, reviewedBy: performedBy },
+      });
+      statusChanged = claim.count === 1;
+      if (!statusChanged) {
+        // Status didn't move (already there), but other field edits from the
+        // same submit should still apply.
+        await prisma.recruitRequest.updateMany({ where: { id }, data: commonData });
+      }
+    } else {
+      await prisma.recruitRequest.updateMany({ where: { id }, data: commonData });
+    }
+
+    const request = await prisma.recruitRequest.findUnique({ where: { id } });
+    if (!request) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     if (statusChanged && status !== "Pending") {
       const settings = await getNotificationSettings();
