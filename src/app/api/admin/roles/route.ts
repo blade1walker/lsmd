@@ -10,7 +10,7 @@ export async function GET() {
 
   try {
     const roles = await prisma.adminRole.findMany({
-      orderBy: { name: "asc" },
+      orderBy: { order: "asc" },
     });
 
     return NextResponse.json(roles);

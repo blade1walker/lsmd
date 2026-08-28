@@ -182,6 +182,15 @@ model AdminRole {
   id          String       @id @default(cuid())
   name        String       @unique
   permissions String[]
+  // Position in the reorderable hierarchy — lower value ranks higher, same
+  // convention as Section.order/SopDocument.order elsewhere in this schema.
+  // A role's effective permissions include its own plus every role ranked
+  // at or below it, so a permission on a lower role is automatically held by
+  // every role above it. autoincrement() rather than a fixed default so
+  // existing rows get distinct values when this column is added — a shared
+  // default would tie every role at the same rank and cascade them all into
+  // each other, which is a real permission escalation, not a display glitch.
+  order       Int          @default(autoincrement())
   // Legacy single-role assignment. Kept rather than replaced so existing
   // assignments are not silently dropped — resolveAccess() unions this with
   // the new multi-role relation below, so either one alone still works.

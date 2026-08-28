@@ -9,9 +9,11 @@ import { ALL_PERMISSIONS } from "@/lib/constants";
 import { ErrorState } from "@/components/ui/error-state";
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
 import { memberDisplayLabel } from "@/lib/utils";
+import { inheritedPermissions } from "@/lib/role-hierarchy";
+import { ArrowUp, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
 
-interface AdminRole { id: string; name: string; permissions: string[]; }
+interface AdminRole { id: string; name: string; permissions: string[]; order: number; }
 interface AdminUser {
   id: string;
   discordId: string;
@@ -186,6 +188,44 @@ export default function AdminRolesPage() {
     }
   };
 
+  const sortedRoles = [...roles].sort((a, b) => a.order - b.order);
+
+  const handleMoveRole = async (roleId: string, direction: -1 | 1) => {
+    const index = sortedRoles.findIndex((r) => r.id === roleId);
+    const otherIndex = index + direction;
+    if (index < 0 || otherIndex < 0 || otherIndex >= sortedRoles.length) return;
+
+    const a = sortedRoles[index];
+    const b = sortedRoles[otherIndex];
+    const previous = roles;
+
+    // Swap their order values — a plain array-index reorder doesn't work
+    // here since `order` values aren't guaranteed contiguous (autoincrement
+    // backfill, gaps from deleted roles), so the only safe move is trading
+    // the two roles' actual values.
+    setRoles((prev) =>
+      prev.map((r) => (r.id === a.id ? { ...r, order: b.order } : r.id === b.id ? { ...r, order: a.order } : r))
+    );
+
+    try {
+      await Promise.all([
+        fetchJson("/api/admin/roles", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: a.id, order: b.order }),
+        }),
+        fetchJson("/api/admin/roles", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: b.id, order: a.order }),
+        }),
+      ]);
+    } catch (err) {
+      setRoles(previous);
+      toast.error(errorMessage(err));
+    }
+  };
+
   const summarizeAccess = (user: AdminUser) => {
     const roleNames = user.roles.map((r) => r.name);
     const base = roleNames.length ? roleNames.join(", ") : "EMS Member (default)";
@@ -205,31 +245,71 @@ export default function AdminRolesPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-1">
               <h2 className="font-[family-name:var(--font-oswald)] text-lg font-semibold text-white uppercase">Roles</h2>
               <Button size="sm" onClick={openAddRole}>Add Role</Button>
             </div>
+            <p className="text-xs text-gray-500 mb-3">
+              Order is the hierarchy — top ranks highest. A role automatically holds every
+              permission of the roles below it.
+            </p>
             <div className="space-y-2">
-              {roles.map((r) => (
-                <div key={r.id} className="p-3 bg-card border border-[#1e1e1e] rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-white font-medium text-sm">{r.name}</span>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <Button size="sm" variant="ghost" className="h-6 text-xs text-gray-400" onClick={() => openEditRole(r)}>Edit</Button>
-                      <Button size="sm" variant="ghost" className="h-6 text-xs text-red-400" onClick={() => handleDeleteRole(r.id)}>×</Button>
+              {sortedRoles.map((r, i) => {
+                const inherited = inheritedPermissions(r, roles);
+                return (
+                  <div key={r.id} className="p-3 bg-card border border-[#1e1e1e] rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className="flex flex-col -my-1">
+                          <button
+                            type="button"
+                            onClick={() => handleMoveRole(r.id, -1)}
+                            disabled={i === 0}
+                            className="text-gray-500 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed"
+                            aria-label={`Move ${r.name} up`}
+                          >
+                            <ArrowUp className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleMoveRole(r.id, 1)}
+                            disabled={i === sortedRoles.length - 1}
+                            className="text-gray-500 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed"
+                            aria-label={`Move ${r.name} down`}
+                          >
+                            <ArrowDown className="w-3 h-3" />
+                          </button>
+                        </div>
+                        <span className="text-white font-medium text-sm">{r.name}</span>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button size="sm" variant="ghost" className="h-6 text-xs text-gray-400" onClick={() => openEditRole(r)}>Edit</Button>
+                        <Button size="sm" variant="ghost" className="h-6 text-xs text-red-400" onClick={() => handleDeleteRole(r.id)}>×</Button>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {r.permissions.length === 0 && inherited.length === 0 ? (
+                        <span className="text-xs text-gray-600">No permissions</span>
+                      ) : (
+                        <>
+                          {r.permissions.map((p) => (
+                            <span key={p} className="text-xs bg-white/5 text-gray-400 px-1.5 py-0.5 rounded">{p}</span>
+                          ))}
+                          {inherited.map((p) => (
+                            <span
+                              key={p}
+                              title="Inherited from a role below this one"
+                              className="text-xs bg-blue-500/10 text-blue-300/80 px-1.5 py-0.5 rounded"
+                            >
+                              {p} ↑
+                            </span>
+                          ))}
+                        </>
+                      )}
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-1">
-                    {r.permissions.length === 0 ? (
-                      <span className="text-xs text-gray-600">No permissions</span>
-                    ) : (
-                      r.permissions.map((p) => (
-                        <span key={p} className="text-xs bg-white/5 text-gray-400 px-1.5 py-0.5 rounded">{p}</span>
-                      ))
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
               {roles.length === 0 && <p className="text-gray-600 text-sm">No roles defined</p>}
             </div>
           </div>

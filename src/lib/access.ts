@@ -2,6 +2,7 @@ import { prisma } from "./prisma";
 import { SUPER_ADMIN_IDS, ALL_PERMISSIONS } from "./constants";
 import { DEFAULT_MEMBER_ROLE, defaultMemberPermissions } from "./role-presets";
 import { memberDisplayLabel } from "./utils";
+import { effectiveRolePermissions, type RoleWithHierarchy } from "./role-hierarchy";
 
 export type DenialReason = "not-in-roster" | "no-discord-id";
 
@@ -41,9 +42,12 @@ function denied(discordId: string, denialReason: DenialReason): Access {
 }
 
 /** Every role assigned via either the legacy single-role field or the multi-role relation, deduplicated by id. */
-function combinedRoles(adminUser: { role: { id: string; name: string; permissions: string[] } | null; roles: { id: string; name: string; permissions: string[] }[] } | null) {
+function combinedRoles(adminUser: {
+  role: RoleWithHierarchy & { name: string } | null;
+  roles: (RoleWithHierarchy & { name: string })[];
+} | null) {
   if (!adminUser) return [];
-  const byId = new Map<string, { id: string; name: string; permissions: string[] }>();
+  const byId = new Map<string, RoleWithHierarchy & { name: string }>();
   if (adminUser.role) byId.set(adminUser.role.id, adminUser.role);
   for (const r of adminUser.roles) byId.set(r.id, r);
   return [...byId.values()];
@@ -64,7 +68,7 @@ export async function resolveAccess(discordId: string | null | undefined): Promi
 
   const isSuperAdmin = SUPER_ADMIN_IDS.includes(discordId);
 
-  const [member, adminUser] = await Promise.all([
+  const [member, adminUser, allRoles] = await Promise.all([
     prisma.member.findFirst({
       where: { discordId },
       select: { id: true, name: true, rank: true },
@@ -72,6 +76,9 @@ export async function resolveAccess(discordId: string | null | undefined): Promi
     prisma.adminUser.findUnique({
       where: { discordId },
       include: { role: true, roles: true },
+    }),
+    prisma.adminRole.findMany({
+      select: { id: true, order: true, permissions: true },
     }),
   ]);
 
@@ -97,11 +104,11 @@ export async function resolveAccess(discordId: string | null | undefined): Promi
 
   if (!member) return denied(discordId, "not-in-roster");
 
-  // Additive union: every role's permissions plus any individually granted
-  // extras. Never a subtraction — extraPermissions cannot revoke something a
-  // role already grants, only add beyond it.
+  // Additive union: the hierarchy-cascaded role permissions plus any
+  // individually granted extras. Never a subtraction — extraPermissions
+  // cannot revoke something a role already grants, only add beyond it.
   const permissions = roles.length
-    ? [...new Set([...roles.flatMap((r) => r.permissions), ...extraPermissions])]
+    ? [...new Set([...effectiveRolePermissions(roles, allRoles), ...extraPermissions])]
     : [...new Set([...defaultMemberPermissions(), ...extraPermissions])];
 
   return {
