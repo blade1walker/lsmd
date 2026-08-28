@@ -17,7 +17,21 @@ export async function getNextCallSign(rank: string): Promise<string | null> {
       select: { callSign: true },
     });
     const usedSet = new Set(used.map((m) => m.callSign));
+
     for (let i = range.start; i <= range.end; i++) {
+      const cs = String(i);
+      if (!usedSet.has(cs)) return cs;
+    }
+
+    // The rank's own band is full. Rather than leaving the member without a
+    // call sign, keep counting past the highest number any rank reserves
+    // (fixed or ranged) so an overflow assignment can never collide with
+    // another rank's number.
+    const reservedMax = Object.values(RANK_CALLSIGN).reduce(
+      (max, r) => Math.max(max, r.fixed ?? 0, r.end ?? 0),
+      0
+    );
+    for (let i = reservedMax + 1; ; i++) {
       const cs = String(i);
       if (!usedSet.has(cs)) return cs;
     }
