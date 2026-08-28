@@ -386,6 +386,8 @@ model NotificationSettings {
   loaDMDecline         String @default("Your Leave of Absence request has been **Declined**.\n\nIf you have questions, please contact HR.")
   promotionWebhook        Boolean @default(true)
   promotionWebhookMessage String  @default("🎉 Congratulations <@{discordId}>! {name} ({callSign}) has been promoted from **{fromRank}** to **{toRank}**!")
+  callsignWebhook         Boolean @default(true)
+  callsignWebhookMessage  String  @default("📻 <@{discordId}>'s call sign has been updated: **{oldCallSign}** → **{newCallSign}**")
   testWebhook          Boolean @default(true)
   testDM               Boolean @default(true)
   webhookUrls          Json?

@@ -5,7 +5,7 @@ import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { SECTION_HINTS, getRankWeight } from "@/lib/constants";
 import { getNextCallSign } from "@/lib/callsign";
-import { getNotificationSettings, postToPromotionWebhook } from "@/lib/discord-webhook";
+import { getNotificationSettings, postToPromotionWebhook, postToCallsignWebhook } from "@/lib/discord-webhook";
 import { removeFtpDiscordRole } from "@/lib/discord-roles";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -41,15 +41,25 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       if (nextCallSign) body.callSign = nextCallSign;
     }
 
-    // Atomically claims the promotion: the conditional where clause means
-    // only the request that actually moves rank away from its current value
-    // writes anything and wins the notification below. A double-click, a
-    // slow retry, or two requests racing all resolve to the same final rank,
-    // but at most one of them creates a PromotionNotification row and posts
-    // to the webhook — and a losing request's speculative call sign, chosen
-    // from the same stale snapshot as a winner's, is discarded rather than
-    // written, so two concurrent promotions can't collide on one call sign.
+    // A standalone call sign reassignment — the dedicated Call Signs section,
+    // or any other edit that sets callSign without also promoting. Excluded
+    // whenever isPromotionCandidate, since a promotion already reassigns the
+    // call sign itself and already has its own notification covering it —
+    // firing this one too would post twice about the same underlying change.
+    const isCallsignChange =
+      !isPromotionCandidate && !!before && body.callSign !== undefined && body.callSign !== before.callSign;
+
+    // Atomically claims the promotion or the call sign change: the
+    // conditional where clause means only the request that actually moves
+    // the guarded field away from its current value writes anything and
+    // wins the notification below. A double-click, a slow retry, or two
+    // requests racing all resolve to the same final state, but at most one
+    // of them posts about it — and, for a promotion, a losing request's
+    // speculative call sign, chosen from the same stale snapshot as a
+    // winner's, is discarded rather than written, so two concurrent
+    // promotions can't collide on one call sign.
     let isPromotion = false;
+    let callsignChanged = false;
     if (isPromotionCandidate) {
       const claim = await prisma.member.updateMany({
         where: { id, rank: { not: body.rank } },
@@ -61,6 +71,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         // other fields from this submit (name, timezone, ...) — those are
         // real edits bundled into the same request, not part of the race.
         const { rank: _rank, callSign: _callSign, ...rest } = body;
+        if (Object.keys(rest).length > 0) {
+          await prisma.member.update({ where: { id }, data: rest });
+        }
+      }
+    } else if (isCallsignChange) {
+      const claim = await prisma.member.updateMany({
+        where: { id, callSign: { not: body.callSign } },
+        data: body,
+      });
+      callsignChanged = claim.count === 1;
+      if (!callsignChanged) {
+        const { callSign: _callSign, ...rest } = body;
         if (Object.keys(rest).length > 0) {
           await prisma.member.update({ where: { id }, data: rest });
         }
@@ -95,6 +117,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         rank: before && body.rank && before.rank !== body.rank ? `${before.rank} -> ${body.rank}` : null,
         activity: before && body.activity && before.activity !== body.activity ? `${before.activity} -> ${body.activity}` : null,
         category: before && body.category !== undefined && before.category !== body.category ? `${before.category ?? "none"} -> ${body.category ?? "none"}` : null,
+        callSign: before && body.callSign !== undefined && before.callSign !== body.callSign ? `${before.callSign ?? "none"} -> ${body.callSign ?? "none"}` : null,
       },
       performedBy: actorLabel(auth.access),
     });
@@ -138,6 +161,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           .replace(/{toRank}/g, member.rank)
           .replace(/{discordId}/g, member.discordId ?? "");
         await postToPromotionWebhook(message);
+      }
+    }
+
+    if (callsignChanged && before) {
+      const settings = await getNotificationSettings();
+      if (settings.callsignWebhook) {
+        const message = settings.callsignWebhookMessage
+          .replace(/{name}/g, member.name)
+          .replace(/{oldCallSign}/g, before.callSign ?? "N/A")
+          .replace(/{newCallSign}/g, member.callSign ?? "N/A")
+          .replace(/{discordId}/g, member.discordId ?? "");
+        await postToCallsignWebhook(message);
       }
     }
 

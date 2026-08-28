@@ -33,6 +33,8 @@ interface Settings {
   loaDMDecline: string;
   promotionWebhook: boolean;
   promotionWebhookMessage: string;
+  callsignWebhook: boolean;
+  callsignWebhookMessage: string;
   testWebhook: boolean;
   testDM: boolean;
   webhookUrls: { recruit?: string; onboarding?: string; ftp?: string; loa?: string; accept?: string } | null;
@@ -63,6 +65,8 @@ const DEFAULTS: Settings = {
   loaDMDecline: "Your Leave of Absence request has been **Declined**.\n\nIf you have questions, please contact HR.",
   promotionWebhook: true,
   promotionWebhookMessage: "🎉 Congratulations <@{discordId}>! {name} ({callSign}) has been promoted from **{fromRank}** to **{toRank}**!",
+  callsignWebhook: true,
+  callsignWebhookMessage: "📻 <@{discordId}>'s call sign has been updated: **{oldCallSign}** → **{newCallSign}**",
   testWebhook: true,
   testDM: true,
   webhookUrls: null,
@@ -354,6 +358,28 @@ export default function AdminNotificationSettingsPage() {
                   <strong>Variables:</strong> {"{name}"} {"{callSign}"} {"{fromRank}"} {"{toRank}"} {"<@{discordId}>"} (tags the member — blank if they have no linked Discord account)
                 </p>
                 <MessageField label="Webhook - Promoted" value={settings.promotionWebhookMessage} onChange={(v) => setSettings({ ...settings, promotionWebhookMessage: v })} />
+              </div>
+            )}
+          </div>
+
+          {/* Call Sign */}
+          <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-[#1e1e1e] flex items-center justify-between cursor-pointer hover:bg-white/5" onClick={() => setExpanded(expanded === "callsign" ? null : "callsign")}>
+              <div>
+                <h3 className="font-[family-name:var(--font-oswald)] text-sm font-semibold text-white uppercase">Call Sign</h3>
+                <p className="text-gray-500 text-xs mt-0.5">Posted to the channel whenever a member's call sign is changed outside of a promotion</p>
+              </div>
+              {expanded === "callsign" ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
+            </div>
+            <div className="divide-y divide-[#1e1e1e]/50">
+              <Toggle label="Webhook" checked={settings.callsignWebhook} onChange={(v) => setSettings({ ...settings, callsignWebhook: v })} />
+            </div>
+            {expanded === "callsign" && (
+              <div className="border-t border-[#1e1e1e] p-4 space-y-4">
+                <p className="text-gray-500 text-xs">
+                  <strong>Variables:</strong> {"{name}"} {"{oldCallSign}"} {"{newCallSign}"} {"<@{discordId}>"} (tags the member — blank if they have no linked Discord account)
+                </p>
+                <MessageField label="Webhook - Call Sign Updated" value={settings.callsignWebhookMessage} onChange={(v) => setSettings({ ...settings, callsignWebhookMessage: v })} />
               </div>
             )}
           </div>

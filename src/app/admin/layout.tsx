@@ -24,6 +24,7 @@ import {
   MessageSquare,
   ScrollText,
   Menu,
+  Hash,
 } from "lucide-react";
 
 // `permission` mirrors the check on the matching API route, so a section is
@@ -31,6 +32,7 @@ import {
 const navItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, permission: "roster.view" },
   { href: "/admin/roster", label: "Roster", icon: Users, permission: "roster.view" },
+  { href: "/admin/callsigns", label: "Call Signs", icon: Hash, permission: "roster.edit" },
   { href: "/admin/onboarding", label: "Onboarding", icon: UserPlus, permission: "onboarding.view" },
   { href: "/admin/recruit", label: "Recruit", icon: Mail, permission: "onboarding.view" },
   { href: "/admin/ftp", label: "FTP", icon: BookOpen, permission: "onboarding.view" },

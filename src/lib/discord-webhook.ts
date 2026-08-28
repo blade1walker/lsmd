@@ -34,6 +34,8 @@ export async function getNotificationSettings() {
       loaDMDecline: string;
       promotionWebhook: boolean;
       promotionWebhookMessage: string;
+      callsignWebhook: boolean;
+      callsignWebhookMessage: string;
       testWebhook: boolean;
       testDM: boolean;
       webhookUrls: any;
@@ -64,6 +66,8 @@ export async function getNotificationSettings() {
       loaDMDecline: "Your Leave of Absence request has been **Declined**.\n\nIf you have questions, please contact HR.",
       promotionWebhook: true,
       promotionWebhookMessage: "🎉 Congratulations <@{discordId}>! {name} ({callSign}) has been promoted from **{fromRank}** to **{toRank}**!",
+      callsignWebhook: true,
+      callsignWebhookMessage: "📻 <@{discordId}>'s call sign has been updated: **{oldCallSign}** → **{newCallSign}**",
       testWebhook: true,
       testDM: true,
       webhookUrls: null,
@@ -154,6 +158,21 @@ export async function postToPromotionWebhook(content: string) {
     });
   } catch (err) {
     console.error("Failed to post to promotion webhook:", err);
+  }
+}
+
+export async function postToCallsignWebhook(content: string) {
+  const webhookUrl = process.env.DISCORD_CALLSIGN_WEBHOOK_URL;
+  if (!webhookUrl) return;
+
+  try {
+    await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: "Nexus EMS HR", content }),
+    });
+  } catch (err) {
+    console.error("Failed to post to call sign webhook:", err);
   }
 }
 
