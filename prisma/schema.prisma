@@ -75,6 +75,8 @@ model SopDocument {
   title     String
   content   String   @default("")
   order     Int      @default(0)
+  /** [{ "label": string, "url": string }] — shown below the document content. */
+  relatedLinks Json   @default("[]")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

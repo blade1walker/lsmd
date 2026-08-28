@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ErrorState } from "@/components/ui/error-state";
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
-import { LEGACY_DOC_ID } from "@/lib/sop";
-import { Save, Plus, Trash2 } from "lucide-react";
+import { LEGACY_DOC_ID, type RelatedLink } from "@/lib/sop";
+import { Save, Plus, Trash2, Image as ImageIcon, Link as LinkIcon } from "lucide-react";
 import { toast } from "sonner";
 
 interface SopDoc {
@@ -16,18 +16,33 @@ interface SopDoc {
   title: string;
   content: string;
   order: number;
+  relatedLinks: RelatedLink[];
+}
+
+interface Draft {
+  content: string;
+  relatedLinks: RelatedLink[];
+}
+
+function draftEquals(a: Draft, b: Draft): boolean {
+  if (a.content !== b.content) return false;
+  if (a.relatedLinks.length !== b.relatedLinks.length) return false;
+  return a.relatedLinks.every((l, i) => l.label === b.relatedLinks[i].label && l.url === b.relatedLinks[i].url);
 }
 
 export default function AdminSopPage() {
   const [docs, setDocs] = useState<SopDoc[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // Edits held per document id, so switching documents does not discard them.
-  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [newTitle, setNewTitle] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchDocs = useCallback(async () => {
     setError(null);
@@ -47,11 +62,21 @@ export default function AdminSopPage() {
   useEffect(() => { fetchDocs(); }, [fetchDocs]);
 
   const selectedDoc = docs.find((d) => d.id === selectedId) ?? null;
-  const content = selectedDoc ? drafts[selectedDoc.id] ?? selectedDoc.content : "";
-  const isDirty = !!selectedDoc && drafts[selectedDoc.id] !== undefined && drafts[selectedDoc.id] !== selectedDoc.content;
+  const draft: Draft = selectedDoc
+    ? drafts[selectedDoc.id] ?? { content: selectedDoc.content, relatedLinks: selectedDoc.relatedLinks }
+    : { content: "", relatedLinks: [] };
+  const isDirty =
+    !!selectedDoc &&
+    drafts[selectedDoc.id] !== undefined &&
+    !draftEquals(drafts[selectedDoc.id], { content: selectedDoc.content, relatedLinks: selectedDoc.relatedLinks });
   // Served from the legacy SopContent row because SopDocument does not exist
   // yet; it is synthetic, so it cannot be edited, renamed or deleted.
   const isLegacy = selectedDoc?.id === LEGACY_DOC_ID;
+
+  const setDraft = (updater: (prev: Draft) => Draft) => {
+    if (!selectedDoc) return;
+    setDrafts((prev) => ({ ...prev, [selectedDoc.id]: updater(draft) }));
+  };
 
   const handleSave = async () => {
     if (!selectedDoc) return;
@@ -60,9 +85,9 @@ export default function AdminSopPage() {
       await fetchJson(`/api/sop/${selectedDoc.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ content: draft.content, relatedLinks: draft.relatedLinks }),
       });
-      setDocs((prev) => prev.map((d) => (d.id === selectedDoc.id ? { ...d, content } : d)));
+      setDocs((prev) => prev.map((d) => (d.id === selectedDoc.id ? { ...d, ...draft } : d)));
       setDrafts((prev) => {
         const next = { ...prev };
         delete next[selectedDoc.id];
@@ -119,6 +144,53 @@ export default function AdminSopPage() {
     } catch (err) {
       toast.error(errorMessage(err));
     }
+  };
+
+  const handleUpload = async (file: File) => {
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch("/api/sop/upload", { method: "POST", body: form });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.detail ? `${body.error}: ${body.detail}` : body.error ?? "Upload failed");
+
+      const markdown = `![${file.name}](${body.url})`;
+      const textarea = textareaRef.current;
+      if (textarea) {
+        const { selectionStart, selectionEnd } = textarea;
+        const next = draft.content.slice(0, selectionStart) + markdown + draft.content.slice(selectionEnd);
+        setDraft((prev) => ({ ...prev, content: next }));
+        // Restore focus and cursor after the inserted text on the next tick,
+        // once the textarea has re-rendered with the new value.
+        requestAnimationFrame(() => {
+          textarea.focus();
+          const pos = selectionStart + markdown.length;
+          textarea.setSelectionRange(pos, pos);
+        });
+      } else {
+        setDraft((prev) => ({ ...prev, content: prev.content + markdown }));
+      }
+      toast.success("Image uploaded");
+    } catch (err) {
+      toast.error(errorMessage(err));
+    }
+    setUploading(false);
+  };
+
+  const updateLink = (index: number, field: keyof RelatedLink, value: string) => {
+    setDraft((prev) => ({
+      ...prev,
+      relatedLinks: prev.relatedLinks.map((l, i) => (i === index ? { ...l, [field]: value } : l)),
+    }));
+  };
+
+  const removeLink = (index: number) => {
+    setDraft((prev) => ({ ...prev, relatedLinks: prev.relatedLinks.filter((_, i) => i !== index) }));
+  };
+
+  const addLink = () => {
+    setDraft((prev) => ({ ...prev, relatedLinks: [...prev.relatedLinks, { label: "", url: "" }] }));
   };
 
   if (loading) {
@@ -198,7 +270,7 @@ export default function AdminSopPage() {
               className="bg-[#dc2626] text-black hover:bg-[#b91c1c]"
             >
               <Save className="w-4 h-4 mr-2" />
-              {saving ? "Saving..." : "Save Content"}
+              {saving ? "Saving..." : "Save"}
             </Button>
           </div>
 
@@ -215,23 +287,88 @@ export default function AdminSopPage() {
           )}
 
           <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#1e1e1e] flex items-center gap-2">
+            <div className="px-4 py-3 border-b border-[#1e1e1e] flex items-center justify-between">
               <span className="text-xs text-gray-500">Markdown</span>
+              <div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/gif,image/webp"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleUpload(file);
+                    e.target.value = "";
+                  }}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs text-gray-400"
+                  disabled={isLegacy || uploading}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <ImageIcon className="w-3.5 h-3.5 mr-1.5" />
+                  {uploading ? "Uploading..." : "Insert Image"}
+                </Button>
+              </div>
             </div>
             <textarea
-              value={content}
+              ref={textareaRef}
+              value={draft.content}
               readOnly={isLegacy}
-              onChange={(e) =>
-                selectedDoc && setDrafts((prev) => ({ ...prev, [selectedDoc.id]: e.target.value }))
-              }
-              className="w-full h-[600px] bg-transparent text-gray-300 text-sm p-4 focus:outline-none resize-none font-[family-name:var(--font-mono)]"
+              onChange={(e) => setDraft((prev) => ({ ...prev, content: e.target.value }))}
+              className="w-full h-[500px] bg-transparent text-gray-300 text-sm p-4 focus:outline-none resize-none font-[family-name:var(--font-mono)]"
               placeholder="Write this SOP's content using Markdown..."
             />
           </div>
 
-          <div className="mt-4 text-xs text-gray-600">
+          <div className="mt-2 text-xs text-gray-600">
             Supports Markdown formatting. Use headings (#, ##, ###), lists (-, *), bold (**text**), tables, and more.
           </div>
+
+          {!isLegacy && (
+            <div className="mt-6 bg-[#111111] border border-[#1e1e1e] rounded-xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <Label className="flex items-center gap-1.5">
+                  <LinkIcon className="w-3.5 h-3.5" />
+                  Related Links
+                </Label>
+                <Button type="button" size="sm" variant="ghost" className="h-7 text-xs" onClick={addLink}>
+                  <Plus className="w-3.5 h-3.5 mr-1" />
+                  Add Link
+                </Button>
+              </div>
+              {draft.relatedLinks.length === 0 ? (
+                <p className="text-xs text-gray-600">
+                  No related links. Add one for a reference this document points to.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {draft.relatedLinks.map((link, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <Input
+                        value={link.label}
+                        onChange={(e) => updateLink(i, "label", e.target.value)}
+                        placeholder="Label"
+                        className="max-w-[180px]"
+                      />
+                      <Input
+                        value={link.url}
+                        onChange={(e) => updateLink(i, "url", e.target.value)}
+                        placeholder="https://..."
+                        className="flex-1"
+                      />
+                      <Button type="button" size="sm" variant="ghost" className="text-red-400 h-9 w-9 p-0" onClick={() => removeLink(i)}>
+                        ×
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </>
       )}
 

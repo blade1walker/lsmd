@@ -4,12 +4,15 @@ import { useMemo, useState } from "react";
 import { DiscordBar } from "@/components/DiscordBar";
 import { SopViewer } from "@/components/SopViewer";
 import { Footer } from "@/components/Footer";
+import { ExternalLink } from "lucide-react";
+import type { RelatedLink } from "@/lib/sop";
 
 export interface SopDoc {
   id: string;
   title: string;
   content: string;
   order: number;
+  relatedLinks: RelatedLink[];
 }
 
 export function SopPageClient({ docs }: { docs: SopDoc[] }) {
@@ -54,6 +57,27 @@ export function SopPageClient({ docs }: { docs: SopDoc[] }) {
               </h2>
             )}
             <SopViewer content={selected.content} />
+            {selected.relatedLinks.length > 0 && (
+              <div className="mt-8 pt-6 border-t border-[#1e1e1e]">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                  Related Links
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {selected.relatedLinks.map((link, i) => (
+                    <a
+                      key={i}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-sm text-red-400 hover:text-red-300 bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      {link.label}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </>
         ) : (
           <div className="text-center py-16 bg-[#111111] border border-[#1e1e1e] rounded-xl">

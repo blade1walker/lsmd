@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
-import { LEGACY_DOC_ID } from "@/lib/sop";
+import { LEGACY_DOC_ID, parseRelatedLinks } from "@/lib/sop";
 
 /** Prisma: the table does not exist in the current database. */
 const TABLE_MISSING = "P2021";
@@ -41,7 +41,7 @@ export async function GET() {
       const legacy = await prisma.sopContent.findFirst();
       return NextResponse.json(
         legacy?.content
-          ? [{ id: LEGACY_DOC_ID, title: "General SOP", content: legacy.content, order: 0 }]
+          ? [{ id: LEGACY_DOC_ID, title: "General SOP", content: legacy.content, order: 0, relatedLinks: [] }]
           : []
       );
     } catch (legacyError) {
@@ -55,9 +55,14 @@ export async function POST(req: Request) {
   if (isDenied(auth)) return auth.error;
 
   try {
-    const { title, content } = await req.json();
+    const { title, content, relatedLinks } = await req.json();
     if (!title || !String(title).trim()) {
       return NextResponse.json({ error: "Title is required" }, { status: 400 });
+    }
+
+    const links = parseRelatedLinks(relatedLinks ?? []);
+    if ("error" in links) {
+      return NextResponse.json({ error: links.error }, { status: 400 });
     }
 
     const maxOrder = await prisma.sopDocument.aggregate({ _max: { order: true } });
@@ -67,6 +72,7 @@ export async function POST(req: Request) {
         title: String(title).trim(),
         content: content ?? "",
         order: (maxOrder._max.order ?? -1) + 1,
+        relatedLinks: links as never,
       },
     });
 

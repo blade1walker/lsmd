@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
-import { LEGACY_DOC_ID } from "@/lib/sop";
+import { LEGACY_DOC_ID, parseRelatedLinks } from "@/lib/sop";
 
 /** The legacy fallback document is synthetic, so writes to it cannot succeed. */
 const legacyReadOnly = () =>
@@ -25,13 +25,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const { id } = await params;
     if (id === LEGACY_DOC_ID) return legacyReadOnly();
 
-    const { title, content, order } = await req.json();
+    const { title, content, order, relatedLinks } = await req.json();
 
     if (title !== undefined && !String(title).trim()) {
       return NextResponse.json({ error: "Title cannot be empty" }, { status: 400 });
     }
 
-    const changed = Object.entries({ title, content, order })
+    let links: ReturnType<typeof parseRelatedLinks> | undefined;
+    if (relatedLinks !== undefined) {
+      links = parseRelatedLinks(relatedLinks);
+      if ("error" in links) {
+        return NextResponse.json({ error: links.error }, { status: 400 });
+      }
+    }
+
+    const changed = Object.entries({ title, content, order, relatedLinks })
       .filter(([, v]) => v !== undefined)
       .map(([k]) => k);
 
@@ -41,6 +49,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ...(title !== undefined && { title: String(title).trim() }),
         ...(content !== undefined && { content }),
         ...(order !== undefined && { order }),
+        ...(links && { relatedLinks: links as never }),
       },
     });
 
