@@ -62,7 +62,7 @@ const DEFAULTS: Settings = {
   loaDMApprove: "Your Leave of Absence has been **Approved**.\n\nStart: {startDate}\nEnd: {endDate}\nReason: {reason}",
   loaDMDecline: "Your Leave of Absence request has been **Declined**.\n\nIf you have questions, please contact HR.",
   promotionWebhook: true,
-  promotionWebhookMessage: "🎉 Congratulations {name} ({callSign})! You have been promoted from **{fromRank}** to **{toRank}**!",
+  promotionWebhookMessage: "🎉 Congratulations <@{discordId}>! {name} ({callSign}) has been promoted from **{fromRank}** to **{toRank}**!",
   testWebhook: true,
   testDM: true,
   webhookUrls: null,
@@ -74,7 +74,7 @@ const VARIABLES_HELP: Record<string, string[]> = {
   onboarding: ["{name}", "{rank}", "{callSign}", "{stateId}", "{inviteLink}"],
   ftp: ["{name}", "{inviteLink}", "{callSign}"],
   loa: ["{name}", "{startDate}", "{endDate}", "{reason}"],
-  promotion: ["{name}", "{callSign}", "{fromRank}", "{toRank}"],
+  promotion: ["{name}", "{callSign}", "{fromRank}", "{toRank}", "<@{discordId}>"],
 };
 
 export default function AdminNotificationSettingsPage() {
@@ -350,7 +350,9 @@ export default function AdminNotificationSettingsPage() {
             </div>
             {expanded === "promotion" && (
               <div className="border-t border-[#1e1e1e] p-4 space-y-4">
-                <p className="text-gray-500 text-xs"><strong>Variables:</strong> {"{name}"} {"{callSign}"} {"{fromRank}"} {"{toRank}"}</p>
+                <p className="text-gray-500 text-xs">
+                  <strong>Variables:</strong> {"{name}"} {"{callSign}"} {"{fromRank}"} {"{toRank}"} {"<@{discordId}>"} (tags the member — blank if they have no linked Discord account)
+                </p>
                 <MessageField label="Webhook - Promoted" value={settings.promotionWebhookMessage} onChange={(v) => setSettings({ ...settings, promotionWebhookMessage: v })} />
               </div>
             )}

@@ -98,11 +98,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
       const settings = await getNotificationSettings();
       if (settings.promotionWebhook) {
+        // {discordId} is substituted the same way recruit/onboarding do it —
+        // the tag itself, <@{discordId}>, lives in the template text. Left
+        // blank when the member has no linked Discord account rather than
+        // skipped, matching how those routes already handle it.
         const message = settings.promotionWebhookMessage
           .replace(/{name}/g, member.name)
           .replace(/{callSign}/g, member.callSign ?? "N/A")
           .replace(/{fromRank}/g, before.rank)
-          .replace(/{toRank}/g, member.rank);
+          .replace(/{toRank}/g, member.rank)
+          .replace(/{discordId}/g, member.discordId ?? "");
         await postToPromotionWebhook(message);
       }
     }

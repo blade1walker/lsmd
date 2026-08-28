@@ -63,7 +63,7 @@ export async function getNotificationSettings() {
       loaDMApprove: "Your Leave of Absence has been **Approved**.\n\nStart: {startDate}\nEnd: {endDate}\nReason: {reason}",
       loaDMDecline: "Your Leave of Absence request has been **Declined**.\n\nIf you have questions, please contact HR.",
       promotionWebhook: true,
-      promotionWebhookMessage: "🎉 Congratulations {name} ({callSign})! You have been promoted from **{fromRank}** to **{toRank}**!",
+      promotionWebhookMessage: "🎉 Congratulations <@{discordId}>! {name} ({callSign}) has been promoted from **{fromRank}** to **{toRank}**!",
       testWebhook: true,
       testDM: true,
       webhookUrls: null,
