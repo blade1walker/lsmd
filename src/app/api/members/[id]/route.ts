@@ -160,7 +160,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           .replace(/{fromRank}/g, before.rank)
           .replace(/{toRank}/g, member.rank)
           .replace(/{discordId}/g, member.discordId ?? "");
-        await postToPromotionWebhook(message);
+        void postToPromotionWebhook(message);
       }
     }
 
@@ -172,7 +172,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           .replace(/{oldCallSign}/g, before.callSign ?? "N/A")
           .replace(/{newCallSign}/g, member.callSign ?? "N/A")
           .replace(/{discordId}/g, member.discordId ?? "");
-        await postToCallsignWebhook(message);
+        void postToCallsignWebhook(message);
       }
     }
 
