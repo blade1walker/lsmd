@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ErrorState } from "@/components/ui/error-state";
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
-import { Radio, Search } from "lucide-react";
+import Link from "next/link";
+import { Radio, Search, Hash } from "lucide-react";
 import { toast } from "sonner";
 
 interface Member {
@@ -98,14 +99,23 @@ export default function AdminCallsignsPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="font-[family-name:var(--font-oswald)] text-2xl font-bold text-white uppercase flex items-center gap-2">
-          <Radio className="w-6 h-6 text-[#dc2626]" />
-          Call Signs
-        </h1>
-        <p className="text-gray-500 text-sm mt-1">
-          Reassign a roster member&apos;s call sign. They&apos;re notified via webhook when it changes.
-        </p>
+      <div className="mb-8 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="font-[family-name:var(--font-oswald)] text-2xl font-bold text-white uppercase flex items-center gap-2">
+            <Radio className="w-6 h-6 text-[#dc2626]" />
+            Call Signs
+          </h1>
+          <p className="text-gray-500 text-sm mt-1">
+            Reassign a roster member&apos;s call sign. They&apos;re notified via webhook when it changes.
+          </p>
+        </div>
+        <Link
+          href="/admin/callsigns/pool"
+          className="shrink-0 inline-flex items-center gap-2 h-9 px-3 rounded-md border border-[#1e1e1e] bg-[#111111] text-sm text-gray-300 hover:text-white hover:border-[#2a2a2a]"
+        >
+          <Hash className="w-4 h-4" />
+          View Pool
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

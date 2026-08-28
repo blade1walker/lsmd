@@ -4,7 +4,6 @@ import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { SECTION_HINTS, getRankWeight } from "@/lib/constants";
-import { getNextCallSign } from "@/lib/callsign";
 import { getNotificationSettings, postToPromotionWebhook, postToCallsignWebhook } from "@/lib/discord-webhook";
 import { removeFtpDiscordRole } from "@/lib/discord-roles";
 
@@ -33,19 +32,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const isPromotionCandidate =
       !!before && !!body.rank && body.rank !== before.rank && getRankWeight(body.rank) > getRankWeight(before.rank);
 
-    // Reassign the call sign for the new rank on promotion — unless the same
-    // request also set a different call sign on purpose, which takes
-    // precedence over the automatic one.
-    if (isPromotionCandidate && (body.callSign === undefined || body.callSign === before!.callSign)) {
-      const nextCallSign = await getNextCallSign(body.rank);
-      if (nextCallSign) body.callSign = nextCallSign;
-    }
-
     // A standalone call sign reassignment — the dedicated Call Signs section,
     // or any other edit that sets callSign without also promoting. Excluded
-    // whenever isPromotionCandidate, since a promotion already reassigns the
-    // call sign itself and already has its own notification covering it —
-    // firing this one too would post twice about the same underlying change.
+    // whenever isPromotionCandidate: if a promotion request happens to bundle
+    // a call sign change too, the promotion announcement below already
+    // reports the new call sign, so firing this notification as well would
+    // post twice about the same underlying change.
     const isCallsignChange =
       !isPromotionCandidate && !!before && body.callSign !== undefined && body.callSign !== before.callSign;
 

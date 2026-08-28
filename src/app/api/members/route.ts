@@ -52,8 +52,8 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    if (!body.callSign && body.rank) {
-      body.callSign = await getNextCallSign(body.rank);
+    if (!body.callSign) {
+      body.callSign = await getNextCallSign();
     }
 
     const member = await prisma.member.create({ data: body });
