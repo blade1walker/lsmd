@@ -7,10 +7,10 @@ import AddMemberDialog from "@/components/AddMemberDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Download } from "lucide-react";
-import { RANK_NAMES, SECTION_HINTS } from "@/lib/constants";
+import { RANK_NAMES, SECTION_HINTS, ACTIVITY_STATUSES } from "@/lib/constants";
 import { toast } from "sonner";
 import { ErrorState } from "@/components/ui/error-state";
-import { fetchList, errorMessage } from "@/lib/fetch-json";
+import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
 
 interface Section {
   id: string;
@@ -41,6 +41,7 @@ export default function AdminRosterPage() {
   const [search, setSearch] = useState("");
   const [rankFilter, setRankFilter] = useState("");
   const [deptFilter, setDeptFilter] = useState("");
+  const [activityFilter, setActivityFilter] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -67,26 +68,24 @@ export default function AdminRosterPage() {
 
   const handleUpdate = async (id: string, data: Record<string, unknown>) => {
     try {
-      const res = await fetch(`/api/members/${id}`, {
+      await fetchJson(`/api/members/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!res.ok) throw new Error("Failed to update");
       fetchData();
-    } catch {
-      toast.error("Failed to update member");
+    } catch (err) {
+      toast.error(errorMessage(err));
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
-      const res = await fetch(`/api/members/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete");
+      await fetchJson(`/api/members/${id}`, { method: "DELETE" });
       toast.success("Member removed");
       fetchData();
-    } catch {
-      toast.error("Failed to delete member");
+    } catch (err) {
+      toast.error(errorMessage(err));
     }
   };
 
@@ -116,6 +115,7 @@ export default function AdminRosterPage() {
       members: s.members.filter((m) => {
         if (rankFilter && m.rank !== rankFilter) return false;
         if (deptFilter && m.dept !== deptFilter) return false;
+        if (activityFilter && m.activity !== activityFilter) return false;
         if (!search) return true;
         const q = search.toLowerCase();
         return (
@@ -143,7 +143,7 @@ export default function AdminRosterPage() {
             Roster Management
           </h1>
           <p className="text-gray-500 text-sm mt-1">
-            {rankFilter || deptFilter
+            {rankFilter || deptFilter || activityFilter
               ? `${filteredCount} of ${allMembers.length} members`
               : `${allMembers.length} total members`}
           </p>
@@ -173,6 +173,17 @@ export default function AdminRosterPage() {
             <option value="">All departments</option>
             {deptNames.map((d) => (
               <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
+          <select
+            value={activityFilter}
+            onChange={(e) => setActivityFilter(e.target.value)}
+            className="h-9 rounded-md border border-[#1e1e1e] bg-[#111111] px-3 text-sm text-white"
+          >
+            <option value="">All statuses</option>
+            {/* "Reserve" is the stored activity value; shown as "Inactive" here since that's what it means day to day. */}
+            {ACTIVITY_STATUSES.map((s) => (
+              <option key={s} value={s}>{s === "Reserve" ? "Inactive" : s}</option>
             ))}
           </select>
           <Button

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { ErrorState } from "@/components/ui/error-state";
-import { fetchList, errorMessage } from "@/lib/fetch-json";
+import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
 
 interface SignOffDefinition {
   id: string;
@@ -67,7 +67,7 @@ export default function AdminSignoffsPage() {
   const handleAddDefinition = async () => {
     if (!newDefinition) return;
     try {
-      const res = await fetch("/api/signoffs", {
+      await fetchJson("/api/signoffs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -75,23 +75,21 @@ export default function AdminSignoffsPage() {
           order: definitions.length,
         }),
       });
-      if (!res.ok) throw new Error("Failed");
       setNewDefinition("");
       toast.success("Sign-off type added");
       fetchData();
-    } catch (error) {
-      toast.error("Failed to add sign-off type");
+    } catch (err) {
+      toast.error(errorMessage(err));
     }
   };
 
   const handleDeleteDefinition = async (id: string) => {
     try {
-      const res = await fetch(`/api/signoffs/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed");
+      await fetchJson(`/api/signoffs/${id}`, { method: "DELETE" });
       toast.success("Sign-off type removed");
       fetchData();
-    } catch (error) {
-      toast.error("Failed to delete sign-off type");
+    } catch (err) {
+      toast.error(errorMessage(err));
     }
   };
 

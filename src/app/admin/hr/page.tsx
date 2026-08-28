@@ -6,7 +6,7 @@ import { Check, X, Clock, CheckCircle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ErrorState } from "@/components/ui/error-state";
-import { fetchList, errorMessage } from "@/lib/fetch-json";
+import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
 
 interface LOA {
   id: string;
@@ -85,16 +85,15 @@ export default function AdminHrPage() {
     if (processingId) return;
     setProcessingId(id);
     try {
-      const res = await fetch(`/api/loa/${id}`, {
+      await fetchJson(`/api/loa/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       });
-      if (!res.ok) throw new Error("Failed");
       toast.success(`LOA ${status.toLowerCase()}`);
       fetchData();
-    } catch {
-      toast.error("Failed to update LOA");
+    } catch (err) {
+      toast.error(errorMessage(err));
     } finally {
       setProcessingId(null);
     }
@@ -104,16 +103,15 @@ export default function AdminHrPage() {
     if (processingId) return;
     setProcessingId(id);
     try {
-      const res = await fetch(`/api/removal-requests/${id}`, {
+      await fetchJson(`/api/removal-requests/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       });
-      if (!res.ok) throw new Error("Failed");
       toast.success(`Removal ${status.toLowerCase()}`);
       fetchData();
-    } catch {
-      toast.error("Failed to update removal request");
+    } catch (err) {
+      toast.error(errorMessage(err));
     } finally {
       setProcessingId(null);
     }
@@ -123,16 +121,15 @@ export default function AdminHrPage() {
     if (processingId) return;
     setProcessingId(id);
     try {
-      const res = await fetch(`/api/inactivity-requests/${id}`, {
+      await fetchJson(`/api/inactivity-requests/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       });
-      if (!res.ok) throw new Error("Failed");
       toast.success(`Inactivity ${status.toLowerCase()}`);
       fetchData();
-    } catch {
-      toast.error("Failed to update inactivity request");
+    } catch (err) {
+      toast.error(errorMessage(err));
     } finally {
       setProcessingId(null);
     }

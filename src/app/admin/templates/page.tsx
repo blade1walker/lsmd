@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { ErrorState } from "@/components/ui/error-state";
-import { fetchList, errorMessage } from "@/lib/fetch-json";
+import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
 
 interface TempRank {
   id: string;
@@ -70,85 +70,78 @@ export default function AdminTemplatesPage() {
   const handleAddTempRank = async () => {
     if (!newTempRank) return;
     try {
-      const res = await fetch("/api/admin/temp-ranks", {
+      await fetchJson("/api/admin/temp-ranks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newTempRank, order: tempRanks.length }),
       });
-      if (!res.ok) throw new Error("Failed");
       setNewTempRank("");
       toast.success("Temp rank added");
       fetchData();
-    } catch (error) {
-      toast.error("Failed to add temp rank");
+    } catch (err) {
+      toast.error(errorMessage(err));
     }
   };
 
   const handleDeleteTempRank = async (id: string) => {
     try {
-      const res = await fetch(`/api/admin/temp-ranks?id=${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed");
+      await fetchJson(`/api/admin/temp-ranks?id=${id}`, { method: "DELETE" });
       toast.success("Temp rank removed");
       fetchData();
-    } catch (error) {
-      toast.error("Failed to delete temp rank");
+    } catch (err) {
+      toast.error(errorMessage(err));
     }
   };
 
   const handleAddCategory = async () => {
     if (!newCategory.name) return;
     try {
-      const res = await fetch("/api/admin/categories", {
+      await fetchJson("/api/admin/categories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...newCategory, order: categories.length }),
       });
-      if (!res.ok) throw new Error("Failed");
       setNewCategory({ name: "", color: "#dc2626" });
       toast.success("Category added");
       fetchData();
-    } catch (error) {
-      toast.error("Failed to add category");
+    } catch (err) {
+      toast.error(errorMessage(err));
     }
   };
 
   const handleDeleteCategory = async (id: string) => {
     try {
-      const res = await fetch(`/api/admin/categories?id=${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed");
+      await fetchJson(`/api/admin/categories?id=${id}`, { method: "DELETE" });
       toast.success("Category removed");
       fetchData();
-    } catch (error) {
-      toast.error("Failed to delete category");
+    } catch (err) {
+      toast.error(errorMessage(err));
     }
   };
 
   const handleAddDepartment = async () => {
     if (!newDepartment.name) return;
     try {
-      const res = await fetch("/api/admin/departments", {
+      await fetchJson("/api/admin/departments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...newDepartment, order: departments.length }),
       });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.error ?? "Failed");
       setNewDepartment({ name: "", documentLink: "" });
       toast.success("Department added");
       fetchData();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to add department");
+    } catch (err) {
+      toast.error(errorMessage(err));
     }
   };
 
   const handleDeleteDepartment = async (id: string) => {
     try {
-      const res = await fetch(`/api/admin/departments?id=${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed");
+      await fetchJson(`/api/admin/departments?id=${id}`, { method: "DELETE" });
       toast.success("Department removed");
       fetchData();
-    } catch (error) {
-      toast.error("Failed to delete department");
+    } catch (err) {
+      toast.error(errorMessage(err));
     }
   };
 
@@ -159,18 +152,16 @@ export default function AdminTemplatesPage() {
 
   const handleSaveDeptLink = async (id: string) => {
     try {
-      const res = await fetch("/api/admin/departments", {
+      await fetchJson("/api/admin/departments", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, documentLink: deptLinkDraft || null }),
       });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.error ?? "Failed");
       setEditingDeptId(null);
       toast.success("Document link saved");
       fetchData();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to save link");
+    } catch (err) {
+      toast.error(errorMessage(err));
     }
   };
 
@@ -178,17 +169,15 @@ export default function AdminTemplatesPage() {
     const current = departments.find((d) => d.id === id);
     if (!current || !name.trim() || name.trim() === current.name) return;
     try {
-      const res = await fetch("/api/admin/departments", {
+      await fetchJson("/api/admin/departments", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, name }),
       });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.error ?? "Failed");
       toast.success("Department renamed");
       fetchData();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to rename department");
+    } catch (err) {
+      toast.error(errorMessage(err));
     }
   };
 

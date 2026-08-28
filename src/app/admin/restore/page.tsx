@@ -7,7 +7,7 @@ import { RotateCcw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ErrorState } from "@/components/ui/error-state";
-import { fetchList, errorMessage } from "@/lib/fetch-json";
+import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
 
 interface DeletionLog {
   id: string;
@@ -42,23 +42,21 @@ export default function AdminRestorePage() {
 
   const handleRestore = async (logId: string) => {
     try {
-      const res = await fetch(`/api/admin/deleted?logId=${logId}`, { method: "POST" });
-      if (!res.ok) throw new Error("Failed");
+      await fetchJson(`/api/admin/deleted?logId=${logId}`, { method: "POST" });
       toast.success("Item restored");
       fetchLogs();
-    } catch (error) {
-      toast.error("Failed to restore item");
+    } catch (err) {
+      toast.error(errorMessage(err));
     }
   };
 
   const handleDismiss = async (logId: string) => {
     try {
-      const res = await fetch(`/api/admin/deleted?logId=${logId}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed");
+      await fetchJson(`/api/admin/deleted?logId=${logId}`, { method: "DELETE" });
       toast.success("Log dismissed");
       fetchLogs();
-    } catch (error) {
-      toast.error("Failed to dismiss log");
+    } catch (err) {
+      toast.error(errorMessage(err));
     }
   };
 

@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ErrorState } from "@/components/ui/error-state";
-import { fetchList, errorMessage } from "@/lib/fetch-json";
+import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
 import { toast } from "sonner";
 
 interface TrainingRecord {
@@ -86,7 +86,7 @@ export default function AdminTrainingPage() {
     currentValue: boolean
   ) => {
     try {
-      const res = await fetch(`/api/training/${recordId}`, {
+      await fetchJson(`/api/training/${recordId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -94,10 +94,9 @@ export default function AdminTrainingPage() {
           [`${field}By`]: signedBy || "Admin",
         }),
       });
-      if (!res.ok) throw new Error("Failed");
       fetchRecords();
-    } catch (error) {
-      toast.error("Failed to update checkpoint");
+    } catch (err) {
+      toast.error(errorMessage(err));
     }
   };
 
@@ -107,7 +106,7 @@ export default function AdminTrainingPage() {
     currentValue: boolean
   ) => {
     try {
-      const res = await fetch(`/api/training/${recordId}`, {
+      await fetchJson(`/api/training/${recordId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -116,11 +115,10 @@ export default function AdminTrainingPage() {
           [`phase${phase}SignedAt`]: new Date().toISOString(),
         }),
       });
-      if (!res.ok) throw new Error("Failed");
       toast.success(`Phase ${phase} ${currentValue ? "unsigned" : "signed off"}`);
       fetchRecords();
-    } catch (error) {
-      toast.error("Failed to sign off phase");
+    } catch (err) {
+      toast.error(errorMessage(err));
     }
   };
 
