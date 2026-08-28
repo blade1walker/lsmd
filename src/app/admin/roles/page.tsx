@@ -6,15 +6,43 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ALL_PERMISSIONS } from "@/lib/constants";
-import { DEFAULT_MEMBER_ROLE } from "@/lib/role-presets";
 import { ErrorState } from "@/components/ui/error-state";
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
 import { memberDisplayLabel } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface AdminRole { id: string; name: string; permissions: string[]; }
-interface AdminUser { id: string; discordId: string; discordName: string; roleId?: string | null; role?: AdminRole | null; }
+interface AdminUser {
+  id: string;
+  discordId: string;
+  discordName: string;
+  roles: AdminRole[];
+  extraPermissions: string[];
+}
 interface RosterMember { id: string; name: string; callSign?: string | null; rank: string; discordId?: string | null; }
+
+function PermissionChecklist({
+  selected,
+  onToggle,
+}: {
+  selected: string[];
+  onToggle: (permission: string, checked: boolean) => void;
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto">
+      {ALL_PERMISSIONS.map((p) => (
+        <label key={p} className="flex items-center gap-2 text-xs text-gray-300">
+          <input
+            type="checkbox"
+            checked={selected.includes(p)}
+            onChange={(e) => onToggle(p, e.target.checked)}
+          />
+          {p}
+        </label>
+      ))}
+    </div>
+  );
+}
 
 export default function AdminRolesPage() {
   const [roles, setRoles] = useState<AdminRole[]>([]);
@@ -24,10 +52,15 @@ export default function AdminRolesPage() {
   const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
   const [showAddUser, setShowAddUser] = useState(false);
   const [roleForm, setRoleForm] = useState({ name: "", permissions: [] as string[] });
-  const [userForm, setUserForm] = useState({ discordId: "", discordName: "", roleId: "" });
+  const [userForm, setUserForm] = useState({ discordId: "", discordName: "", roleIds: [] as string[] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [savingUserId, setSavingUserId] = useState<string | null>(null);
+
+  // Access editor for an existing admin user: their role checkboxes and any
+  // extra permissions granted directly to them, outside of a role.
+  const [editingAccessUser, setEditingAccessUser] = useState<AdminUser | null>(null);
+  const [accessForm, setAccessForm] = useState({ roleIds: [] as string[], extraPermissions: [] as string[] });
 
   const fetchData = useCallback(async () => {
     setError(null);
@@ -101,15 +134,13 @@ export default function AdminRolesPage() {
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await fetchJson("/api/admin/users", {
+      const user = await fetchJson<AdminUser>("/api/admin/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // roleId is a foreign key — "" is not a valid AdminRole.id, so the
-        // unset "default role" option must send null, not the raw "" value.
-        body: JSON.stringify({ ...userForm, roleId: userForm.roleId || null }),
+        body: JSON.stringify(userForm),
       });
-      toast.success(`${userForm.discordName} added`);
-      setUserForm({ discordId: "", discordName: "", roleId: "" });
+      toast.success(`${user.discordName} added`);
+      setUserForm({ discordId: "", discordName: "", roleIds: [] });
       setShowAddUser(false);
       fetchData();
     } catch (err) {
@@ -127,32 +158,38 @@ export default function AdminRolesPage() {
     fetchData();
   };
 
-  const handleChangeUserRole = async (user: AdminUser, roleId: string) => {
-    // roleId === "" means "no explicit role" — the user falls back to the
-    // default role at session time rather than storing a role of its own.
-    const nextRoleId = roleId || null;
-    if ((user.roleId ?? null) === nextRoleId) return;
+  const openEditAccess = (user: AdminUser) => {
+    setEditingAccessUser(user);
+    setAccessForm({
+      roleIds: user.roles.map((r) => r.id),
+      extraPermissions: [...user.extraPermissions],
+    });
+  };
 
-    const previous = users;
-    const nextRole = roles.find((r) => r.id === nextRoleId) ?? null;
-    setUsers((prev) =>
-      prev.map((u) => (u.id === user.id ? { ...u, roleId: nextRoleId, role: nextRole } : u))
-    );
-    setSavingUserId(user.id);
-
+  const handleSaveAccess = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingAccessUser) return;
+    setSavingUserId(editingAccessUser.id);
     try {
-      await fetchJson("/api/admin/users", {
+      const updated = await fetchJson<AdminUser>("/api/admin/users", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: user.id, roleId: nextRoleId }),
+        body: JSON.stringify({ id: editingAccessUser.id, ...accessForm }),
       });
-      toast.success(`${user.discordName} is now ${nextRole?.name ?? DEFAULT_MEMBER_ROLE}`);
+      setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
+      toast.success(`${updated.discordName}'s access updated`);
+      setEditingAccessUser(null);
     } catch (err) {
-      setUsers(previous);
       toast.error(errorMessage(err));
     } finally {
       setSavingUserId(null);
     }
+  };
+
+  const summarizeAccess = (user: AdminUser) => {
+    const roleNames = user.roles.map((r) => r.name);
+    const base = roleNames.length ? roleNames.join(", ") : "EMS Member (default)";
+    return user.extraPermissions.length > 0 ? `${base} +${user.extraPermissions.length} extra` : base;
   };
 
   return (
@@ -208,19 +245,18 @@ export default function AdminRolesPage() {
                   <div className="min-w-0">
                     <div className="text-white font-medium text-sm truncate">{u.discordName}</div>
                     <div className="text-gray-500 text-xs truncate">{u.discordId}</div>
+                    <div className="text-gray-400 text-xs truncate mt-0.5">{summarizeAccess(u)}</div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <select
-                      value={u.roleId ?? ""}
-                      onChange={(e) => handleChangeUserRole(u, e.target.value)}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 text-xs text-gray-400"
+                      onClick={() => openEditAccess(u)}
                       disabled={savingUserId === u.id}
-                      className="h-8 rounded-md border border-[#1e1e1e] bg-[#111111] px-2 text-xs text-white disabled:opacity-50"
                     >
-                      <option value="">{DEFAULT_MEMBER_ROLE} (default)</option>
-                      {roles.map((r) => (
-                        <option key={r.id} value={r.id}>{r.name}</option>
-                      ))}
-                    </select>
+                      Edit Access
+                    </Button>
                     <Button size="sm" variant="ghost" className="h-6 text-xs text-red-400" onClick={() => handleDeleteUser(u.id)}>×</Button>
                   </div>
                 </div>
@@ -244,24 +280,15 @@ export default function AdminRolesPage() {
             <div><Label>Role Name</Label><Input value={roleForm.name} onChange={(e) => setRoleForm((p) => ({ ...p, name: e.target.value }))} required /></div>
             <div>
               <Label className="mb-2 block">Permissions</Label>
-              <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto">
-                {ALL_PERMISSIONS.map((p) => (
-                  <label key={p} className="flex items-center gap-2 text-xs text-gray-300">
-                    <input
-                      type="checkbox"
-                      checked={roleForm.permissions.includes(p)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setRoleForm((prev) => ({ ...prev, permissions: [...prev.permissions, p] }));
-                        } else {
-                          setRoleForm((prev) => ({ ...prev, permissions: prev.permissions.filter((x) => x !== p) }));
-                        }
-                      }}
-                    />
-                    {p}
-                  </label>
-                ))}
-              </div>
+              <PermissionChecklist
+                selected={roleForm.permissions}
+                onToggle={(p, checked) =>
+                  setRoleForm((prev) => ({
+                    ...prev,
+                    permissions: checked ? [...prev.permissions, p] : prev.permissions.filter((x) => x !== p),
+                  }))
+                }
+              />
             </div>
             <DialogFooter>
               <Button
@@ -281,7 +308,7 @@ export default function AdminRolesPage() {
       </Dialog>
 
       <Dialog open={showAddUser} onOpenChange={setShowAddUser}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Add Admin User</DialogTitle></DialogHeader>
           <form onSubmit={handleAddUser} className="space-y-4">
             <div>
@@ -312,21 +339,89 @@ export default function AdminRolesPage() {
               </p>
             </div>
             <div>
-              <Label>Role</Label>
-              <select
-                value={userForm.roleId}
-                onChange={(e) => setUserForm((p) => ({ ...p, roleId: e.target.value }))}
-                className="flex h-9 w-full rounded-md border border-[#1e1e1e] bg-[#111111] px-3 py-1 text-sm text-white"
-              >
-                <option value="">{DEFAULT_MEMBER_ROLE} (default)</option>
+              <Label className="mb-2 block">Roles</Label>
+              <p className="text-xs text-gray-500 mb-2">
+                Leave all unchecked for the default role. A member can hold more than one.
+              </p>
+              <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
                 {roles.map((r) => (
-                  <option key={r.id} value={r.id}>{r.name}</option>
+                  <label key={r.id} className="flex items-center gap-2 text-xs text-gray-300">
+                    <input
+                      type="checkbox"
+                      checked={userForm.roleIds.includes(r.id)}
+                      onChange={(e) =>
+                        setUserForm((prev) => ({
+                          ...prev,
+                          roleIds: e.target.checked
+                            ? [...prev.roleIds, r.id]
+                            : prev.roleIds.filter((id) => id !== r.id),
+                        }))
+                      }
+                    />
+                    {r.name}
+                  </label>
                 ))}
-              </select>
+              </div>
             </div>
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => setShowAddUser(false)}>Cancel</Button>
               <Button type="submit">Add</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editingAccessUser} onOpenChange={(open) => !open && setEditingAccessUser(null)}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Edit Access — {editingAccessUser?.discordName}</DialogTitle></DialogHeader>
+          <form onSubmit={handleSaveAccess} className="space-y-5">
+            <div>
+              <Label className="mb-2 block">Roles</Label>
+              <p className="text-xs text-gray-500 mb-2">
+                A person can hold more than one role — their permissions are the union of all of them.
+              </p>
+              <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                {roles.map((r) => (
+                  <label key={r.id} className="flex items-center gap-2 text-xs text-gray-300">
+                    <input
+                      type="checkbox"
+                      checked={accessForm.roleIds.includes(r.id)}
+                      onChange={(e) =>
+                        setAccessForm((prev) => ({
+                          ...prev,
+                          roleIds: e.target.checked
+                            ? [...prev.roleIds, r.id]
+                            : prev.roleIds.filter((id) => id !== r.id),
+                        }))
+                      }
+                    />
+                    {r.name}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div>
+              <Label className="mb-2 block">Extra Permissions</Label>
+              <p className="text-xs text-gray-500 mb-2">
+                Granted directly to this person on top of their role(s) — for a one-off case that
+                doesn&apos;t justify a whole new role. Adds access only; it can never remove a
+                permission a role already grants.
+              </p>
+              <PermissionChecklist
+                selected={accessForm.extraPermissions}
+                onToggle={(p, checked) =>
+                  setAccessForm((prev) => ({
+                    ...prev,
+                    extraPermissions: checked
+                      ? [...prev.extraPermissions, p]
+                      : prev.extraPermissions.filter((x) => x !== p),
+                  }))
+                }
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={() => setEditingAccessUser(null)}>Cancel</Button>
+              <Button type="submit" disabled={savingUserId === editingAccessUser?.id}>Save</Button>
             </DialogFooter>
           </form>
         </DialogContent>

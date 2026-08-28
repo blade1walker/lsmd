@@ -17,8 +17,10 @@ export interface Access {
   memberName: string | null;
   /** Roster rank, for rules that gate on seniority (e.g. FTP eligibility). */
   memberRank: string | null;
-  /** Explicitly assigned role, or the default when they are only a roster member. */
+  /** Human-readable summary of assigned role(s), or the default when they carry none. */
   roleName: string | null;
+  /** Every role name assigned (legacy single role and the multi-role set, deduplicated). Empty when on the default role. */
+  roleNames: string[];
   permissions: string[];
 }
 
@@ -33,8 +35,18 @@ function denied(discordId: string, denialReason: DenialReason): Access {
     memberName: null,
     memberRank: null,
     roleName: null,
+    roleNames: [],
     permissions: [],
   };
+}
+
+/** Every role assigned via either the legacy single-role field or the multi-role relation, deduplicated by id. */
+function combinedRoles(adminUser: { role: { id: string; name: string; permissions: string[] } | null; roles: { id: string; name: string; permissions: string[] }[] } | null) {
+  if (!adminUser) return [];
+  const byId = new Map<string, { id: string; name: string; permissions: string[] }>();
+  if (adminUser.role) byId.set(adminUser.role.id, adminUser.role);
+  for (const r of adminUser.roles) byId.set(r.id, r);
+  return [...byId.values()];
 }
 
 /**
@@ -59,9 +71,13 @@ export async function resolveAccess(discordId: string | null | undefined): Promi
     }),
     prisma.adminUser.findUnique({
       where: { discordId },
-      include: { role: true },
+      include: { role: true, roles: true },
     }),
   ]);
+
+  const roles = combinedRoles(adminUser);
+  const roleNames = roles.map((r) => r.name);
+  const extraPermissions = adminUser?.extraPermissions ?? [];
 
   if (isSuperAdmin) {
     return {
@@ -73,12 +89,20 @@ export async function resolveAccess(discordId: string | null | undefined): Promi
       memberId: member?.id ?? null,
       memberName: member?.name ?? null,
       memberRank: member?.rank ?? null,
-      roleName: adminUser?.role?.name ?? "Super Admin",
+      roleName: roleNames.length ? roleNames.join(", ") : "Super Admin",
+      roleNames,
       permissions: [...ALL_PERMISSIONS],
     };
   }
 
   if (!member) return denied(discordId, "not-in-roster");
+
+  // Additive union: every role's permissions plus any individually granted
+  // extras. Never a subtraction — extraPermissions cannot revoke something a
+  // role already grants, only add beyond it.
+  const permissions = roles.length
+    ? [...new Set([...roles.flatMap((r) => r.permissions), ...extraPermissions])]
+    : [...new Set([...defaultMemberPermissions(), ...extraPermissions])];
 
   return {
     discordId,
@@ -89,8 +113,9 @@ export async function resolveAccess(discordId: string | null | undefined): Promi
     memberId: member.id,
     memberName: member.name,
     memberRank: member.rank,
-    roleName: adminUser?.role?.name ?? DEFAULT_MEMBER_ROLE,
-    permissions: adminUser?.role?.permissions ?? defaultMemberPermissions(),
+    roleName: roleNames.length ? roleNames.join(", ") : DEFAULT_MEMBER_ROLE,
+    roleNames,
+    permissions,
   };
 }
 

@@ -180,7 +180,11 @@ model AdminRole {
   id          String       @id @default(cuid())
   name        String       @unique
   permissions String[]
+  // Legacy single-role assignment. Kept rather than replaced so existing
+  // assignments are not silently dropped — resolveAccess() unions this with
+  // the new multi-role relation below, so either one alone still works.
   adminUsers  AdminUser[]
+  assignedTo  AdminUser[] @relation("AdminUserRoles")
 }
 
 model TempRankTemplate {
@@ -200,8 +204,16 @@ model AdminUser {
   id          String    @id @default(cuid())
   discordId   String    @unique
   discordName String
+  // Legacy single role. New assignments use `roles` below; this stays so a
+  // user assigned before the multi-role UI shipped keeps their access.
   roleId      String?
   role        AdminRole? @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  roles       AdminRole[] @relation("AdminUserRoles")
+  // Individual permission grants outside of any role — for the rare person
+  // who needs one extra permission without a whole role built around them.
+  // Additive only: this can grant beyond what their role(s) allow, never
+  // revoke a permission a role already grants.
+  extraPermissions String[] @default([])
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }

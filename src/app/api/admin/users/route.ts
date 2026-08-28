@@ -4,15 +4,19 @@ import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 
+const include = { role: true, roles: true } as const;
+
+function roleNames(user: { role: { name: string } | null; roles: { name: string }[] }): string {
+  const names = [...new Set([user.role?.name, ...user.roles.map((r) => r.name)].filter((n): n is string => !!n))];
+  return names.length ? names.join(", ") : "EMS Member (default)";
+}
+
 export async function GET() {
   const auth = await requireAuth("roles.manage");
   if (isDenied(auth)) return auth.error;
 
   try {
-    const users = await prisma.adminUser.findMany({
-      include: { role: true },
-    });
-
+    const users = await prisma.adminUser.findMany({ include });
     return NextResponse.json(users);
   } catch (error) {
     return apiError("Failed to fetch users", error);
@@ -25,15 +29,16 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { discordId, discordName, roleId } = body;
+    const { discordId, discordName, roleIds } = body;
+    const ids: string[] = Array.isArray(roleIds) ? roleIds : [];
 
     const user = await prisma.adminUser.create({
       data: {
         discordId,
         discordName,
-        roleId,
+        roles: { connect: ids.map((id) => ({ id })) },
       },
-      include: { role: true },
+      include,
     });
 
     await logAudit({
@@ -41,7 +46,7 @@ export async function POST(request: Request) {
       entityType: "AdminUser",
       entityId: user.id,
       entityLabel: user.discordName,
-      details: { role: user.role?.name ?? null },
+      details: { roles: roleNames(user) },
       performedBy: actorLabel(auth.access),
     });
 
@@ -51,29 +56,45 @@ export async function POST(request: Request) {
   }
 }
 
+/**
+ * Full replace on roleIds/extraPermissions — the caller sends the complete
+ * desired set each time (the UI always does), not a delta.
+ */
 export async function PATCH(request: Request) {
   const auth = await requireAuth("roles.manage");
   if (isDenied(auth)) return auth.error;
 
   try {
     const body = await request.json();
-    const { id, ...data } = body;
+    const { id, roleIds, extraPermissions, ...data } = body;
 
-    const before = await prisma.adminUser.findUnique({ where: { id }, include: { role: true } });
+    const before = await prisma.adminUser.findUnique({ where: { id }, include });
+    if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
     const user = await prisma.adminUser.update({
       where: { id },
-      data,
-      include: { role: true },
+      data: {
+        ...data,
+        ...(Array.isArray(roleIds) ? { roles: { set: roleIds.map((rid: string) => ({ id: rid })) } } : {}),
+        ...(Array.isArray(extraPermissions) ? { extraPermissions } : {}),
+      },
+      include,
     });
 
-    if (before?.roleId !== user.roleId) {
+    const beforeRoles = roleNames(before);
+    const afterRoles = roleNames(user);
+    const beforeExtra = [...before.extraPermissions].sort().join(",");
+    const afterExtra = [...user.extraPermissions].sort().join(",");
+
+    if (beforeRoles !== afterRoles || beforeExtra !== afterExtra) {
       await logAudit({
         action: "update",
         entityType: "AdminUser",
         entityId: user.id,
         entityLabel: user.discordName,
         details: {
-          role: `${before?.role?.name ?? "EMS Member (default)"} -> ${user.role?.name ?? "EMS Member (default)"}`,
+          roles: beforeRoles !== afterRoles ? `${beforeRoles} -> ${afterRoles}` : null,
+          extraPermissions: beforeExtra !== afterExtra ? `${beforeExtra || "none"} -> ${afterExtra || "none"}` : null,
         },
         performedBy: actorLabel(auth.access),
       });
