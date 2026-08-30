@@ -57,7 +57,10 @@ export async function PATCH(
 
     if (statusChanged && status !== "Pending") {
       const settings = await getNotificationSettings();
-      const inviteLink = settings.botSettings?.stateInvite || settings.webhookUrls?.recruit || process.env.DISCORD_STATE_INVITE || "https://discord.gg/YOUR_INVITE";
+      // Never falls back to webhookUrls.recruit: that is a webhook URL, which
+      // is a credential, and this string is DM'd to the applicant as their
+      // "join the server" link.
+      const inviteLink = settings.botSettings?.stateInvite || process.env.DISCORD_STATE_INVITE || "https://discord.gg/YOUR_INVITE";
 
       if (status === "Approved") {
         if (settings.recruitWebhook) {
@@ -65,28 +68,28 @@ export async function PATCH(
             .replace(/{discordId}/g, request.discordId)
             .replace(/{name}/g, request.characterName || "Recruit")
             .replace(/{inviteLink}/g, inviteLink);
-          await postToAcceptWebhook(msg, "https://r2.fivemanage.com/kgAGMLox973pn5aee2Vbl/ems_approved.png");
+          await postToAcceptWebhook(msg, "https://r2.fivemanage.com/kgAGMLox973pn5aee2Vbl/ems_approved.png", "recruit.approved");
         }
 
         if (settings.recruitDM) {
           const msg = (customMessage || settings.recruitDMApprove)
             .replace(/{name}/g, request.characterName || "Recruit")
             .replace(/{inviteLink}/g, inviteLink);
-          await sendDiscordDM(request.discordId, msg);
+          await sendDiscordDM(request.discordId, msg, "recruit.approved");
         }
       } else if (status === "Declined") {
         if (settings.recruitWebhook) {
           const msg = settings.recruitWebhookDecline
             .replace(/{name}/g, request.characterName || "Recruit")
             .replace(/{discordId}/g, request.discordId);
-          await postToAcceptWebhook(msg, "https://r2.fivemanage.com/kgAGMLox973pn5aee2Vbl/ems_rejected.png");
+          await postToAcceptWebhook(msg, "https://r2.fivemanage.com/kgAGMLox973pn5aee2Vbl/ems_rejected.png", "recruit.declined");
         }
 
         if (settings.recruitDM) {
           const msg = settings.recruitDMDecline
             .replace(/{name}/g, request.characterName || "Recruit")
             .replace(/{inviteLink}/g, inviteLink);
-          await sendDiscordDM(request.discordId, msg);
+          await sendDiscordDM(request.discordId, msg, "recruit.declined");
         }
       }
     }

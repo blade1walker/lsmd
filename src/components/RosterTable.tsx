@@ -18,6 +18,19 @@ interface Member {
   timezone?: string | null;
   category?: string | null;
   tempRank?: string | null;
+  /** At most one row: the leave the member is currently on. */
+  loas?: { endDate: string | Date }[];
+}
+
+/** "Back 12/09/2026" under the status pill, for members listed in the LOA section. */
+function LeaveReturn({ member }: { member: Member }) {
+  const endDate = member.activity === "LOA" ? member.loas?.[0]?.endDate : undefined;
+  if (!endDate) return null;
+  return (
+    <span className="block text-[11px] text-gray-500 mt-1">
+      Back {new Date(endDate).toLocaleDateString()}
+    </span>
+  );
 }
 
 interface RosterTableProps {
@@ -81,6 +94,7 @@ export default function RosterTable({ members, clockStatus, onMemberClick }: Ros
                 </td>
                 <td className="py-3 px-4">
                   <ActivityPill activity={member.activity} />
+                  <LeaveReturn member={member} />
                 </td>
                 <td className="py-3 px-4 font-[family-name:var(--font-mono)] text-gray-400 text-xs">
                   {clock ? formatDuration(clock.todayTotal) : "—"}

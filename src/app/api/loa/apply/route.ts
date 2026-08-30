@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
         { name: "Reason", value: loa.reason || "Not specified", inline: false },
         { name: "Status", value: "Pending", inline: true },
       ],
-    });
+    }, "loa.requested");
 
     return NextResponse.json(loa, { status: 201 });
   } catch (error) {

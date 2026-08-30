@@ -4,7 +4,7 @@ import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { SECTION_HINTS, getRankWeight } from "@/lib/constants";
-import { getNotificationSettings, postToPromotionWebhook, postToCallsignWebhook } from "@/lib/discord-webhook";
+import { getNotificationSettings, postToPromotionWebhook, postToCallsignWebhook, renderTemplate } from "@/lib/discord-webhook";
 import { removeFtpDiscordRole } from "@/lib/discord-roles";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -29,17 +29,22 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     // a snapshot that can go stale before the write below, which is fine —
     // it only decides whether to attempt the atomic path, not whether the
     // promotion notification actually fires.
+    const isRankChange = !!before && !!body.rank && body.rank !== before.rank;
     const isPromotionCandidate =
-      !!before && !!body.rank && body.rank !== before.rank && getRankWeight(body.rank) > getRankWeight(before.rank);
+      isRankChange && getRankWeight(body.rank) > getRankWeight(before!.rank);
+    // A rank change that is not upward. Claimed and announced the same way a
+    // promotion is, on the same channel — a demotion is the other half of the
+    // same event and was previously invisible.
+    const isDemotionCandidate = isRankChange && !isPromotionCandidate;
 
     // A standalone call sign reassignment — the dedicated Call Signs section,
-    // or any other edit that sets callSign without also promoting. Excluded
-    // whenever isPromotionCandidate: if a promotion request happens to bundle
-    // a call sign change too, the promotion announcement below already
-    // reports the new call sign, so firing this notification as well would
-    // post twice about the same underlying change.
+    // or any other edit that sets callSign without also changing rank.
+    // Excluded whenever the rank moves: if a promotion or demotion happens to
+    // bundle a call sign change too, that announcement already reports the new
+    // call sign, so firing this notification as well would post twice about
+    // the same underlying change.
     const isCallsignChange =
-      !isPromotionCandidate && !!before && body.callSign !== undefined && body.callSign !== before.callSign;
+      !isRankChange && !!before && body.callSign !== undefined && body.callSign !== before.callSign;
 
     // Atomically claims the promotion or the call sign change: the
     // conditional where clause means only the request that actually moves
@@ -51,14 +56,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     // winner's, is discarded rather than written, so two concurrent
     // promotions can't collide on one call sign.
     let isPromotion = false;
+    let isDemotion = false;
     let callsignChanged = false;
-    if (isPromotionCandidate) {
+    if (isPromotionCandidate || isDemotionCandidate) {
       const claim = await prisma.member.updateMany({
         where: { id, rank: { not: body.rank } },
         data: body,
       });
-      isPromotion = claim.count === 1;
-      if (!isPromotion) {
+      const rankChanged = claim.count === 1;
+      isPromotion = rankChanged && isPromotionCandidate;
+      isDemotion = rankChanged && isDemotionCandidate;
+      if (!rankChanged) {
         // Someone else already made this exact rank change. Still apply any
         // other fields from this submit (name, timezone, ...) — those are
         // real edits bundled into the same request, not part of the race.
@@ -152,7 +160,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           .replace(/{fromRank}/g, before.rank)
           .replace(/{toRank}/g, member.rank)
           .replace(/{discordId}/g, member.discordId ?? "");
-        void postToPromotionWebhook(message);
+        void postToPromotionWebhook(message, "member.promoted");
+      }
+    }
+
+    if (isDemotion && before) {
+      const settings = await getNotificationSettings();
+      if (settings.demotionWebhook) {
+        const message = renderTemplate(settings.demotionWebhookMessage, {
+          name: member.name,
+          callSign: member.callSign ?? "N/A",
+          fromRank: before.rank,
+          toRank: member.rank,
+          discordId: member.discordId,
+        });
+        void postToPromotionWebhook(message, "member.demoted");
       }
     }
 
@@ -164,7 +186,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           .replace(/{oldCallSign}/g, before.callSign ?? "N/A")
           .replace(/{newCallSign}/g, member.callSign ?? "N/A")
           .replace(/{discordId}/g, member.discordId ?? "");
-        void postToCallsignWebhook(message);
+        void postToCallsignWebhook(message, "member.callsign");
       }
     }
 

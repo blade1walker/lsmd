@@ -24,6 +24,8 @@ interface Member {
   tempRank?: string | null;
   category?: string | null;
   order: number;
+  /** At most one row: the leave the member is currently on. */
+  loas?: { endDate: string | Date }[];
 }
 
 interface MemberRowProps {
@@ -166,6 +168,11 @@ export default function MemberRow({ member, departments, onUpdate, onDelete, onP
       </td>
       <td className="py-3 px-4">
         <ActivityPill activity={member.activity} />
+        {member.activity === "LOA" && member.loas?.[0]?.endDate && (
+          <span className="block text-[11px] text-gray-500 mt-1">
+            Back {new Date(member.loas[0].endDate).toLocaleDateString()}
+          </span>
+        )}
       </td>
       <td className="py-3 px-4 text-gray-400 text-xs">
         {member.tempRank ?? "—"}

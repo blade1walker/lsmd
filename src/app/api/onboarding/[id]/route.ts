@@ -90,7 +90,7 @@ export async function PATCH(
             { name: "Call Sign", value: callSign || "N/A", inline: true },
             { name: "State ID", value: request.stateId || "N/A", inline: true },
           ],
-        });
+        }, "onboarding.approved");
       }
 
       if (settings.onboardingDM) {
@@ -102,7 +102,7 @@ export async function PATCH(
           .replace(/{stateId}/g, request.stateId || "N/A")
           .replace(/{inviteLink}/g, inviteLink);
 
-        await sendDiscordDM(request.discordId, welcomeMessage);
+        await sendDiscordDM(request.discordId, welcomeMessage, "onboarding.approved");
       }
     }
 
@@ -111,7 +111,7 @@ export async function PATCH(
       if (settings.onboardingDM) {
         const msg = settings.onboardingDMDecline
           .replace(/{name}/g, request.name);
-        await sendDiscordDM(request.discordId, msg);
+        await sendDiscordDM(request.discordId, msg, "onboarding.declined");
       }
     }
 

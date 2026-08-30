@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Save, RotateCcw, ChevronDown, ChevronUp, MessageSquare, Webhook, Bot } from "lucide-react";
+import { Loader2, Save, RotateCcw, ChevronDown, ChevronUp, MessageSquare, Webhook, Bot, Send, ScrollText, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { fetchJson, errorMessage } from "@/lib/fetch-json";
 
@@ -31,13 +31,27 @@ interface Settings {
   loaWebhookDecline: string;
   loaDMApprove: string;
   loaDMDecline: string;
+  loaReminderDM: boolean;
+  loaReminderMessage: string;
+  loaExpiredDM: boolean;
+  loaExpiredMessage: string;
   promotionWebhook: boolean;
   promotionWebhookMessage: string;
+  demotionWebhook: boolean;
+  demotionWebhookMessage: string;
   callsignWebhook: boolean;
   callsignWebhookMessage: string;
   testWebhook: boolean;
   testDM: boolean;
-  webhookUrls: { recruit?: string; onboarding?: string; ftp?: string; loa?: string; accept?: string } | null;
+  webhookUrls: {
+    recruit?: string;
+    onboarding?: string;
+    ftp?: string;
+    loa?: string;
+    promotion?: string;
+    callsign?: string;
+    accept?: string;
+  } | null;
   botSettings: { token?: string; inviteLink?: string; stateInvite?: string } | null;
 }
 
@@ -64,8 +78,14 @@ const DEFAULTS: Settings = {
   loaWebhookDecline: "<@{discordId}> **{name}**'s Leave of Absence request has been declined.",
   loaDMApprove: "Your Leave of Absence has been **Approved**.\n\nStart: {startDate}\nEnd: {endDate}\nReason: {reason}",
   loaDMDecline: "Your Leave of Absence request has been **Declined**.\n\nIf you have questions, please contact HR.",
+  loaReminderDM: true,
+  loaReminderMessage: "Hi {name}, your Leave of Absence ends on {endDate} — {daysLeft} day(s) from now. Let HR know if you need an extension.",
+  loaExpiredDM: true,
+  loaExpiredMessage: "Welcome back, {name}! Your Leave of Absence ended on {endDate} and your roster status is Active again.",
   promotionWebhook: true,
   promotionWebhookMessage: "🎉 Congratulations <@{discordId}>! {name} ({callSign}) has been promoted from **{fromRank}** to **{toRank}**!",
+  demotionWebhook: false,
+  demotionWebhookMessage: "📋 {name} ({callSign}) has been moved from **{fromRank}** to **{toRank}**.",
   callsignWebhook: true,
   callsignWebhookMessage: "📻 <@{discordId}>'s call sign has been updated: **{oldCallSign}** → **{newCallSign}**",
   testWebhook: true,
@@ -74,14 +94,36 @@ const DEFAULTS: Settings = {
   botSettings: null,
 };
 
+/** Mirrors the sample values the test endpoint substitutes, so preview matches what gets sent. */
+const SAMPLE_VALUES: Record<string, string> = {
+  name: "Sample Medic",
+  rank: "Paramedic",
+  fromRank: "EMT",
+  toRank: "Paramedic",
+  callSign: "947",
+  oldCallSign: "912",
+  newCallSign: "947",
+  stateId: "12345",
+  startDate: new Date().toLocaleDateString(),
+  endDate: new Date(Date.now() + 7 * 86_400_000).toLocaleDateString(),
+  daysLeft: "2",
+  reason: "Vacation",
+  discordId: "123456789012345678",
+  inviteLink: "https://discord.gg/example",
+};
+
 type BooleanKey = { [K in keyof Settings]: Settings[K] extends boolean ? K : never }[keyof Settings];
 type StringKey = { [K in keyof Settings]: Settings[K] extends string ? K : never }[keyof Settings];
+type WebhookKind = "recruit" | "onboarding" | "ftp" | "loa" | "promotion" | "callsign";
 
 interface ChannelDef {
   id: string;
   label: string;
   hint: string;
   toggleKey: BooleanKey;
+  /** "dm" sends through the bot; "webhook" posts to the channel named by webhookKind. */
+  transport: "webhook" | "dm";
+  webhookKind?: WebhookKind;
   variables: string[];
   fields: { key: StringKey; label: string }[];
 }
@@ -109,6 +151,8 @@ const MESSAGE_GROUPS: GroupDef[] = [
         label: "Webhook",
         hint: "Posted publicly in the recruitment channel",
         toggleKey: "recruitWebhook",
+        transport: "webhook",
+        webhookKind: "recruit",
         variables: ["<@{discordId}>", "{name}", "{inviteLink}"],
         fields: [
           { key: "recruitWebhookApprove", label: "Approved" },
@@ -120,6 +164,7 @@ const MESSAGE_GROUPS: GroupDef[] = [
         label: "Direct Message",
         hint: "Sent privately to the applicant by the bot",
         toggleKey: "recruitDM",
+        transport: "dm",
         variables: ["{name}", "{inviteLink}"],
         fields: [
           { key: "recruitDMApprove", label: "Approved" },
@@ -138,6 +183,8 @@ const MESSAGE_GROUPS: GroupDef[] = [
         label: "Webhook",
         hint: "Embed description posted in the enrollment channel",
         toggleKey: "onboardingWebhook",
+        transport: "webhook",
+        webhookKind: "onboarding",
         variables: ["<@{discordId}>", "{name}", "{rank}", "{callSign}", "{stateId}"],
         fields: [{ key: "onboardingWebhookMessage", label: "Enrolled" }],
       },
@@ -146,6 +193,7 @@ const MESSAGE_GROUPS: GroupDef[] = [
         label: "Direct Message",
         hint: "Sent privately to the new member by the bot",
         toggleKey: "onboardingDM",
+        transport: "dm",
         variables: ["{name}", "{rank}", "{callSign}", "{stateId}", "{inviteLink}"],
         fields: [
           { key: "onboardingDMApprove", label: "Approved" },
@@ -164,6 +212,8 @@ const MESSAGE_GROUPS: GroupDef[] = [
         label: "Webhook",
         hint: "Posted publicly in the FTP channel",
         toggleKey: "ftpWebhook",
+        transport: "webhook",
+        webhookKind: "ftp",
         variables: ["{name}", "{callSign}"],
         fields: [{ key: "ftpWebhookApprove", label: "Enrolled" }],
       },
@@ -172,6 +222,7 @@ const MESSAGE_GROUPS: GroupDef[] = [
         label: "Direct Message",
         hint: "Sent privately to the trainee by the bot",
         toggleKey: "ftpDM",
+        transport: "dm",
         variables: ["{name}", "{inviteLink}"],
         fields: [
           { key: "ftpDMApprove", label: "Approved" },
@@ -190,6 +241,8 @@ const MESSAGE_GROUPS: GroupDef[] = [
         label: "Webhook",
         hint: "Embed description posted in the LOA channel",
         toggleKey: "loaWebhook",
+        transport: "webhook",
+        webhookKind: "loa",
         variables: ["<@{discordId}>", "{name}", "{rank}", "{callSign}", "{startDate}", "{endDate}", "{reason}"],
         fields: [
           { key: "loaWebhookApprove", label: "Approved" },
@@ -201,11 +254,30 @@ const MESSAGE_GROUPS: GroupDef[] = [
         label: "Direct Message",
         hint: "Sent privately to the member by the bot",
         toggleKey: "loaDM",
+        transport: "dm",
         variables: ["{name}", "{rank}", "{callSign}", "{startDate}", "{endDate}", "{reason}"],
         fields: [
           { key: "loaDMApprove", label: "Approved" },
           { key: "loaDMDecline", label: "Declined" },
         ],
+      },
+      {
+        id: "reminder",
+        label: "Ending-soon reminder",
+        hint: "DM sent by the nightly job 1-2 days before the leave ends",
+        toggleKey: "loaReminderDM",
+        transport: "dm",
+        variables: ["{name}", "{rank}", "{callSign}", "{endDate}", "{daysLeft}", "{reason}"],
+        fields: [{ key: "loaReminderMessage", label: "Reminder" }],
+      },
+      {
+        id: "expired",
+        label: "Leave ended",
+        hint: "DM sent when the nightly job expires the leave and restores Active status",
+        toggleKey: "loaExpiredDM",
+        transport: "dm",
+        variables: ["{name}", "{rank}", "{callSign}", "{startDate}", "{endDate}", "{reason}"],
+        fields: [{ key: "loaExpiredMessage", label: "Ended" }],
       },
     ],
   },
@@ -219,21 +291,42 @@ const MESSAGE_GROUPS: GroupDef[] = [
         label: "Webhook",
         hint: "Posted publicly in the promotion channel",
         toggleKey: "promotionWebhook",
+        transport: "webhook",
+        webhookKind: "promotion",
         variables: ["<@{discordId}>", "{name}", "{callSign}", "{fromRank}", "{toRank}"],
         fields: [{ key: "promotionWebhookMessage", label: "Promoted" }],
       },
     ],
   },
   {
+    id: "demotion",
+    title: "Demotion",
+    description: "Posted when a member's rank moves down, on the promotion channel",
+    channels: [
+      {
+        id: "webhook",
+        label: "Webhook",
+        hint: "Off by default — a rank drop is not always something to announce",
+        toggleKey: "demotionWebhook",
+        transport: "webhook",
+        webhookKind: "promotion",
+        variables: ["<@{discordId}>", "{name}", "{callSign}", "{fromRank}", "{toRank}"],
+        fields: [{ key: "demotionWebhookMessage", label: "Demoted" }],
+      },
+    ],
+  },
+  {
     id: "callsign",
     title: "Call Sign",
-    description: "Posted to the channel whenever a member's call sign is changed outside of a promotion",
+    description: "Posted to the channel whenever a member's call sign is changed outside of a rank change",
     channels: [
       {
         id: "webhook",
         label: "Webhook",
         hint: "Posted publicly in the call sign channel",
         toggleKey: "callsignWebhook",
+        transport: "webhook",
+        webhookKind: "callsign",
         variables: ["<@{discordId}>", "{name}", "{oldCallSign}", "{newCallSign}"],
         fields: [{ key: "callsignWebhookMessage", label: "Call Sign Updated" }],
       },
@@ -242,13 +335,46 @@ const MESSAGE_GROUPS: GroupDef[] = [
   {
     id: "test",
     title: "Test",
-    description: "Test notifications from recruit page",
+    description: "Master switches for the test sends on this page",
     channels: [
-      { id: "webhook", label: "Webhook", hint: "", toggleKey: "testWebhook", variables: [], fields: [] },
-      { id: "dm", label: "Direct Message", hint: "", toggleKey: "testDM", variables: [], fields: [] },
+      { id: "webhook", label: "Webhook", hint: "", toggleKey: "testWebhook", transport: "webhook", variables: [], fields: [] },
+      { id: "dm", label: "Direct Message", hint: "", toggleKey: "testDM", transport: "dm", variables: [], fields: [] },
     ],
   },
 ];
+
+const WEBHOOK_URL_FIELDS: { key: WebhookKind; label: string; env: string }[] = [
+  { key: "recruit", label: "Recruit (accept / decline)", env: "DISCORD_ACCEPT_WEBHOOK_URL" },
+  { key: "onboarding", label: "Onboarding (enrollment)", env: "DISCORD_ENROLL_WEBHOOK_URL" },
+  { key: "ftp", label: "FTP", env: "DISCORD_FTP_WEBHOOK_URL" },
+  { key: "loa", label: "LOA", env: "DISCORD_LOA_WEBHOOK_URL" },
+  { key: "promotion", label: "Promotion / demotion", env: "DISCORD_PROMOTION_WEBHOOK_URL" },
+  { key: "callsign", label: "Call sign", env: "DISCORD_CALLSIGN_WEBHOOK_URL" },
+];
+
+interface Delivery {
+  id: string;
+  event: string;
+  channel: string;
+  target: string | null;
+  ok: boolean;
+  status: number | null;
+  error: string | null;
+  preview: string;
+  createdAt: string;
+}
+
+/** Substitutes {placeholders}, leaving unknown ones visible so a typo stands out. */
+function renderPreview(template: string): string {
+  return template.replace(/{(\w+)}/g, (match, key: string) => SAMPLE_VALUES[key] ?? match);
+}
+
+/** Placeholder names used in a message that this channel never substitutes. */
+function unknownVariables(template: string, allowed: string[]): string[] {
+  const permitted = new Set(allowed.map((v) => v.replace(/[^\w]/g, "")));
+  const used = [...template.matchAll(/{(\w+)}/g)].map((m) => m[1]);
+  return [...new Set(used.filter((name) => !permitted.has(name)))];
+}
 
 /**
  * Declared at module scope rather than inside the page: a component re-created
@@ -272,29 +398,48 @@ function MessageField({
   label,
   value,
   defaultValue,
+  variables,
   onChange,
+  onTest,
+  testing,
 }: {
   label: string;
   value: string;
   defaultValue: string;
+  variables: string[];
   onChange: (v: string) => void;
+  onTest: () => void;
+  testing: boolean;
 }) {
   const isDefault = value === defaultValue;
+  const unknown = unknownVariables(value, variables);
+
   return (
     <div>
       <div className="flex items-center justify-between gap-3 mb-1">
         <label className="text-gray-400 text-xs font-medium">{label}</label>
-        {isDefault ? (
-          <span className="text-[10px] uppercase tracking-wide text-gray-600">Default</span>
-        ) : (
+        <div className="flex items-center gap-3">
+          {isDefault ? (
+            <span className="text-[10px] uppercase tracking-wide text-gray-600">Default</span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onChange(defaultValue)}
+              className="text-[10px] uppercase tracking-wide text-gray-500 hover:text-[#dc2626] transition-colors"
+            >
+              Restore default
+            </button>
+          )}
           <button
             type="button"
-            onClick={() => onChange(defaultValue)}
-            className="text-[10px] uppercase tracking-wide text-gray-500 hover:text-[#dc2626] transition-colors"
+            onClick={onTest}
+            disabled={testing}
+            className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-gray-500 hover:text-[#dc2626] transition-colors disabled:opacity-40"
           >
-            Restore default
+            {testing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+            Send test
           </button>
-        )}
+        </div>
       </div>
       <textarea
         value={value}
@@ -303,6 +448,19 @@ function MessageField({
         placeholder={defaultValue}
         className="w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#dc2626] resize-y"
       />
+      {unknown.length > 0 && (
+        <p className="text-amber-500/90 text-xs mt-1">
+          Not substituted here: {unknown.map((v) => `{${v}}`).join(", ")} — it will be sent literally.
+        </p>
+      )}
+      <details className="mt-1 group">
+        <summary className="text-[10px] uppercase tracking-wide text-gray-600 cursor-pointer hover:text-gray-400 list-none">
+          Preview
+        </summary>
+        <pre className="mt-1 whitespace-pre-wrap break-words bg-[#0a0a0a] border border-[#1e1e1e] rounded-md px-3 py-2 text-xs text-gray-300 font-[family-name:var(--font-sans)]">
+          {renderPreview(value) || "(empty)"}
+        </pre>
+      </details>
     </div>
   );
 }
@@ -313,12 +471,16 @@ function ChannelSection({
   onChange,
   open,
   onToggleOpen,
+  onTest,
+  testingField,
 }: {
   channel: ChannelDef;
   settings: Settings;
   onChange: (patch: Partial<Settings>) => void;
   open: boolean;
   onToggleOpen: () => void;
+  onTest: (channel: ChannelDef, field: StringKey) => void;
+  testingField: string | null;
 }) {
   const enabled = settings[channel.toggleKey];
   const editable = channel.fields.length > 0;
@@ -387,7 +549,10 @@ function ChannelSection({
               label={f.label}
               value={settings[f.key]}
               defaultValue={DEFAULTS[f.key]}
+              variables={channel.variables}
               onChange={(v) => onChange({ [f.key]: v } as Partial<Settings>)}
+              onTest={() => onTest(channel, f.key)}
+              testing={testingField === f.key}
             />
           ))}
         </div>
@@ -402,11 +567,12 @@ export default function AdminNotificationSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [activeSection, setActiveSection] = useState<"messages" | "webhooks" | "bot">("messages");
-  const [testTarget, setTestTarget] = useState({ discordId: "", characterName: "" });
-  const [testSending, setTestSending] = useState(false);
-  const [testResult, setTestResult] = useState("");
-  const [testType, setTestType] = useState<"dm" | "webhook">("dm");
+  const [activeSection, setActiveSection] = useState<"messages" | "webhooks" | "bot" | "log">("messages");
+  const [testDiscordId, setTestDiscordId] = useState("");
+  const [testingField, setTestingField] = useState<string | null>(null);
+  const [deliveries, setDeliveries] = useState<Delivery[]>([]);
+  const [failuresOnly, setFailuresOnly] = useState(false);
+  const [loadingLog, setLoadingLog] = useState(false);
 
   const fetchSettings = async () => {
     try {
@@ -414,12 +580,27 @@ export default function AdminNotificationSettingsPage() {
       if (res.ok) {
         const data = await res.json();
         setSettings(data);
+      } else {
+        toast.error("Failed to load notification settings");
       }
     } catch (err) {
       console.error(err);
     }
     setLoading(false);
   };
+
+  // Loaded when the tab is opened or refreshed rather than from an effect —
+  // the log is a snapshot the admin asks for, not state to keep in sync.
+  const fetchDeliveries = useCallback(async (failed = failuresOnly) => {
+    setLoadingLog(true);
+    try {
+      const res = await fetch(`/api/admin/notification-settings/deliveries${failed ? "?failed=1" : ""}`);
+      if (res.ok) setDeliveries(await res.json());
+    } catch (err) {
+      console.error(err);
+    }
+    setLoadingLog(false);
+  }, [failuresOnly]);
 
   useEffect(() => {
     fetchSettings();
@@ -448,30 +629,41 @@ export default function AdminNotificationSettingsPage() {
 
   const patchSettings = (patch: Partial<Settings>) => setSettings((prev) => ({ ...prev, ...patch }));
 
-  const handleTestSend = async () => {
-    if (!testTarget.discordId) {
-      alert("Enter a Discord ID to test");
+  /**
+   * Sends the channel's own message, rendered with sample values. Saves first —
+   * the server reads the stored template, so testing an unsaved edit would
+   * otherwise send the previous text.
+   */
+  const handleTest = async (channel: ChannelDef, field: StringKey) => {
+    if (channel.transport === "dm" && !testDiscordId) {
+      toast.error("Enter a Discord ID at the top of this tab to receive test DMs");
       return;
     }
-    setTestSending(true);
-    setTestResult("");
+
+    setTestingField(field);
     try {
-      const res = await fetch("/api/recruit/test-webhook", {
+      await fetchJson("/api/admin/notification-settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(settings),
+      });
+      const res = await fetch("/api/admin/notification-settings/test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          discordId: testTarget.discordId,
-          characterName: testTarget.characterName,
-          message: "",
-          type: testType,
+          channel: channel.transport,
+          field,
+          kind: channel.webhookKind,
+          discordId: testDiscordId,
         }),
       });
       const data = await res.json();
-      setTestResult(res.ok ? `${testType === "dm" ? "DM" : "Webhook"} sent successfully!` : `Failed: ${data.error || "Unknown error"}`);
+      if (res.ok && data.ok) toast.success(`Test sent — ${data.detail}`);
+      else toast.error(data.error || data.detail || "Test failed");
     } catch (err) {
-      setTestResult("Failed to send test");
+      toast.error(errorMessage(err));
     }
-    setTestSending(false);
+    setTestingField(null);
   };
 
   if (loading) {
@@ -481,6 +673,13 @@ export default function AdminNotificationSettingsPage() {
       </div>
     );
   }
+
+  const tabs = [
+    { id: "messages" as const, label: "Messages", icon: MessageSquare },
+    { id: "webhooks" as const, label: "Webhooks", icon: Webhook },
+    { id: "bot" as const, label: "Bot", icon: Bot },
+    { id: "log" as const, label: "Delivery log", icon: ScrollText },
+  ];
 
   return (
     <div>
@@ -507,42 +706,46 @@ export default function AdminNotificationSettingsPage() {
 
       {/* Section Tabs */}
       <div className="flex gap-1 mb-6 bg-[#111111] border border-[#1e1e1e] rounded-xl p-1 w-fit">
-        <button
-          onClick={() => setActiveSection("messages")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-            activeSection === "messages" ? "bg-[#dc2626] text-black" : "text-gray-400 hover:text-white"
-          }`}
-        >
-          <MessageSquare className="w-4 h-4" />
-          Messages
-        </button>
-        <button
-          onClick={() => setActiveSection("webhooks")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-            activeSection === "webhooks" ? "bg-[#dc2626] text-black" : "text-gray-400 hover:text-white"
-          }`}
-        >
-          <Webhook className="w-4 h-4" />
-          Webhooks
-        </button>
-        <button
-          onClick={() => setActiveSection("bot")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-            activeSection === "bot" ? "bg-[#dc2626] text-black" : "text-gray-400 hover:text-white"
-          }`}
-        >
-          <Bot className="w-4 h-4" />
-          Bot
-        </button>
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => {
+              setActiveSection(tab.id);
+              if (tab.id === "log") fetchDeliveries();
+            }}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+              activeSection === tab.id ? "bg-[#dc2626] text-black" : "text-gray-400 hover:text-white"
+            }`}
+          >
+            <tab.icon className="w-4 h-4" />
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {/* Messages Section */}
       {activeSection === "messages" && (
         <div className="space-y-4">
+          <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl px-4 py-3 flex items-center gap-3 flex-wrap">
+            <div className="min-w-0">
+              <p className="text-sm text-gray-300">Test recipient</p>
+              <p className="text-gray-500 text-xs mt-0.5">
+                Discord ID that receives the DM tests. Webhook tests post to the configured channel.
+              </p>
+            </div>
+            <Input
+              value={testDiscordId}
+              onChange={(e) => setTestDiscordId(e.target.value)}
+              placeholder="Your Discord ID"
+              className="ml-auto w-56 bg-[#0a0a0a] border-[#1e1e1e] text-white"
+            />
+          </div>
+
           <p className="text-gray-500 text-xs">
             Every notification type lists its channels separately — open one to edit the exact message that channel
-            sends, or restore the default wording.
+            sends, preview it, restore the default wording, or send yourself a test.
           </p>
+
           {MESSAGE_GROUPS.map((group) => (
             <div key={group.id} className="bg-[#111111] border border-[#1e1e1e] rounded-xl overflow-hidden">
               <div className="px-4 py-3 border-b border-[#1e1e1e]">
@@ -560,6 +763,8 @@ export default function AdminNotificationSettingsPage() {
                       onChange={patchSettings}
                       open={expanded === key}
                       onToggleOpen={() => setExpanded(expanded === key ? null : key)}
+                      onTest={handleTest}
+                      testingField={testingField}
                     />
                   );
                 })}
@@ -575,73 +780,35 @@ export default function AdminNotificationSettingsPage() {
           <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl overflow-hidden">
             <div className="px-4 py-3 border-b border-[#1e1e1e]">
               <h3 className="font-[family-name:var(--font-oswald)] text-sm font-semibold text-white uppercase">Webhook URLs</h3>
-              <p className="text-gray-500 text-xs mt-0.5">Configure webhook endpoints for each feature</p>
+              <p className="text-gray-500 text-xs mt-0.5">
+                A URL set here overrides the matching environment variable. Leave one blank to keep using the variable.
+              </p>
             </div>
             <div className="p-4 space-y-4">
-              <div>
-                <Label className="text-gray-400 text-sm">Recruit Webhook (Accept/Decline)</Label>
-                <Input
-                  value={settings.webhookUrls?.recruit || ""}
-                  onChange={(e) => setSettings({ ...settings, webhookUrls: { ...settings.webhookUrls, recruit: e.target.value } })}
-                  placeholder="https://discord.com/api/webhooks/..."
-                  className="mt-1 bg-[#0a0a0a] border-[#1e1e1e] text-white"
-                />
-              </div>
-              <div>
-                <Label className="text-gray-400 text-sm">Onboarding Webhook (Enrollment)</Label>
-                <Input
-                  value={settings.webhookUrls?.onboarding || ""}
-                  onChange={(e) => setSettings({ ...settings, webhookUrls: { ...settings.webhookUrls, onboarding: e.target.value } })}
-                  placeholder="https://discord.com/api/webhooks/..."
-                  className="mt-1 bg-[#0a0a0a] border-[#1e1e1e] text-white"
-                />
-              </div>
-              <div>
-                <Label className="text-gray-400 text-sm">FTP Webhook</Label>
-                <Input
-                  value={settings.webhookUrls?.ftp || ""}
-                  onChange={(e) => setSettings({ ...settings, webhookUrls: { ...settings.webhookUrls, ftp: e.target.value } })}
-                  placeholder="https://discord.com/api/webhooks/..."
-                  className="mt-1 bg-[#0a0a0a] border-[#1e1e1e] text-white"
-                />
-              </div>
-              <div>
-                <Label className="text-gray-400 text-sm">LOA Webhook</Label>
-                <Input
-                  value={settings.webhookUrls?.loa || ""}
-                  onChange={(e) => setSettings({ ...settings, webhookUrls: { ...settings.webhookUrls, loa: e.target.value } })}
-                  placeholder="https://discord.com/api/webhooks/..."
-                  className="mt-1 bg-[#0a0a0a] border-[#1e1e1e] text-white"
-                />
-              </div>
+              {WEBHOOK_URL_FIELDS.map((field) => (
+                <div key={field.key}>
+                  <Label className="text-gray-400 text-sm">{field.label}</Label>
+                  <Input
+                    value={settings.webhookUrls?.[field.key] || ""}
+                    onChange={(e) =>
+                      setSettings({ ...settings, webhookUrls: { ...settings.webhookUrls, [field.key]: e.target.value } })
+                    }
+                    placeholder="https://discord.com/api/webhooks/..."
+                    className="mt-1 bg-[#0a0a0a] border-[#1e1e1e] text-white"
+                  />
+                  <p className="text-gray-600 text-[11px] mt-1">
+                    Falls back to <code className="bg-white/5 px-1 rounded">{field.env}</code>
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Test Section */}
-          <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#1e1e1e]">
-              <h3 className="font-[family-name:var(--font-oswald)] text-sm font-semibold text-white uppercase">Test Webhook</h3>
-              <p className="text-gray-500 text-xs mt-0.5">Send test messages to verify webhooks work</p>
-            </div>
-            <div className="p-4 space-y-4">
-              <div className="flex gap-2">
-                <Button size="sm" onClick={() => setTestType("dm")} className={testType === "dm" ? "bg-[#dc2626] text-black" : "bg-[#1a1a1a] text-gray-400"}>Direct Message</Button>
-                <Button size="sm" onClick={() => setTestType("webhook")} className={testType === "webhook" ? "bg-[#dc2626] text-black" : "bg-[#1a1a1a] text-gray-400"}>Webhook</Button>
-              </div>
-              <div>
-                <Label className="text-gray-400 text-sm">Discord ID</Label>
-                <Input value={testTarget.discordId} onChange={(e) => setTestTarget({ ...testTarget, discordId: e.target.value })} placeholder="Your Discord ID" className="mt-1 bg-[#0a0a0a] border-[#1e1e1e] text-white" />
-              </div>
-              {testResult && (
-                <div className={`p-3 rounded text-sm ${testResult.includes("success") ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400"}`}>
-                  {testResult}
-                </div>
-              )}
-              <Button onClick={handleTestSend} disabled={testSending || !testTarget.discordId} className="bg-[#dc2626] text-black hover:bg-[#b91c1c]">
-                {testSending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                Send Test
-              </Button>
-            </div>
+          <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl px-4 py-3">
+            <p className="text-gray-500 text-xs">
+              To try one out, open the matching channel on the Messages tab and use <strong className="text-gray-400">Send test</strong> —
+              it posts that channel&apos;s real message and reports what Discord answered.
+            </p>
           </div>
         </div>
       )}
@@ -664,6 +831,9 @@ export default function AdminNotificationSettingsPage() {
                   type="password"
                   className="mt-1 bg-[#0a0a0a] border-[#1e1e1e] text-white"
                 />
+                <p className="text-gray-600 text-[11px] mt-1">
+                  Used for every DM. Falls back to <code className="bg-white/5 px-1 rounded">DISCORD_BOT_TOKEN</code>.
+                </p>
               </div>
               <div>
                 <Label className="text-gray-400 text-sm">Bot Invite Link</Label>
@@ -681,6 +851,9 @@ export default function AdminNotificationSettingsPage() {
                   placeholder="https://discord.gg/YOUR_INVITE"
                   className="mt-1 bg-[#0a0a0a] border-[#1e1e1e] text-white"
                 />
+                <p className="text-gray-600 text-[11px] mt-1">
+                  Substituted for <code className="bg-white/5 px-1 rounded">{"{inviteLink}"}</code> in recruit, onboarding and FTP messages.
+                </p>
               </div>
             </div>
           </div>
@@ -698,6 +871,78 @@ export default function AdminNotificationSettingsPage() {
               </p>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Delivery log */}
+      {activeSection === "log" && (
+        <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl overflow-hidden">
+          <div className="px-4 py-3 border-b border-[#1e1e1e] flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <h3 className="font-[family-name:var(--font-oswald)] text-sm font-semibold text-white uppercase">Recent deliveries</h3>
+              <p className="text-gray-500 text-xs mt-0.5">Last 50 notification attempts, newest first</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 text-xs text-gray-400 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={failuresOnly}
+                  onChange={(e) => {
+                    setFailuresOnly(e.target.checked);
+                    fetchDeliveries(e.target.checked);
+                  }}
+                  className="accent-[#dc2626]"
+                />
+                Failures only
+              </label>
+              <Button variant="outline" size="sm" onClick={() => fetchDeliveries()} disabled={loadingLog} className="border-[#1e1e1e] text-gray-400">
+                <RefreshCw className={`w-4 h-4 mr-2 ${loadingLog ? "animate-spin" : ""}`} />
+                Refresh
+              </Button>
+            </div>
+          </div>
+
+          {deliveries.length === 0 ? (
+            <p className="text-gray-500 text-sm px-4 py-8 text-center">
+              {loadingLog ? "Loading…" : "Nothing logged yet. Every send from here on is recorded."}
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[#1e1e1e]">
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">When</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Event</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Channel</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Target</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Result</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {deliveries.map((d) => (
+                    <tr key={d.id} className="border-b border-[#1e1e1e]/50 align-top">
+                      <td className="py-3 px-4 text-gray-500 text-xs whitespace-nowrap">
+                        {new Date(d.createdAt).toLocaleString()}
+                      </td>
+                      <td className="py-3 px-4 text-gray-300 text-xs font-[family-name:var(--font-mono)]">{d.event}</td>
+                      <td className="py-3 px-4 text-gray-400 text-xs">{d.channel}</td>
+                      <td className="py-3 px-4 text-gray-400 text-xs font-[family-name:var(--font-mono)] break-all">
+                        {d.target || "—"}
+                      </td>
+                      <td className="py-3 px-4 text-xs">
+                        {d.ok ? (
+                          <span className="text-green-400">Sent</span>
+                        ) : (
+                          <span className="text-red-400">{d.error || `Failed (${d.status ?? "no response"})`}</span>
+                        )}
+                        <span className="block text-gray-600 mt-1 line-clamp-2 max-w-md">{d.preview}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
     </div>

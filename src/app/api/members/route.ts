@@ -21,6 +21,17 @@ const PUBLIC_MEMBER_FIELDS = {
 } as const;
 
 /**
+ * The leave a member is currently on, so the roster's LOA section can show when
+ * they are due back. Statuses match the ones the expiry job treats as running.
+ */
+const ACTIVE_LOA = {
+  where: { status: { in: ["Approved", "Active"] } },
+  orderBy: { endDate: "desc" as const },
+  take: 1,
+  select: { endDate: true, startDate: true, reason: true },
+};
+
+/**
  * Stays reachable without a session because the public LOA request page needs
  * to list members. Anonymous callers get a reduced projection: the full row
  * carries discordId, stateId and timezone, which the public roster never shows.
@@ -34,7 +45,9 @@ export async function GET() {
       include: {
         members: {
           orderBy: { order: "asc" },
-          ...(full ? {} : { select: PUBLIC_MEMBER_FIELDS }),
+          ...(full
+            ? { include: { loas: ACTIVE_LOA } }
+            : { select: { ...PUBLIC_MEMBER_FIELDS, loas: ACTIVE_LOA } }),
         },
       },
       orderBy: { order: "asc" },

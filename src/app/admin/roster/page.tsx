@@ -30,6 +30,7 @@ interface Section {
     tempRank?: string | null;
     category?: string | null;
     order: number;
+    loas?: { endDate: string }[];
   }>;
 }
 

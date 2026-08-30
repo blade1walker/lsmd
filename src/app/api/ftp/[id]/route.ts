@@ -61,19 +61,19 @@ export async function PATCH(
         const msg = settings.ftpDMApprove
           .replace(/{name}/g, request.characterName)
           .replace(/{inviteLink}/g, inviteLink);
-        await sendDiscordDM(request.discordId, msg);
+        await sendDiscordDM(request.discordId, msg, "ftp.approved");
       }
 
       if (settings.ftpWebhook) {
         const msg = settings.ftpWebhookApprove
           .replace(/{name}/g, request.characterName)
           .replace(/{callSign}/g, member?.callSign ?? "N/A");
-        await postToFtpWebhook(msg);
+        await postToFtpWebhook(msg, "ftp.enrolled");
       }
     } else if (wonTransition && status === "Declined") {
       if (settings.ftpDM) {
         const msg = settings.ftpDMDecline.replace(/{name}/g, request.characterName);
-        await sendDiscordDM(request.discordId, msg);
+        await sendDiscordDM(request.discordId, msg, "ftp.declined");
       }
     }
 

@@ -385,14 +385,44 @@ model NotificationSettings {
   loaWebhookDecline    String @default("<@{discordId}> **{name}**'s Leave of Absence request has been declined.")
   loaDMApprove         String @default("Your Leave of Absence has been **Approved**.\n\nStart: {startDate}\nEnd: {endDate}\nReason: {reason}")
   loaDMDecline         String @default("Your Leave of Absence request has been **Declined**.\n\nIf you have questions, please contact HR.")
+  loaReminderDM        Boolean @default(true)
+  loaReminderMessage   String @default("Hi {name}, your Leave of Absence ends on {endDate} — {daysLeft} day(s) from now. Let HR know if you need an extension.")
+  loaExpiredDM         Boolean @default(true)
+  loaExpiredMessage    String @default("Welcome back, {name}! Your Leave of Absence ended on {endDate} and your roster status is Active again.")
   promotionWebhook        Boolean @default(true)
   promotionWebhookMessage String  @default("🎉 Congratulations <@{discordId}>! {name} ({callSign}) has been promoted from **{fromRank}** to **{toRank}**!")
+  demotionWebhook         Boolean @default(false)
+  demotionWebhookMessage  String  @default("📋 {name} ({callSign}) has been moved from **{fromRank}** to **{toRank}**.")
   callsignWebhook         Boolean @default(true)
   callsignWebhookMessage  String  @default("📻 <@{discordId}>'s call sign has been updated: **{oldCallSign}** → **{newCallSign}**")
   testWebhook          Boolean @default(true)
   testDM               Boolean @default(true)
   webhookUrls          Json?
   botSettings          Json?
+}
+
+/**
+ * One row per notification attempt. Sends happen inside serverless requests
+ * where a console.error goes nowhere, so a failed DM used to be invisible —
+ * this is the record that answers "did that member actually get it?".
+ */
+model NotificationLog {
+  id        String   @id @default(cuid())
+  /** Dotted event name, e.g. "recruit.approved", "loa.reminder". */
+  event     String
+  /** "webhook" or "dm". */
+  channel   String
+  /** Discord user id for a DM, channel kind for a webhook. */
+  target    String?
+  ok        Boolean
+  status    Int?
+  error     String?
+  /** First 300 characters of what was sent, for spotting a bad template. */
+  preview   String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([event])
 }
 
 model AuditLog {

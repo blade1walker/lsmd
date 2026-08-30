@@ -71,11 +71,11 @@ export async function PATCH(
               { name: "End Date", value: loa.endDate.toLocaleDateString(), inline: true },
               { name: "Reason", value: loa.reason || "Not specified", inline: false },
             ],
-          });
+          }, "loa.approved");
         }
 
         if (settings.loaDM && loa.member.discordId) {
-          await sendDiscordDM(loa.member.discordId, fillTemplate(settings.loaDMApprove));
+          await sendDiscordDM(loa.member.discordId, fillTemplate(settings.loaDMApprove), "loa.approved");
         }
       }
     } else if (status === "Declined") {
@@ -93,11 +93,11 @@ export async function PATCH(
               { name: "End Date", value: loa.endDate.toLocaleDateString(), inline: true },
               { name: "Reason", value: loa.reason || "Not specified", inline: false },
             ],
-          });
+          }, "loa.declined");
         }
 
         if (settings.loaDM && loa.member.discordId) {
-          await sendDiscordDM(loa.member.discordId, fillTemplate(settings.loaDMDecline));
+          await sendDiscordDM(loa.member.discordId, fillTemplate(settings.loaDMDecline), "loa.declined");
         }
       }
     } else if (status === "Expired" || status === "Cancelled") {

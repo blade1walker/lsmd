@@ -9,6 +9,16 @@ export default async function Home() {
       include: {
         members: {
           orderBy: { order: "asc" },
+          // The leave a member is currently on, so the roster's LOA section can
+          // show when they are due back.
+          include: {
+            loas: {
+              where: { status: { in: ["Approved", "Active"] } },
+              orderBy: { endDate: "desc" },
+              take: 1,
+              select: { endDate: true },
+            },
+          },
         },
       },
       orderBy: { order: "asc" },
