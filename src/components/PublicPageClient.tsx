@@ -24,6 +24,9 @@ interface PublicPageClientProps {
   sections: Section[];
 }
 
+/** Collapse key for the LOA group — not a real Section, so it needs its own id. */
+const LOA_SECTION_ID = "__loa";
+
 export function PublicPageClient({ sections }: PublicPageClientProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [activityFilter, setActivityFilter] = useState("All");
@@ -39,24 +42,36 @@ export function PublicPageClient({ sections }: PublicPageClientProps) {
     setOpenSections(initial);
   }, [sections]);
 
-  const filteredSections = useMemo(() => {
-    return sections
-      .map((section) => ({
-        ...section,
-        members: section.members.filter((member) => {
-          const matchesSearch =
-            !searchQuery ||
-            member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            member.callSign?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            member.rank.toLowerCase().includes(searchQuery.toLowerCase());
+  // Anyone on LOA is lifted out of their own section and listed together at the
+  // bottom instead, so a section only shows the people currently serving in it.
+  const { filteredSections, membersOnLOA } = useMemo(() => {
+    const visible = sections.map((section) => ({
+      ...section,
+      members: section.members.filter((member) => {
+        const matchesSearch =
+          !searchQuery ||
+          member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          member.callSign?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          member.rank.toLowerCase().includes(searchQuery.toLowerCase());
 
-          const matchesActivity =
-            activityFilter === "All" || member.activity === activityFilter;
+        const matchesActivity =
+          activityFilter === "All" || member.activity === activityFilter;
 
-          return matchesSearch && matchesActivity;
-        }),
-      }))
-      .filter((section) => section.members.length > 0);
+        return matchesSearch && matchesActivity;
+      }),
+    }));
+
+    return {
+      filteredSections: visible
+        .map((section) => ({
+          ...section,
+          members: section.members.filter((member) => member.activity !== "LOA"),
+        }))
+        .filter((section) => section.members.length > 0),
+      membersOnLOA: visible
+        .flatMap((section) => section.members)
+        .filter((member) => member.activity === "LOA"),
+    };
   }, [sections, searchQuery, activityFilter]);
 
   const totalMembers = sections.reduce((sum, s) => sum + s.members.length, 0);
@@ -105,7 +120,7 @@ export function PublicPageClient({ sections }: PublicPageClientProps) {
           onActivityFilterChange={setActivityFilter}
         />
 
-        {filteredSections.length === 0 ? (
+        {filteredSections.length === 0 && membersOnLOA.length === 0 ? (
           <div className="text-center py-16">
             <div className="text-gray-500 text-lg mb-2">No results found</div>
             <div className="text-gray-600 text-sm">
@@ -132,6 +147,25 @@ export function PublicPageClient({ sections }: PublicPageClientProps) {
                 )}
               </div>
             ))}
+
+            {membersOnLOA.length > 0 && (
+              <div className="mb-8">
+                <SectionHeader
+                  name="On Leave of Absence"
+                  count={membersOnLOA.length}
+                  isOpen={openSections[LOA_SECTION_ID] ?? true}
+                  onToggle={() =>
+                    setOpenSections((prev) => ({
+                      ...prev,
+                      [LOA_SECTION_ID]: !(prev[LOA_SECTION_ID] ?? true),
+                    }))
+                  }
+                />
+                {(openSections[LOA_SECTION_ID] ?? true) && (
+                  <RosterTable members={membersOnLOA} />
+                )}
+              </div>
+            )}
 
             {/* Join EMS CTA */}
             <a

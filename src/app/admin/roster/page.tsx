@@ -35,6 +35,9 @@ interface Section {
 
 interface DepartmentOption { id: string; name: string; }
 
+/** Key for the LOA group — not a real Section, so it needs an id of its own. */
+const LOA_SECTION_ID = "__loa";
+
 export default function AdminRosterPage() {
   const [sections, setSections] = useState<Section[]>([]);
   const [departmentOptions, setDepartmentOptions] = useState<DepartmentOption[]>([]);
@@ -126,6 +129,19 @@ export default function AdminRosterPage() {
       }),
     }))
     .filter((s) => s.members.length > 0);
+
+  // Members on LOA are lifted out of their own section into one group at the
+  // bottom, so a section lists only who is actually serving in it. They keep
+  // their real sectionId — this is a display grouping, not a reassignment.
+  const membersOnLOA = filteredSections.flatMap((s) => s.members).filter((m) => m.activity === "LOA");
+  const displaySections = [
+    ...filteredSections
+      .map((s) => ({ ...s, members: s.members.filter((m) => m.activity !== "LOA") }))
+      .filter((s) => s.members.length > 0),
+    ...(membersOnLOA.length > 0
+      ? [{ id: LOA_SECTION_ID, name: "On Leave of Absence", order: Number.MAX_SAFE_INTEGER, members: membersOnLOA }]
+      : []),
+  ];
 
   const allMembers = sections.flatMap((s) => s.members);
   const filteredCount = filteredSections.reduce((n, s) => n + s.members.length, 0);
@@ -220,7 +236,7 @@ export default function AdminRosterPage() {
         <ErrorState title="Failed to load roster" message={error} onRetry={fetchData} />
       ) : (
         <div className="space-y-8">
-          {filteredSections.map((section) => (
+          {displaySections.map((section) => (
             <div key={section.id}>
               <h2 className="font-[family-name:var(--font-oswald)] text-lg font-semibold text-white uppercase mb-3">
                 {section.name} ({section.members.length})
