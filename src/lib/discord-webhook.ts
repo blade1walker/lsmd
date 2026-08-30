@@ -19,6 +19,7 @@ export async function getNotificationSettings() {
       recruitDMDecline: string;
       onboardingWebhook: boolean;
       onboardingDM: boolean;
+      onboardingWebhookMessage: string;
       onboardingDMApprove: string;
       onboardingDMDecline: string;
       ftpWebhook: boolean;
@@ -51,6 +52,7 @@ export async function getNotificationSettings() {
       recruitDMDecline: "Dear {name},\n\nWe regret to inform you that your recruitment application has been **Declined**.\n\nIf you have questions, please contact HR.",
       onboardingWebhook: false,
       onboardingDM: true,
+      onboardingWebhookMessage: "<@{discordId}> **{name}** has been enrolled in the EMS roster.",
       onboardingDMApprove: "Congratulations, {name}! 🎉\n\nYou have been accepted into the Emergency Medical Services!\n\n**Your Details:**\n• Rank: {rank}\n• Call Sign: {callSign}\n• State ID: {stateId}\n\nJoin our state Discord server to get started:\n{inviteLink}\n\nWelcome aboard! 🚑🚀",
       onboardingDMDecline: "Dear {name},\n\nWe regret to inform you that your application has been **Declined**.\n\nIf you have questions, please contact HR.",
       ftpWebhook: false,
@@ -60,8 +62,8 @@ export async function getNotificationSettings() {
       ftpWebhookApprove: "🎓 {name} ({callSign}) has enrolled in the Field Training Program!",
       loaWebhook: true,
       loaDM: false,
-      loaWebhookApprove: "LOA Approved for {name}",
-      loaWebhookDecline: "LOA Declined for {name}",
+      loaWebhookApprove: "<@{discordId}> **{name}** has been granted a Leave of Absence.",
+      loaWebhookDecline: "<@{discordId}> **{name}**'s Leave of Absence request has been declined.",
       loaDMApprove: "Your Leave of Absence has been **Approved**.\n\nStart: {startDate}\nEnd: {endDate}\nReason: {reason}",
       loaDMDecline: "Your Leave of Absence request has been **Declined**.\n\nIf you have questions, please contact HR.",
       promotionWebhook: true,

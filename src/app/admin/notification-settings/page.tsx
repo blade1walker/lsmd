@@ -4,8 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Save, RotateCcw, ChevronDown, ChevronUp, MessageSquare, Webhook, Bot, Settings } from "lucide-react";
-import * as XLSX from "xlsx";
+import { Loader2, Save, RotateCcw, ChevronDown, ChevronUp, MessageSquare, Webhook, Bot } from "lucide-react";
 import { toast } from "sonner";
 import { fetchJson, errorMessage } from "@/lib/fetch-json";
 
@@ -18,6 +17,7 @@ interface Settings {
   recruitDMDecline: string;
   onboardingWebhook: boolean;
   onboardingDM: boolean;
+  onboardingWebhookMessage: string;
   onboardingDMApprove: string;
   onboardingDMDecline: string;
   ftpWebhook: boolean;
@@ -50,6 +50,7 @@ const DEFAULTS: Settings = {
   recruitDMDecline: "Dear {name},\n\nWe regret to inform you that your recruitment application has been **Declined**.\n\nIf you have questions, please contact HR.",
   onboardingWebhook: false,
   onboardingDM: true,
+  onboardingWebhookMessage: "<@{discordId}> **{name}** has been enrolled in the EMS roster.",
   onboardingDMApprove: "Congratulations, {name}! 🎉\n\nYou have been accepted into the Emergency Medical Services!\n\n**Your Details:**\n• Rank: {rank}\n• Call Sign: {callSign}\n• State ID: {stateId}\n\nJoin our state Discord server to get started:\n{inviteLink}\n\nWelcome aboard! 🚑🚀",
   onboardingDMDecline: "Dear {name},\n\nWe regret to inform you that your application has been **Declined**.\n\nIf you have questions, please contact HR.",
   ftpWebhook: false,
@@ -59,8 +60,8 @@ const DEFAULTS: Settings = {
   ftpWebhookApprove: "🎓 {name} ({callSign}) has enrolled in the Field Training Program!",
   loaWebhook: true,
   loaDM: false,
-  loaWebhookApprove: "LOA Approved for {name}",
-  loaWebhookDecline: "LOA Declined for {name}",
+  loaWebhookApprove: "<@{discordId}> **{name}** has been granted a Leave of Absence.",
+  loaWebhookDecline: "<@{discordId}> **{name}**'s Leave of Absence request has been declined.",
   loaDMApprove: "Your Leave of Absence has been **Approved**.\n\nStart: {startDate}\nEnd: {endDate}\nReason: {reason}",
   loaDMDecline: "Your Leave of Absence request has been **Declined**.\n\nIf you have questions, please contact HR.",
   promotionWebhook: true,
@@ -73,13 +74,327 @@ const DEFAULTS: Settings = {
   botSettings: null,
 };
 
-const VARIABLES_HELP: Record<string, string[]> = {
-  recruit: ["<@ID>", "{name}", "{inviteLink}"],
-  onboarding: ["{name}", "{rank}", "{callSign}", "{stateId}", "{inviteLink}"],
-  ftp: ["{name}", "{inviteLink}", "{callSign}"],
-  loa: ["{name}", "{startDate}", "{endDate}", "{reason}"],
-  promotion: ["{name}", "{callSign}", "{fromRank}", "{toRank}", "<@{discordId}>"],
-};
+type BooleanKey = { [K in keyof Settings]: Settings[K] extends boolean ? K : never }[keyof Settings];
+type StringKey = { [K in keyof Settings]: Settings[K] extends string ? K : never }[keyof Settings];
+
+interface ChannelDef {
+  id: string;
+  label: string;
+  hint: string;
+  toggleKey: BooleanKey;
+  variables: string[];
+  fields: { key: StringKey; label: string }[];
+}
+
+interface GroupDef {
+  id: string;
+  title: string;
+  description: string;
+  channels: ChannelDef[];
+}
+
+/**
+ * Each notification splits into its own channel section: the webhook posted in a
+ * channel and the DM sent to the member are different messages with different
+ * variables, so each gets its own editor instead of one shared drawer.
+ */
+const MESSAGE_GROUPS: GroupDef[] = [
+  {
+    id: "recruit",
+    title: "Recruit",
+    description: "Approval and decline notifications",
+    channels: [
+      {
+        id: "webhook",
+        label: "Webhook",
+        hint: "Posted publicly in the recruitment channel",
+        toggleKey: "recruitWebhook",
+        variables: ["<@{discordId}>", "{name}", "{inviteLink}"],
+        fields: [
+          { key: "recruitWebhookApprove", label: "Approved" },
+          { key: "recruitWebhookDecline", label: "Declined" },
+        ],
+      },
+      {
+        id: "dm",
+        label: "Direct Message",
+        hint: "Sent privately to the applicant by the bot",
+        toggleKey: "recruitDM",
+        variables: ["{name}", "{inviteLink}"],
+        fields: [
+          { key: "recruitDMApprove", label: "Approved" },
+          { key: "recruitDMDecline", label: "Declined" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "onboarding",
+    title: "Onboarding",
+    description: "New member enrollment notifications",
+    channels: [
+      {
+        id: "webhook",
+        label: "Webhook",
+        hint: "Embed description posted in the enrollment channel",
+        toggleKey: "onboardingWebhook",
+        variables: ["<@{discordId}>", "{name}", "{rank}", "{callSign}", "{stateId}"],
+        fields: [{ key: "onboardingWebhookMessage", label: "Enrolled" }],
+      },
+      {
+        id: "dm",
+        label: "Direct Message",
+        hint: "Sent privately to the new member by the bot",
+        toggleKey: "onboardingDM",
+        variables: ["{name}", "{rank}", "{callSign}", "{stateId}", "{inviteLink}"],
+        fields: [
+          { key: "onboardingDMApprove", label: "Approved" },
+          { key: "onboardingDMDecline", label: "Declined" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "ftp",
+    title: "FTP",
+    description: "Field Training Program notifications",
+    channels: [
+      {
+        id: "webhook",
+        label: "Webhook",
+        hint: "Posted publicly in the FTP channel",
+        toggleKey: "ftpWebhook",
+        variables: ["{name}", "{callSign}"],
+        fields: [{ key: "ftpWebhookApprove", label: "Enrolled" }],
+      },
+      {
+        id: "dm",
+        label: "Direct Message",
+        hint: "Sent privately to the trainee by the bot",
+        toggleKey: "ftpDM",
+        variables: ["{name}", "{inviteLink}"],
+        fields: [
+          { key: "ftpDMApprove", label: "Approved" },
+          { key: "ftpDMDecline", label: "Declined" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "loa",
+    title: "LOA",
+    description: "Leave of Absence notifications",
+    channels: [
+      {
+        id: "webhook",
+        label: "Webhook",
+        hint: "Embed description posted in the LOA channel",
+        toggleKey: "loaWebhook",
+        variables: ["<@{discordId}>", "{name}", "{rank}", "{callSign}", "{startDate}", "{endDate}", "{reason}"],
+        fields: [
+          { key: "loaWebhookApprove", label: "Approved" },
+          { key: "loaWebhookDecline", label: "Declined" },
+        ],
+      },
+      {
+        id: "dm",
+        label: "Direct Message",
+        hint: "Sent privately to the member by the bot",
+        toggleKey: "loaDM",
+        variables: ["{name}", "{rank}", "{callSign}", "{startDate}", "{endDate}", "{reason}"],
+        fields: [
+          { key: "loaDMApprove", label: "Approved" },
+          { key: "loaDMDecline", label: "Declined" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "promotion",
+    title: "Promotion",
+    description: "Posted to the channel whenever a member's rank increases",
+    channels: [
+      {
+        id: "webhook",
+        label: "Webhook",
+        hint: "Posted publicly in the promotion channel",
+        toggleKey: "promotionWebhook",
+        variables: ["<@{discordId}>", "{name}", "{callSign}", "{fromRank}", "{toRank}"],
+        fields: [{ key: "promotionWebhookMessage", label: "Promoted" }],
+      },
+    ],
+  },
+  {
+    id: "callsign",
+    title: "Call Sign",
+    description: "Posted to the channel whenever a member's call sign is changed outside of a promotion",
+    channels: [
+      {
+        id: "webhook",
+        label: "Webhook",
+        hint: "Posted publicly in the call sign channel",
+        toggleKey: "callsignWebhook",
+        variables: ["<@{discordId}>", "{name}", "{oldCallSign}", "{newCallSign}"],
+        fields: [{ key: "callsignWebhookMessage", label: "Call Sign Updated" }],
+      },
+    ],
+  },
+  {
+    id: "test",
+    title: "Test",
+    description: "Test notifications from recruit page",
+    channels: [
+      { id: "webhook", label: "Webhook", hint: "", toggleKey: "testWebhook", variables: [], fields: [] },
+      { id: "dm", label: "Direct Message", hint: "", toggleKey: "testDM", variables: [], fields: [] },
+    ],
+  },
+];
+
+/**
+ * Declared at module scope rather than inside the page: a component re-created
+ * on every render remounts its textarea, which drops focus after a keystroke.
+ */
+function Switch({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={`w-11 h-6 shrink-0 rounded-full relative transition-colors cursor-pointer ${checked ? "bg-[#dc2626]" : "bg-[#2a2a2a]"}`}
+    >
+      <span className={`block w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${checked ? "translate-x-5.5" : "translate-x-0.5"}`} />
+    </button>
+  );
+}
+
+function MessageField({
+  label,
+  value,
+  defaultValue,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  defaultValue: string;
+  onChange: (v: string) => void;
+}) {
+  const isDefault = value === defaultValue;
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-3 mb-1">
+        <label className="text-gray-400 text-xs font-medium">{label}</label>
+        {isDefault ? (
+          <span className="text-[10px] uppercase tracking-wide text-gray-600">Default</span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => onChange(defaultValue)}
+            className="text-[10px] uppercase tracking-wide text-gray-500 hover:text-[#dc2626] transition-colors"
+          >
+            Restore default
+          </button>
+        )}
+      </div>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        rows={4}
+        placeholder={defaultValue}
+        className="w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#dc2626] resize-y"
+      />
+    </div>
+  );
+}
+
+function ChannelSection({
+  channel,
+  settings,
+  onChange,
+  open,
+  onToggleOpen,
+}: {
+  channel: ChannelDef;
+  settings: Settings;
+  onChange: (patch: Partial<Settings>) => void;
+  open: boolean;
+  onToggleOpen: () => void;
+}) {
+  const enabled = settings[channel.toggleKey];
+  const editable = channel.fields.length > 0;
+  const allDefault = channel.fields.every((f) => settings[f.key] === DEFAULTS[f.key]);
+
+  const restoreAll = () => {
+    const patch: Partial<Settings> = {};
+    for (const f of channel.fields) patch[f.key] = DEFAULTS[f.key];
+    onChange(patch);
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-3 py-3 px-4 hover:bg-white/5">
+        <button
+          type="button"
+          onClick={onToggleOpen}
+          disabled={!editable}
+          className="flex items-center gap-2 flex-1 min-w-0 text-left disabled:cursor-default"
+        >
+          {editable ? (
+            open ? (
+              <ChevronUp className="w-4 h-4 text-gray-500 shrink-0" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-gray-500 shrink-0" />
+            )
+          ) : (
+            <span className="w-4 shrink-0" />
+          )}
+          <span className="min-w-0">
+            <span className="block text-sm text-gray-300">{channel.label}</span>
+            {channel.hint && <span className="block text-gray-500 text-xs mt-0.5 truncate">{channel.hint}</span>}
+          </span>
+        </button>
+        <Switch checked={enabled} onChange={(v) => onChange({ [channel.toggleKey]: v } as Partial<Settings>)} />
+      </div>
+
+      {editable && open && (
+        <div className="bg-[#0d0d0d] border-t border-[#1e1e1e] px-4 py-4 space-y-4">
+          {!enabled && (
+            <p className="text-amber-500/80 text-xs">
+              {channel.label} is off — these messages are saved, but nothing is sent until you enable it.
+            </p>
+          )}
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <p className="text-gray-500 text-xs">
+              <strong className="text-gray-400">Variables:</strong>{" "}
+              {channel.variables.map((v) => (
+                <code key={v} className="bg-white/5 border border-[#1e1e1e] rounded px-1 py-0.5 mr-1 text-gray-400">
+                  {v}
+                </code>
+              ))}
+            </p>
+            <button
+              type="button"
+              onClick={restoreAll}
+              disabled={allDefault}
+              className="text-xs text-gray-500 hover:text-[#dc2626] transition-colors disabled:opacity-40 disabled:hover:text-gray-500 shrink-0"
+            >
+              Restore defaults
+            </button>
+          </div>
+          {channel.fields.map((f) => (
+            <MessageField
+              key={f.key}
+              label={f.label}
+              value={settings[f.key]}
+              defaultValue={DEFAULTS[f.key]}
+              onChange={(v) => onChange({ [f.key]: v } as Partial<Settings>)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function AdminNotificationSettingsPage() {
   const [settings, setSettings] = useState<Settings>(DEFAULTS);
@@ -93,10 +408,6 @@ export default function AdminNotificationSettingsPage() {
   const [testResult, setTestResult] = useState("");
   const [testType, setTestType] = useState<"dm" | "webhook">("dm");
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
   const fetchSettings = async () => {
     try {
       const res = await fetch("/api/admin/notification-settings");
@@ -109,6 +420,10 @@ export default function AdminNotificationSettingsPage() {
     }
     setLoading(false);
   };
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
 
   const handleSave = async () => {
     setSaving(true);
@@ -130,6 +445,8 @@ export default function AdminNotificationSettingsPage() {
   const handleReset = () => {
     setSettings(DEFAULTS);
   };
+
+  const patchSettings = (patch: Partial<Settings>) => setSettings((prev) => ({ ...prev, ...patch }));
 
   const handleTestSend = async () => {
     if (!testTarget.discordId) {
@@ -156,31 +473,6 @@ export default function AdminNotificationSettingsPage() {
     }
     setTestSending(false);
   };
-
-  const Toggle = ({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) => (
-    <label className="flex items-center justify-between py-3 px-4 hover:bg-white/5 rounded-lg cursor-pointer">
-      <span className="text-sm text-gray-300">{label}</span>
-      <div
-        onClick={() => onChange(!checked)}
-        className={`w-11 h-6 rounded-full relative transition-colors cursor-pointer ${checked ? "bg-[#dc2626]" : "bg-[#2a2a2a]"}`}
-      >
-        <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${checked ? "translate-x-5.5" : "translate-x-0.5"}`} />
-      </div>
-    </label>
-  );
-
-  const MessageField = ({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) => (
-    <div className="px-4 pb-3">
-      <label className="text-gray-500 text-xs mb-1 block">{label}</label>
-      <textarea
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        rows={3}
-        placeholder={placeholder}
-        className="w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#dc2626] resize-none"
-      />
-    </div>
-  );
 
   if (loading) {
     return (
@@ -247,154 +539,33 @@ export default function AdminNotificationSettingsPage() {
       {/* Messages Section */}
       {activeSection === "messages" && (
         <div className="space-y-4">
-          {/* Recruit */}
-          <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#1e1e1e] flex items-center justify-between cursor-pointer hover:bg-white/5" onClick={() => setExpanded(expanded === "recruit" ? null : "recruit")}>
-              <div>
-                <h3 className="font-[family-name:var(--font-oswald)] text-sm font-semibold text-white uppercase">Recruit</h3>
-                <p className="text-gray-500 text-xs mt-0.5">Approval and decline notifications</p>
+          <p className="text-gray-500 text-xs">
+            Every notification type lists its channels separately — open one to edit the exact message that channel
+            sends, or restore the default wording.
+          </p>
+          {MESSAGE_GROUPS.map((group) => (
+            <div key={group.id} className="bg-[#111111] border border-[#1e1e1e] rounded-xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-[#1e1e1e]">
+                <h3 className="font-[family-name:var(--font-oswald)] text-sm font-semibold text-white uppercase">{group.title}</h3>
+                <p className="text-gray-500 text-xs mt-0.5">{group.description}</p>
               </div>
-              {expanded === "recruit" ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
-            </div>
-            <div className="divide-y divide-[#1e1e1e]/50">
-              <Toggle label="Webhook" checked={settings.recruitWebhook} onChange={(v) => setSettings({ ...settings, recruitWebhook: v })} />
-              <Toggle label="Direct Message" checked={settings.recruitDM} onChange={(v) => setSettings({ ...settings, recruitDM: v })} />
-            </div>
-            {expanded === "recruit" && (
-              <div className="border-t border-[#1e1e1e] p-4 space-y-4">
-                <p className="text-gray-500 text-xs"><strong>Variables:</strong> {"{discordId}"} = mention user, {"{name}"} = character name, {"{inviteLink}"} = server invite</p>
-                <MessageField label="Webhook - Approved" value={settings.recruitWebhookApprove} onChange={(v) => setSettings({ ...settings, recruitWebhookApprove: v })} />
-                <MessageField label="Webhook - Declined" value={settings.recruitWebhookDecline} onChange={(v) => setSettings({ ...settings, recruitWebhookDecline: v })} />
-                <MessageField label="DM - Approved" value={settings.recruitDMApprove} onChange={(v) => setSettings({ ...settings, recruitDMApprove: v })} />
-                <MessageField label="DM - Declined" value={settings.recruitDMDecline} onChange={(v) => setSettings({ ...settings, recruitDMDecline: v })} />
+              <div className="divide-y divide-[#1e1e1e]/50">
+                {group.channels.map((channel) => {
+                  const key = `${group.id}:${channel.id}`;
+                  return (
+                    <ChannelSection
+                      key={key}
+                      channel={channel}
+                      settings={settings}
+                      onChange={patchSettings}
+                      open={expanded === key}
+                      onToggleOpen={() => setExpanded(expanded === key ? null : key)}
+                    />
+                  );
+                })}
               </div>
-            )}
-          </div>
-
-          {/* Onboarding */}
-          <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#1e1e1e] flex items-center justify-between cursor-pointer hover:bg-white/5" onClick={() => setExpanded(expanded === "onboarding" ? null : "onboarding")}>
-              <div>
-                <h3 className="font-[family-name:var(--font-oswald)] text-sm font-semibold text-white uppercase">Onboarding</h3>
-                <p className="text-gray-500 text-xs mt-0.5">New member enrollment notifications</p>
-              </div>
-              {expanded === "onboarding" ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
             </div>
-            <div className="divide-y divide-[#1e1e1e]/50">
-              <Toggle label="Webhook" checked={settings.onboardingWebhook} onChange={(v) => setSettings({ ...settings, onboardingWebhook: v })} />
-              <Toggle label="Direct Message" checked={settings.onboardingDM} onChange={(v) => setSettings({ ...settings, onboardingDM: v })} />
-            </div>
-            {expanded === "onboarding" && (
-              <div className="border-t border-[#1e1e1e] p-4 space-y-4">
-                <p className="text-gray-500 text-xs"><strong>Variables:</strong> {"{name}"} {"{rank}"} {"{callSign}"} {"{stateId}"} {"{inviteLink}"}</p>
-                <MessageField label="DM - Approved" value={settings.onboardingDMApprove} onChange={(v) => setSettings({ ...settings, onboardingDMApprove: v })} />
-                <MessageField label="DM - Declined" value={settings.onboardingDMDecline} onChange={(v) => setSettings({ ...settings, onboardingDMDecline: v })} />
-              </div>
-            )}
-          </div>
-
-          {/* FTP */}
-          <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#1e1e1e] flex items-center justify-between cursor-pointer hover:bg-white/5" onClick={() => setExpanded(expanded === "ftp" ? null : "ftp")}>
-              <div>
-                <h3 className="font-[family-name:var(--font-oswald)] text-sm font-semibold text-white uppercase">FTP</h3>
-                <p className="text-gray-500 text-xs mt-0.5">Field Training Program notifications</p>
-              </div>
-              {expanded === "ftp" ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
-            </div>
-            <div className="divide-y divide-[#1e1e1e]/50">
-              <Toggle label="Webhook" checked={settings.ftpWebhook} onChange={(v) => setSettings({ ...settings, ftpWebhook: v })} />
-              <Toggle label="Direct Message" checked={settings.ftpDM} onChange={(v) => setSettings({ ...settings, ftpDM: v })} />
-            </div>
-            {expanded === "ftp" && (
-              <div className="border-t border-[#1e1e1e] p-4 space-y-4">
-                <p className="text-gray-500 text-xs"><strong>Variables:</strong> {"{name}"} {"{inviteLink}"} {"{callSign}"} (webhook only)</p>
-                <MessageField label="Webhook - Enrolled" value={settings.ftpWebhookApprove} onChange={(v) => setSettings({ ...settings, ftpWebhookApprove: v })} />
-                <MessageField label="DM - Approved" value={settings.ftpDMApprove} onChange={(v) => setSettings({ ...settings, ftpDMApprove: v })} />
-                <MessageField label="DM - Declined" value={settings.ftpDMDecline} onChange={(v) => setSettings({ ...settings, ftpDMDecline: v })} />
-              </div>
-            )}
-          </div>
-
-          {/* LOA */}
-          <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#1e1e1e] flex items-center justify-between cursor-pointer hover:bg-white/5" onClick={() => setExpanded(expanded === "loa" ? null : "loa")}>
-              <div>
-                <h3 className="font-[family-name:var(--font-oswald)] text-sm font-semibold text-white uppercase">LOA</h3>
-                <p className="text-gray-500 text-xs mt-0.5">Leave of Absence notifications</p>
-              </div>
-              {expanded === "loa" ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
-            </div>
-            <div className="divide-y divide-[#1e1e1e]/50">
-              <Toggle label="Webhook" checked={settings.loaWebhook} onChange={(v) => setSettings({ ...settings, loaWebhook: v })} />
-              <Toggle label="Direct Message" checked={settings.loaDM} onChange={(v) => setSettings({ ...settings, loaDM: v })} />
-            </div>
-            {expanded === "loa" && (
-              <div className="border-t border-[#1e1e1e] p-4 space-y-4">
-                <p className="text-gray-500 text-xs"><strong>Variables:</strong> {"{name}"} {"{startDate}"} {"{endDate}"} {"{reason}"}</p>
-                <MessageField label="Webhook - Approved" value={settings.loaWebhookApprove} onChange={(v) => setSettings({ ...settings, loaWebhookApprove: v })} />
-                <MessageField label="Webhook - Declined" value={settings.loaWebhookDecline} onChange={(v) => setSettings({ ...settings, loaWebhookDecline: v })} />
-                <MessageField label="DM - Approved" value={settings.loaDMApprove} onChange={(v) => setSettings({ ...settings, loaDMApprove: v })} />
-                <MessageField label="DM - Declined" value={settings.loaDMDecline} onChange={(v) => setSettings({ ...settings, loaDMDecline: v })} />
-              </div>
-            )}
-          </div>
-
-          {/* Promotion */}
-          <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#1e1e1e] flex items-center justify-between cursor-pointer hover:bg-white/5" onClick={() => setExpanded(expanded === "promotion" ? null : "promotion")}>
-              <div>
-                <h3 className="font-[family-name:var(--font-oswald)] text-sm font-semibold text-white uppercase">Promotion</h3>
-                <p className="text-gray-500 text-xs mt-0.5">Posted to the channel whenever a member's rank increases</p>
-              </div>
-              {expanded === "promotion" ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
-            </div>
-            <div className="divide-y divide-[#1e1e1e]/50">
-              <Toggle label="Webhook" checked={settings.promotionWebhook} onChange={(v) => setSettings({ ...settings, promotionWebhook: v })} />
-            </div>
-            {expanded === "promotion" && (
-              <div className="border-t border-[#1e1e1e] p-4 space-y-4">
-                <p className="text-gray-500 text-xs">
-                  <strong>Variables:</strong> {"{name}"} {"{callSign}"} {"{fromRank}"} {"{toRank}"} {"<@{discordId}>"} (tags the member — blank if they have no linked Discord account)
-                </p>
-                <MessageField label="Webhook - Promoted" value={settings.promotionWebhookMessage} onChange={(v) => setSettings({ ...settings, promotionWebhookMessage: v })} />
-              </div>
-            )}
-          </div>
-
-          {/* Call Sign */}
-          <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#1e1e1e] flex items-center justify-between cursor-pointer hover:bg-white/5" onClick={() => setExpanded(expanded === "callsign" ? null : "callsign")}>
-              <div>
-                <h3 className="font-[family-name:var(--font-oswald)] text-sm font-semibold text-white uppercase">Call Sign</h3>
-                <p className="text-gray-500 text-xs mt-0.5">Posted to the channel whenever a member's call sign is changed outside of a promotion</p>
-              </div>
-              {expanded === "callsign" ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
-            </div>
-            <div className="divide-y divide-[#1e1e1e]/50">
-              <Toggle label="Webhook" checked={settings.callsignWebhook} onChange={(v) => setSettings({ ...settings, callsignWebhook: v })} />
-            </div>
-            {expanded === "callsign" && (
-              <div className="border-t border-[#1e1e1e] p-4 space-y-4">
-                <p className="text-gray-500 text-xs">
-                  <strong>Variables:</strong> {"{name}"} {"{oldCallSign}"} {"{newCallSign}"} {"<@{discordId}>"} (tags the member — blank if they have no linked Discord account)
-                </p>
-                <MessageField label="Webhook - Call Sign Updated" value={settings.callsignWebhookMessage} onChange={(v) => setSettings({ ...settings, callsignWebhookMessage: v })} />
-              </div>
-            )}
-          </div>
-
-          {/* Test */}
-          <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#1e1e1e]">
-              <h3 className="font-[family-name:var(--font-oswald)] text-sm font-semibold text-white uppercase">Test</h3>
-              <p className="text-gray-500 text-xs mt-0.5">Test notifications from recruit page</p>
-            </div>
-            <div className="divide-y divide-[#1e1e1e]/50">
-              <Toggle label="Webhook" checked={settings.testWebhook} onChange={(v) => setSettings({ ...settings, testWebhook: v })} />
-              <Toggle label="Direct Message" checked={settings.testDM} onChange={(v) => setSettings({ ...settings, testDM: v })} />
-            </div>
-          </div>
+          ))}
         </div>
       )}
 

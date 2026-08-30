@@ -35,6 +35,22 @@ export async function PATCH(
 
     const settings = await getNotificationSettings();
 
+    // The channel post and the DM both render the templates configured in
+    // admin > notification settings. They used to be hardcoded here, so
+    // editing those fields changed nothing. {discordId} is substituted the
+    // same way the recruit and promotion routes do it — the tag itself,
+    // <@{discordId}>, lives in the template text and is left blank when the
+    // member has no linked Discord account.
+    const fillTemplate = (template: string) =>
+      template
+        .replace(/{name}/g, loa.member.name)
+        .replace(/{rank}/g, loa.member.rank)
+        .replace(/{callSign}/g, loa.member.callSign || "N/A")
+        .replace(/{startDate}/g, loa.startDate.toLocaleDateString())
+        .replace(/{endDate}/g, loa.endDate.toLocaleDateString())
+        .replace(/{reason}/g, loa.reason || "Not specified")
+        .replace(/{discordId}/g, loa.member.discordId ?? "");
+
     if (status === "Approved") {
       await prisma.member.update({
         where: { id: loa.memberId },
@@ -45,7 +61,7 @@ export async function PATCH(
         if (settings.loaWebhook) {
           await postToLOAWebhook({
             title: "LOA Approved",
-            description: `<@${loa.member.discordId}> **${loa.member.name}** has been granted a Leave of Absence.`,
+            description: fillTemplate(settings.loaWebhookApprove),
             color: 0x22c55e,
             fields: [
               { name: "Member", value: loa.member.name, inline: true },
@@ -59,10 +75,7 @@ export async function PATCH(
         }
 
         if (settings.loaDM && loa.member.discordId) {
-          await sendDiscordDM(
-            loa.member.discordId,
-            `Your Leave of Absence has been **Approved**.\n\nStart: ${loa.startDate.toLocaleDateString()}\nEnd: ${loa.endDate.toLocaleDateString()}\nReason: ${loa.reason || "Not specified"}`
-          );
+          await sendDiscordDM(loa.member.discordId, fillTemplate(settings.loaDMApprove));
         }
       }
     } else if (status === "Declined") {
@@ -70,7 +83,7 @@ export async function PATCH(
         if (settings.loaWebhook) {
           await postToLOAWebhook({
             title: "LOA Declined",
-            description: `<@${loa.member.discordId}> **${loa.member.name}**'s Leave of Absence request has been declined.`,
+            description: fillTemplate(settings.loaWebhookDecline),
             color: 0xef4444,
             fields: [
               { name: "Member", value: loa.member.name, inline: true },
@@ -84,10 +97,7 @@ export async function PATCH(
         }
 
         if (settings.loaDM && loa.member.discordId) {
-          await sendDiscordDM(
-            loa.member.discordId,
-            `Your Leave of Absence request has been **Declined**.\n\nIf you have questions, please contact HR.`
-          );
+          await sendDiscordDM(loa.member.discordId, fillTemplate(settings.loaDMDecline));
         }
       }
     } else if (status === "Expired" || status === "Cancelled") {

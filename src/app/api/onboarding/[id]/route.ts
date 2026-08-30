@@ -77,7 +77,12 @@ export async function PATCH(
       if (settings.onboardingWebhook) {
         await postToEnrollWebhook({
           title: "New Member Enrolled",
-          description: `<@${request.discordId}> **${request.name}** has been enrolled in the EMS roster.`,
+          description: settings.onboardingWebhookMessage
+            .replace(/{name}/g, request.name)
+            .replace(/{rank}/g, assignedRank)
+            .replace(/{callSign}/g, callSign || "N/A")
+            .replace(/{stateId}/g, request.stateId || "N/A")
+            .replace(/{discordId}/g, request.discordId ?? ""),
           color: 0x22c55e,
           fields: [
             { name: "Name", value: request.name, inline: true },
