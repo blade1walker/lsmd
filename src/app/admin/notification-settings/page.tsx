@@ -323,7 +323,7 @@ const MESSAGE_GROUPS: GroupDef[] = [
       {
         id: "webhook",
         label: "Webhook",
-        hint: "Posted publicly in the call sign channel",
+        hint: "Posted publicly in the call sign channel — falls back to the promotion channel if none is set",
         toggleKey: "callsignWebhook",
         transport: "webhook",
         webhookKind: "callsign",
@@ -343,13 +343,18 @@ const MESSAGE_GROUPS: GroupDef[] = [
   },
 ];
 
-const WEBHOOK_URL_FIELDS: { key: WebhookKind; label: string; env: string }[] = [
+const WEBHOOK_URL_FIELDS: { key: WebhookKind; label: string; env: string; note?: string }[] = [
   { key: "recruit", label: "Recruit (accept / decline)", env: "DISCORD_ACCEPT_WEBHOOK_URL" },
   { key: "onboarding", label: "Onboarding (enrollment)", env: "DISCORD_ENROLL_WEBHOOK_URL" },
   { key: "ftp", label: "FTP", env: "DISCORD_FTP_WEBHOOK_URL" },
   { key: "loa", label: "LOA", env: "DISCORD_LOA_WEBHOOK_URL" },
   { key: "promotion", label: "Promotion / demotion", env: "DISCORD_PROMOTION_WEBHOOK_URL" },
-  { key: "callsign", label: "Call sign", env: "DISCORD_CALLSIGN_WEBHOOK_URL" },
+  {
+    key: "callsign",
+    label: "Call sign",
+    env: "DISCORD_CALLSIGN_WEBHOOK_URL",
+    note: "Leave both empty to post call sign changes on the promotion channel instead.",
+  },
 ];
 
 interface Delivery {
@@ -798,13 +803,20 @@ export default function AdminNotificationSettingsPage() {
                   />
                   <p className="text-gray-600 text-[11px] mt-1">
                     Falls back to <code className="bg-white/5 px-1 rounded">{field.env}</code>
+                    {field.note ? ` — ${field.note}` : ""}
                   </p>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl px-4 py-3">
+          <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl px-4 py-3 space-y-2">
+            <p className="text-gray-500 text-xs">
+              <strong className="text-gray-400">Getting a URL:</strong> in Discord, open the target channel &rarr; Edit Channel &rarr;
+              Integrations &rarr; Webhooks &rarr; New Webhook &rarr; Copy Webhook URL, then paste it above and Save. It looks like{" "}
+              <code className="bg-white/5 px-1 rounded">https://discord.com/api/webhooks/…</code> and is a credential — anyone holding it
+              can post to that channel.
+            </p>
             <p className="text-gray-500 text-xs">
               To try one out, open the matching channel on the Messages tab and use <strong className="text-gray-400">Send test</strong> —
               it posts that channel&apos;s real message and reports what Discord answered.

@@ -7,7 +7,7 @@ import {
   sendDiscordDM,
   renderTemplate,
   describeResult,
-  resolveWebhookUrl,
+  resolveWebhookSource,
   type WebhookKind,
   type NotificationSettings,
 } from "@/lib/discord-webhook";
@@ -82,15 +82,20 @@ export async function POST(req: NextRequest) {
     if (!kind || !WEBHOOK_KINDS.includes(kind)) {
       return NextResponse.json({ error: "Unknown webhook channel" }, { status: 400 });
     }
-    if (!(await resolveWebhookUrl(kind))) {
+    const source = await resolveWebhookSource(kind);
+    if (!source.url) {
       return NextResponse.json(
-        { error: `No webhook URL configured for "${kind}" — set one on the Webhooks tab` },
+        { error: `No webhook URL configured for "${kind}" — add one on the Webhooks tab` },
         { status: 400 }
       );
     }
 
     const result = await postContent(kind, `**[TEST]** ${message}`, `test.${field}`);
-    return NextResponse.json({ ok: result.ok, detail: describeResult(result), preview: message }, { status: result.ok ? 200 : 502 });
+    const detail =
+      result.ok && source.kind !== kind
+        ? `Sent to the ${source.kind} channel — no dedicated ${kind} webhook is configured`
+        : describeResult(result);
+    return NextResponse.json({ ok: result.ok, detail, preview: message }, { status: result.ok ? 200 : 502 });
   } catch (error) {
     return apiError("Failed to send test", error);
   }

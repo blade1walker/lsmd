@@ -108,14 +108,46 @@ const WEBHOOK_ENV: Record<WebhookKind, string | undefined> = {
 };
 
 /**
+ * Channels that borrow another channel's webhook when they have none of their
+ * own. A call sign change belongs with promotions — both announce a change to
+ * how a member is identified — so it posts there rather than nowhere until a
+ * dedicated webhook is configured.
+ */
+const WEBHOOK_FALLBACK: Partial<Record<WebhookKind, WebhookKind>> = {
+  callsign: "promotion",
+};
+
+function ownUrl(kind: WebhookKind, settings: NotificationSettings): string {
+  const configured = settings.webhookUrls?.[kind] || (kind === "recruit" ? settings.webhookUrls?.accept : undefined);
+  return (configured || WEBHOOK_ENV[kind] || "").trim();
+}
+
+/**
  * A URL configured in admin > notification settings wins over the environment
  * variable. The env vars stay as the fallback so an existing deployment keeps
  * working with nothing filled in — but the settings page is no longer decorative.
  */
 export async function resolveWebhookUrl(kind: WebhookKind, settings?: NotificationSettings): Promise<string> {
   const s = settings ?? (await getNotificationSettings());
-  const configured = s.webhookUrls?.[kind] || (kind === "recruit" ? s.webhookUrls?.accept : undefined);
-  return (configured || WEBHOOK_ENV[kind] || "").trim();
+  const own = ownUrl(kind, s);
+  if (own) return own;
+
+  const fallback = WEBHOOK_FALLBACK[kind];
+  return fallback ? ownUrl(fallback, s) : "";
+}
+
+/** The channel a kind will actually post to, for telling the admin where a test went. */
+export async function resolveWebhookSource(
+  kind: WebhookKind,
+  settings?: NotificationSettings
+): Promise<{ url: string; kind: WebhookKind | null }> {
+  const s = settings ?? (await getNotificationSettings());
+  const own = ownUrl(kind, s);
+  if (own) return { url: own, kind };
+
+  const fallback = WEBHOOK_FALLBACK[kind];
+  const borrowed = fallback ? ownUrl(fallback, s) : "";
+  return { url: borrowed, kind: borrowed ? fallback! : null };
 }
 
 export async function resolveBotToken(settings?: NotificationSettings): Promise<string> {
