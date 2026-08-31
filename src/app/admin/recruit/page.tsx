@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, XCircle, Loader2, Upload, Eye, Trash2, Plus, Pencil, Send, X, ClipboardList } from "lucide-react";
+import { CheckCircle, XCircle, Loader2, Upload, Eye, Trash2, Plus, Pencil, Send, X, ClipboardList, Search } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { RANK_NAMES } from "@/lib/constants";
 import * as XLSX from "xlsx";
@@ -24,6 +24,31 @@ interface RecruitRequest {
   reviewedBy: string | null;
   reviewNote: string | null;
   createdAt: string;
+}
+
+/**
+ * Every field a reviewer might recognise a recruit by. The approve log grows
+ * without bound — 38 rows and counting — so finding one by scrolling stopped
+ * being realistic.
+ */
+function matchesSearch(req: RecruitRequest, query: string): boolean {
+  if (!query) return true;
+  const haystack = [
+    req.characterName,
+    req.discordUsername,
+    req.discordId,
+    req.steamId,
+    req.user,
+    req.rank,
+    req.status,
+    req.reviewedBy,
+    req.reviewNote,
+  ];
+  // Every space-separated term must appear somewhere, so "john approved"
+  // narrows rather than widening the way a single joined string would.
+  const terms = query.toLowerCase().split(" ").map((t) => t.trim()).filter(Boolean);
+  const text = haystack.filter(Boolean).join(" ").toLowerCase();
+  return terms.every((term) => text.includes(term));
 }
 
 const EMPTY_FORM = {
@@ -61,6 +86,7 @@ export default function AdminRecruitPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<"pending" | "log">("pending");
+  const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -270,6 +296,14 @@ export default function AdminRecruitPage() {
   const declined = requests.filter((r) => r.status === "Declined");
   const allReviewed = [...approved, ...declined].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
+  // Tab counts stay on the totals; the search narrows what each table renders,
+  // and the line under the box reports how much of the total is showing.
+  const query = search.trim();
+  const visiblePending = pending.filter((r) => matchesSearch(r, query));
+  const visibleReviewed = allReviewed.filter((r) => matchesSearch(r, query));
+  const shown = activeTab === "pending" ? visiblePending.length : visibleReviewed.length;
+  const total = activeTab === "pending" ? pending.length : allReviewed.length;
+
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
@@ -311,25 +345,50 @@ export default function AdminRecruitPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 bg-[#111111] border border-[#1e1e1e] rounded-xl p-1 w-fit">
-        <button
-          onClick={() => setActiveTab("pending")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            activeTab === "pending" ? "bg-[#dc2626] text-black" : "text-gray-400 hover:text-white"
-          }`}
-        >
-          Pending ({pending.length})
-        </button>
-        <button
-          onClick={() => setActiveTab("log")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            activeTab === "log" ? "bg-[#dc2626] text-black" : "text-gray-400 hover:text-white"
-          }`}
-        >
-          <ClipboardList className="w-4 h-4 mr-1 inline" />
-          Approve Log ({allReviewed.length})
-        </button>
+      <div className="flex items-center justify-between gap-4 mb-2 flex-wrap">
+        <div className="flex gap-1 bg-[#111111] border border-[#1e1e1e] rounded-xl p-1 w-fit">
+          <button
+            onClick={() => setActiveTab("pending")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === "pending" ? "bg-[#dc2626] text-black" : "text-gray-400 hover:text-white"
+            }`}
+          >
+            Pending ({pending.length})
+          </button>
+          <button
+            onClick={() => setActiveTab("log")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === "log" ? "bg-[#dc2626] text-black" : "text-gray-400 hover:text-white"
+            }`}
+          >
+            <ClipboardList className="w-4 h-4 mr-1 inline" />
+            Approve Log ({allReviewed.length})
+          </button>
+        </div>
+
+        <div className="relative w-full sm:w-80">
+          <Search className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search name, Discord, Steam ID, rank, reviewer..."
+            className="pl-9 pr-9 bg-[#111111] border-[#1e1e1e]"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-white"
+              title="Clear search"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
+
+      <p className="text-gray-500 text-xs mb-6 h-4">
+        {query ? `Showing ${shown} of ${total}` : ""}
+      </p>
 
       {loading ? (
         <div className="text-center py-12">
@@ -340,8 +399,10 @@ export default function AdminRecruitPage() {
           {/* Pending Tab */}
           {activeTab === "pending" && (
             <div>
-              {pending.length === 0 ? (
-                <p className="text-gray-500 text-sm">No pending recruits</p>
+              {visiblePending.length === 0 ? (
+                <p className="text-gray-500 text-sm">
+                  {query ? `No pending recruits match "${query}"` : "No pending recruits"}
+                </p>
               ) : (
                 <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl overflow-hidden">
                   <table className="w-full text-sm">
@@ -356,7 +417,7 @@ export default function AdminRecruitPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {pending.map((req) => (
+                      {visiblePending.map((req) => (
                         <tr key={req.id} className="border-b border-[#1e1e1e]/50 hover:bg-white/5">
                           <td className="py-3 px-4 text-white">{req.characterName ?? "—"}</td>
                           <td className="py-3 px-4 text-gray-400 text-xs">{req.discordUsername ?? req.discordId}</td>
@@ -414,8 +475,10 @@ export default function AdminRecruitPage() {
           {/* Approve Log Tab */}
           {activeTab === "log" && (
             <div>
-              {allReviewed.length === 0 ? (
-                <p className="text-gray-500 text-sm">No reviewed recruits yet</p>
+              {visibleReviewed.length === 0 ? (
+                <p className="text-gray-500 text-sm">
+                  {query ? `No reviewed recruits match "${query}"` : "No reviewed recruits yet"}
+                </p>
               ) : (
                 <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl overflow-hidden">
                   <table className="w-full text-sm">
@@ -433,7 +496,7 @@ export default function AdminRecruitPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {allReviewed.map((req) => (
+                      {visibleReviewed.map((req) => (
                         <tr key={req.id} className="border-b border-[#1e1e1e]/50 hover:bg-white/5">
                           <td className="py-3 px-4 text-white">{req.characterName ?? "—"}</td>
                           <td className="py-3 px-4 text-gray-400 text-xs">{req.discordUsername ?? req.discordId}</td>
