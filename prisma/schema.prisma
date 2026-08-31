@@ -540,3 +540,56 @@ model AuditLog {
   @@index([performedBy])
   @@index([createdAt])
 }
+
+/**
+ * One DM conversation between the bot and a Discord user.
+ *
+ * NotificationLog answers "did that send succeed?" and is capped at a 300
+ * character preview, so it can't show a conversation. This is the thread
+ * itself: every DM the bot sends to this person, plus the replies pulled back
+ * from Discord.
+ */
+model DMThread {
+  id            String   @id @default(cuid())
+  discordId     String   @unique
+  /** Discord's DM channel id, cached so a sync need not reopen the channel. */
+  channelId     String?
+  /** Their Discord name at last sync, so the list reads as names not snowflakes. */
+  username      String?
+  /** Set when the Discord account matches a roster member. */
+  memberId      String?
+  memberName    String?
+  lastMessageAt DateTime @default(now())
+  /** Inbound messages after this are unread in the panel. */
+  lastReadAt    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  messages      DirectMessage[]
+
+  @@index([lastMessageAt])
+}
+
+model DirectMessage {
+  id        String   @id @default(cuid())
+  threadId  String
+  /** "out" — bot to user; "in" — their reply, pulled back from Discord. */
+  direction String
+  content   String
+  /**
+   * Discord's own message id. Unique, so re-syncing a thread can never
+   * duplicate a reply that is already stored.
+   */
+  discordMessageId String? @unique
+  /** The automation that produced an outbound message, or "manual". */
+  event     String   @default("manual")
+  /** The panel user behind a manual send. */
+  sentBy    String?
+  ok        Boolean  @default(true)
+  error     String?
+  sentAt    DateTime @default(now())
+
+  thread    DMThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([threadId, sentAt])
+}

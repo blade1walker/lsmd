@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import { recordDirectMessage } from "./dm-threads";
 
 export async function getNotificationSettings() {
   try {
@@ -179,6 +180,13 @@ export interface SendResult {
   status?: number;
   error?: string;
   skipped?: SkipReason;
+  /**
+   * Discord's parsed response on success, when it sent one. A DM POST answers
+   * with the created message, whose id is what lets a later conversation sync
+   * recognise this send instead of storing it a second time. Null for the
+   * 204-with-no-body a webhook returns.
+   */
+  body?: unknown;
 }
 
 /** Human-readable reason, for surfacing in the admin UI instead of a silent no-op. */
@@ -240,7 +248,7 @@ async function send(url: string, init: RequestInit): Promise<SendResult> {
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
       const res = await fetch(url, init);
-      if (res.ok) return { ok: true, status: res.status };
+      if (res.ok) return { ok: true, status: res.status, body: await res.json().catch(() => null) };
 
       last = { ok: false, status: res.status, error: (await res.text().catch(() => "")).slice(0, 300) };
 
@@ -379,7 +387,20 @@ export async function postToAcceptWebhook(content: string, imageUrl?: string, ev
   return postContent("recruit", content, event, imageUrl);
 }
 
-export async function sendDiscordDM(discordId: string, message: string, event = "dm"): Promise<SendResult> {
+/**
+ * Sends a DM through the bot.
+ *
+ * Every attempt lands in two places: NotificationLog (did it go out?) and the
+ * conversation thread in dm-threads (what was actually said). The second is
+ * what makes the messaging panel show automated DMs alongside hand-written
+ * ones, instead of only the ones an admin typed.
+ */
+export async function sendDiscordDM(
+  discordId: string,
+  message: string,
+  event = "dm",
+  sentBy?: string
+): Promise<SendResult> {
   if (!discordId) {
     const result: SendResult = { ok: false, skipped: "no-target" };
     await logDelivery({ event, channel: "dm", content: message, result });
@@ -394,6 +415,11 @@ export async function sendDiscordDM(discordId: string, message: string, event = 
   }
 
   const headers = { Authorization: `Bot ${botToken}`, "Content-Type": "application/json" };
+
+  // Kept so the thread can cache it — reading replies later needs this id, and
+  // opening the channel is the one step that can fail for a reason worth
+  // reporting (no shared server, DMs closed).
+  let channelId: string | null = null;
 
   let result: SendResult;
   try {
@@ -416,6 +442,7 @@ export async function sendDiscordDM(discordId: string, message: string, event = 
       };
     } else {
       const dmChannel = await channelRes.json();
+      channelId = dmChannel.id ?? null;
       result = await send(`https://discord.com/api/v10/channels/${dmChannel.id}/messages`, {
         method: "POST",
         headers,
@@ -427,6 +454,19 @@ export async function sendDiscordDM(discordId: string, message: string, event = 
   }
 
   await logDelivery({ event, channel: "dm", target: discordId, content: message, result });
+  await recordDirectMessage({
+    discordId,
+    direction: "out",
+    content: message,
+    event,
+    sentBy,
+    channelId,
+    // Storing Discord's id here is what stops a later sync — which reads the
+    // bot's own messages back — from duplicating this one.
+    discordMessageId: (result.body as { id?: string } | null)?.id ?? null,
+    ok: result.ok,
+    error: result.ok ? null : describeResult(result),
+  });
   return result;
 }
 
