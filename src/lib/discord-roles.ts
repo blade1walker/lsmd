@@ -1,8 +1,13 @@
+import { resolveBotToken } from "./discord-webhook";
+
 /**
  * Adds/removes a Discord server (guild) role on a member — distinct from the
  * webhook posts and DMs in discord-webhook.ts, which never touch guild
- * membership. Requires DISCORD_BOT_TOKEN with Manage Roles, positioned above
- * the target role in the server's role list, plus DISCORD_GUILD_ID.
+ * membership. Requires a bot token with Manage Roles, positioned above the
+ * target role in the server's role list, plus DISCORD_GUILD_ID. The token
+ * itself is resolved the same way DMs resolve theirs — the one configured in
+ * admin > notification settings wins, DISCORD_BOT_TOKEN is the fallback —
+ * so a token set only in the admin UI still lets role grants work.
  *
  * Every function here degrades to a silent no-op when its configuration is
  * missing, matching how the rest of the app treats DISCORD_BOT_TOKEN — inert
@@ -10,7 +15,7 @@
  */
 
 async function setGuildRole(discordId: string, roleId: string, action: "add" | "remove"): Promise<boolean> {
-  const botToken = process.env.DISCORD_BOT_TOKEN;
+  const botToken = await resolveBotToken();
   const guildId = process.env.DISCORD_GUILD_ID;
   if (!botToken || !guildId) return false;
 
