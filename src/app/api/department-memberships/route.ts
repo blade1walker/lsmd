@@ -4,8 +4,14 @@ import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { DEPARTMENT_PERMISSIONS } from "@/lib/constants";
-import { DEPARTMENT_ROLES, isDepartmentRole } from "@/lib/departments";
+import { DEPARTMENT_ROLES, isDepartmentRole, departmentTag } from "@/lib/departments";
 import { addDepartmentDiscordRole, removeDepartmentDiscordRole } from "@/lib/discord-roles";
+import {
+  getNotificationSettings,
+  postToDepartmentWebhook,
+  renderTemplate,
+  sendDiscordDM,
+} from "@/lib/discord-webhook";
 
 /**
  * Who is in which department, and at what standing. This is what the roster's
@@ -61,6 +67,16 @@ export async function POST(req: NextRequest) {
     if (!department) return NextResponse.json({ error: "Department not found" }, { status: 404 });
     if (!member) return NextResponse.json({ error: "Member not found" }, { status: 404 });
 
+    // A membership add through this route skips the application flow entirely
+    // (no approval to trigger it), so a brand-new membership gets the same
+    // Discord role + join announcement an approved applicant gets — only the
+    // review step differs, not the outcome. Re-adding an existing member
+    // (a standing change) does not re-announce.
+    const isNew = !(await prisma.departmentMembership.findUnique({
+      where: { departmentId_memberId: { departmentId, memberId } },
+      select: { id: true },
+    }));
+
     const membership = await prisma.departmentMembership.upsert({
       where: { departmentId_memberId: { departmentId, memberId } },
       create: { departmentId, memberId, role },
@@ -72,6 +88,32 @@ export async function POST(req: NextRequest) {
 
     if (member.discordId) {
       await addDepartmentDiscordRole(member.discordId, department.discordRoleId);
+    }
+
+    if (isNew) {
+      const settings = await getNotificationSettings();
+      const values = {
+        department: department.name,
+        tag: departmentTag(department),
+        name: member.name,
+        discordId: member.discordId ?? "",
+      };
+
+      if (settings.departmentDM && member.discordId) {
+        await sendDiscordDM(
+          member.discordId,
+          renderTemplate(settings.departmentDMApprove, values),
+          "department.approved"
+        );
+      }
+
+      if (settings.departmentWebhook) {
+        await postToDepartmentWebhook(
+          renderTemplate(settings.departmentWebhookApprove, values),
+          "department.approved",
+          department.webhookUrl
+        );
+      }
     }
 
     await logAudit({
