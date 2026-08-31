@@ -24,6 +24,41 @@ interface AdminUser {
 }
 interface RosterMember { id: string; name: string; callSign?: string | null; rank: string; discordId?: string | null; }
 
+/**
+ * Heading for each dotted permission prefix. A permission with no dot
+ * (`templates`, `notifications`) falls through to "General".
+ */
+const PERMISSION_GROUP_LABELS: Record<string, string> = {
+  roster: "Roster",
+  hr: "HR",
+  removal: "Removals",
+  sop: "SOP",
+  training: "Training",
+  clock: "Clock",
+  onboarding: "Onboarding",
+  departments: "Departments",
+  roles: "Roles",
+  audit: "Audit",
+};
+
+/**
+ * The flat list had grown past thirty entries inside a short scroll box, which
+ * made a newly added section's permissions effectively unfindable. Grouping by
+ * prefix keeps each section's permissions together and labelled.
+ */
+const PERMISSION_GROUPS = (() => {
+  const groups = new Map<string, string[]>();
+  for (const permission of ALL_PERMISSIONS) {
+    const key = permission.includes(".") ? permission.split(".")[0] : "general";
+    groups.set(key, [...(groups.get(key) ?? []), permission]);
+  }
+  return [...groups.entries()].map(([key, permissions]) => ({
+    key,
+    label: PERMISSION_GROUP_LABELS[key] ?? "General",
+    permissions,
+  }));
+})();
+
 function PermissionChecklist({
   selected,
   onToggle,
@@ -32,16 +67,25 @@ function PermissionChecklist({
   onToggle: (permission: string, checked: boolean) => void;
 }) {
   return (
-    <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto">
-      {ALL_PERMISSIONS.map((p) => (
-        <label key={p} className="flex items-center gap-2 text-xs text-gray-300">
-          <input
-            type="checkbox"
-            checked={selected.includes(p)}
-            onChange={(e) => onToggle(p, e.target.checked)}
-          />
-          {p}
-        </label>
+    <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+      {PERMISSION_GROUPS.map((group) => (
+        <div key={group.key}>
+          <div className="text-[11px] uppercase tracking-wide text-gray-500 mb-1">
+            {group.label}
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {group.permissions.map((p) => (
+              <label key={p} className="flex items-center gap-2 text-xs text-gray-300">
+                <input
+                  type="checkbox"
+                  checked={selected.includes(p)}
+                  onChange={(e) => onToggle(p, e.target.checked)}
+                />
+                {p}
+              </label>
+            ))}
+          </div>
+        </div>
       ))}
     </div>
   );

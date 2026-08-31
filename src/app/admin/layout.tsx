@@ -26,16 +26,24 @@ import {
   Hash,
   Building2,
 } from "lucide-react";
+import { DEPARTMENT_SECTION_PERMISSIONS } from "@/lib/constants";
 
 // `permission` mirrors the check on the matching API route, so a section is
-// only offered when the calls behind it will actually succeed.
-const navItems = [
+// only offered when the calls behind it will actually succeed. An array means
+// any one of them is enough — the departments console accepts either its own
+// permissions or the older ones its routes still honour.
+const navItems: {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  permission: string | string[];
+}[] = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, permission: "roster.view" },
   { href: "/admin/roster", label: "Roster", icon: Users, permission: "roster.view" },
   { href: "/admin/callsigns", label: "Call Signs", icon: Hash, permission: "roster.edit" },
   { href: "/admin/onboarding", label: "Onboarding", icon: UserPlus, permission: "onboarding.view" },
   { href: "/admin/recruit", label: "Recruit", icon: Mail, permission: "onboarding.view" },
-  { href: "/admin/departments", label: "Departments", icon: Building2, permission: "onboarding.view" },
+  { href: "/admin/departments", label: "Departments", icon: Building2, permission: DEPARTMENT_SECTION_PERMISSIONS },
   { href: "/admin/training", label: "Training", icon: GraduationCap, permission: "training.view" },
   { href: "/admin/sop", label: "SOP", icon: FileText, permission: "sop.edit" },
   { href: "/admin/radio-codes", label: "Radio Codes", icon: Radio, permission: "radio.edit" },
@@ -85,7 +93,11 @@ export default function AdminLayout({
   const permissions = session.user.permissions ?? [];
   const visibleNav = session.user.isSuperAdmin
     ? navItems
-    : navItems.filter((item) => permissions.includes(item.permission));
+    : navItems.filter((item) =>
+        (Array.isArray(item.permission) ? item.permission : [item.permission]).some((p) =>
+          permissions.includes(p)
+        )
+      );
 
   if (visibleNav.length === 0) {
     return (

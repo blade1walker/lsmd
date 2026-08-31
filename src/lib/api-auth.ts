@@ -18,7 +18,7 @@ export function isDenied(result: AuthResult): result is { error: NextResponse } 
  * Re-resolves access from the database rather than trusting the JWT claims, so
  * a revoked role or a roster removal takes effect on the next request.
  */
-export async function requireAuth(permission?: string): Promise<AuthResult> {
+export async function requireAuth(permission?: string | readonly string[]): Promise<AuthResult> {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.discordId) {
@@ -36,10 +36,20 @@ export async function requireAuth(permission?: string): Promise<AuthResult> {
     };
   }
 
-  if (permission && !hasPermission(access, permission)) {
+  const required = permission === undefined ? [] : typeof permission === "string" ? [permission] : permission;
+
+  // A list is any-of, not all-of: it is how a route accepts either its own
+  // dedicated permission or the older, broader one it used to be guarded by.
+  if (required.length > 0 && !required.some((p) => hasPermission(access, p))) {
     return {
       error: NextResponse.json(
-        { error: "Forbidden", detail: `Requires the "${permission}" permission.` },
+        {
+          error: "Forbidden",
+          detail:
+            required.length === 1
+              ? `Requires the "${required[0]}" permission.`
+              : `Requires one of these permissions: ${required.map((p) => `"${p}"`).join(", ")}.`,
+        },
         { status: 403 }
       ),
     };

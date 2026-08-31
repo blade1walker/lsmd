@@ -75,6 +75,10 @@ export const ALL_PERMISSIONS = [
   "radio.edit",
   "onboarding.view",
   "onboarding.approve",
+  "departments.view",
+  "departments.approve",
+  "departments.manage",
+  "departments.members",
   "roles.manage",
   "audit.view",
 ] as const;
@@ -106,6 +110,28 @@ export const FTP_MIN_RANK = "Paramedic";
 export const FTP_ELIGIBLE_RANKS = RANKS
   .filter((r) => r.weight >= getRankWeight(FTP_MIN_RANK))
   .map((r) => r.name);
+
+/**
+ * Department permissions, and the older permission each one still accepts.
+ *
+ * Departments grew out of the FTP form and the Templates page, so before this
+ * split their routes were guarded by `onboarding.*`, `templates` and
+ * `roster.*`. Those stay valid alongside the new ones: a deployment upgrading
+ * to this release must not silently lose access to a section its admins
+ * already had, and the roles page has no way to know which permission was
+ * meant to imply which. Grant the dedicated permission to narrow access.
+ */
+export const DEPARTMENT_PERMISSIONS = {
+  view: ["departments.view", "onboarding.view"],
+  approve: ["departments.approve", "onboarding.approve"],
+  manage: ["departments.manage", "templates"],
+  members: ["departments.members", "roster.edit"],
+} as const satisfies Record<string, readonly string[]>;
+
+/** Every permission that opens the departments console, for the sidebar check. */
+export const DEPARTMENT_SECTION_PERMISSIONS: string[] = [
+  ...new Set(Object.values(DEPARTMENT_PERMISSIONS).flat()),
+];
 
 export function canSeeRosterPages(permissions: string[]): boolean {
   return permissions.includes("roster.view");

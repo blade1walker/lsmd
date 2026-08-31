@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
+import { DEPARTMENT_PERMISSIONS } from "@/lib/constants";
 import { DEPARTMENT_ROLES, isDepartmentRole } from "@/lib/departments";
 import { addDepartmentDiscordRole, removeDepartmentDiscordRole } from "@/lib/discord-roles";
 
@@ -16,7 +17,7 @@ import { addDepartmentDiscordRole, removeDepartmentDiscordRole } from "@/lib/dis
 const ROLE_LIST = DEPARTMENT_ROLES.map((r) => `"${r}"`).join(", ");
 
 export async function GET(req: NextRequest) {
-  const auth = await requireAuth("roster.view");
+  const auth = await requireAuth(DEPARTMENT_PERMISSIONS.view);
   if (isDenied(auth)) return auth.error;
 
   try {
@@ -37,7 +38,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await requireAuth("roster.edit");
+  const auth = await requireAuth(DEPARTMENT_PERMISSIONS.members);
   if (isDenied(auth)) return auth.error;
 
   try {
@@ -90,7 +91,7 @@ export async function POST(req: NextRequest) {
 
 /** Changes standing only — moving someone between departments is a remove plus an add. */
 export async function PATCH(req: NextRequest) {
-  const auth = await requireAuth("roster.edit");
+  const auth = await requireAuth(DEPARTMENT_PERMISSIONS.members);
   if (isDenied(auth)) return auth.error;
 
   try {
@@ -126,7 +127,7 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const auth = await requireAuth("roster.edit");
+  const auth = await requireAuth(DEPARTMENT_PERMISSIONS.members);
   if (isDenied(auth)) return auth.error;
 
   try {

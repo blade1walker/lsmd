@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, isDenied } from "@/lib/api-auth";
 import { apiError } from "@/lib/api-error";
-import { RANK_LIST } from "@/lib/constants";
+import { DEPARTMENT_PERMISSIONS, RANK_LIST } from "@/lib/constants";
 
 /** documentLink renders as a real <a href> on the roster page — reject anything that isn't a plain http(s) URL (e.g. javascript:). */
 function validUrl(url: unknown, label: string): string | null | { error: string } {
@@ -104,7 +104,7 @@ const PUBLIC_FIELDS = {
  */
 export async function GET() {
   try {
-    const auth = await requireAuth("templates");
+    const auth = await requireAuth(DEPARTMENT_PERMISSIONS.manage);
     const full = !isDenied(auth);
 
     const departments = full
@@ -127,7 +127,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const auth = await requireAuth("templates");
+  const auth = await requireAuth(DEPARTMENT_PERMISSIONS.manage);
   if (isDenied(auth)) return auth.error;
 
   try {
@@ -157,7 +157,7 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const auth = await requireAuth("templates");
+  const auth = await requireAuth(DEPARTMENT_PERMISSIONS.manage);
   if (isDenied(auth)) return auth.error;
 
   try {
@@ -193,7 +193,7 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const auth = await requireAuth("templates");
+  const auth = await requireAuth(DEPARTMENT_PERMISSIONS.manage);
   if (isDenied(auth)) return auth.error;
 
   try {

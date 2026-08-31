@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,7 +19,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
-import { RANK_LIST } from "@/lib/constants";
+import { DEPARTMENT_PERMISSIONS, RANK_LIST } from "@/lib/constants";
 import {
   DEPARTMENT_ROLES,
   QUESTION_TYPES,
@@ -100,10 +101,24 @@ const TAB_LABELS: Record<Tab, string> = {
   settings: "Settings",
 };
 
+/**
+ * The permission each tab needs. Mirrors the guard on the route behind it, so
+ * a tab is only offered when its calls will actually succeed — an admin with
+ * only departments.view sees the applications and the member list, and nothing
+ * that would 403 on save.
+ */
+const TAB_PERMISSION: Record<Tab, keyof typeof DEPARTMENT_PERMISSIONS> = {
+  applications: "view",
+  form: "manage",
+  members: "view",
+  settings: "manage",
+};
+
 const inputClass =
   "w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#dc2626]";
 
 export default function AdminDepartmentsPage() {
+  const { data: session } = useSession();
   const [departments, setDepartments] = useState<Department[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [memberships, setMemberships] = useState<Membership[]>([]);
@@ -116,6 +131,21 @@ export default function AdminDepartmentsPage() {
   const [newDeptName, setNewDeptName] = useState("");
   const [creating, setCreating] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+
+  // UX only — every route re-checks for itself. This just keeps controls that
+  // would fail out of the way.
+  const granted = session?.user?.permissions ?? [];
+  const isSuperAdmin = session?.user?.isSuperAdmin ?? false;
+  const can = useCallback(
+    (kind: keyof typeof DEPARTMENT_PERMISSIONS) =>
+      isSuperAdmin || DEPARTMENT_PERMISSIONS[kind].some((p) => granted.includes(p)),
+    [isSuperAdmin, granted]
+  );
+
+  const canManage = can("manage");
+  const canApprove = can("approve");
+  const canEditMembers = can("members");
+  const visibleTabs = TABS.filter((t) => can(TAB_PERMISSION[t]));
 
   const load = useCallback(async () => {
     setError(null);
@@ -140,6 +170,12 @@ export default function AdminDepartmentsPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Keeps the selected tab on something this admin may actually open — the
+  // default is "applications", which anyone reaching this page can see.
+  useEffect(() => {
+    if (visibleTabs.length > 0 && !visibleTabs.includes(tab)) setTab(visibleTabs[0]);
+  }, [visibleTabs, tab]);
 
   const selected = departments.find((d) => d.id === selectedId) ?? null;
 
@@ -366,6 +402,7 @@ export default function AdminDepartmentsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-[16rem_1fr] gap-6 items-start">
         {/* Department list */}
         <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl p-4">
+          {canManage && (
           <div className="flex gap-2 mb-4">
             <Input
               value={newDeptName}
@@ -382,6 +419,7 @@ export default function AdminDepartmentsPage() {
               {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
             </Button>
           </div>
+          )}
 
           <div className="space-y-1">
             {departments.map((dept) => {
@@ -422,7 +460,9 @@ export default function AdminDepartmentsPage() {
           <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl p-12 text-center">
             <Building2 className="w-10 h-10 text-gray-700 mx-auto mb-3" />
             <p className="text-gray-500 text-sm">
-              Create a department to build its join form.
+              {canManage
+                ? "Create a department to build its join form."
+                : "No departments to show."}
             </p>
           </div>
         ) : (
@@ -452,7 +492,7 @@ export default function AdminDepartmentsPage() {
               </div>
 
               <div className="flex gap-1 mt-4">
-                {TABS.map((t) => (
+                {visibleTabs.map((t) => (
                   <button
                     key={t}
                     onClick={() => setTab(t)}
@@ -473,6 +513,7 @@ export default function AdminDepartmentsPage() {
                 <ApplicationsTab
                   applications={deptApplications}
                   busyId={busyId}
+                  canApprove={canApprove}
                   onReview={reviewApplication}
                 />
               )}
@@ -492,6 +533,7 @@ export default function AdminDepartmentsPage() {
                   memberships={deptMemberships}
                   roster={roster}
                   color={selected.color}
+                  canEdit={canEditMembers}
                   onAdd={addMember}
                   onSetRole={setMembershipRole}
                   onRemove={removeMembership}
@@ -518,10 +560,13 @@ export default function AdminDepartmentsPage() {
 function ApplicationsTab({
   applications,
   busyId,
+  canApprove,
   onReview,
 }: {
   applications: Application[];
   busyId: string | null;
+  /** False for a reviewer with read-only access — the decision controls are hidden. */
+  canApprove: boolean;
   onReview: (id: string, status: string, role?: string) => void;
 }) {
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -551,6 +596,7 @@ function ApplicationsTab({
                         {new Date(app.createdAt).toLocaleDateString()}
                       </div>
                     </div>
+                    {canApprove && (
                     <div className="flex items-center gap-2">
                       <select
                         value={roles[app.id] ?? "Member"}
@@ -585,6 +631,7 @@ function ApplicationsTab({
                         <XCircle className="w-4 h-4" />
                       </Button>
                     </div>
+                    )}
                   </div>
 
                   {answers.length > 0 && (
@@ -831,6 +878,7 @@ function MembersTab({
   memberships,
   roster,
   color,
+  canEdit,
   onAdd,
   onSetRole,
   onRemove,
@@ -838,6 +886,8 @@ function MembersTab({
   memberships: Membership[];
   roster: { id: string; name: string; callSign?: string | null; rank: string }[];
   color: string;
+  /** False without departments.members — the list stays readable, the controls go. */
+  canEdit: boolean;
   onAdd: (memberId: string, role: string) => void;
   onSetRole: (id: string, role: string) => void;
   onRemove: (id: string) => void;
@@ -854,6 +904,7 @@ function MembersTab({
     <div>
       <DepartmentMarkLegend className="mb-4" />
 
+      {canEdit && (
       <div className="flex gap-2 mb-5 flex-wrap">
         <select
           value={memberId}
@@ -890,6 +941,7 @@ function MembersTab({
           <Plus className="w-4 h-4" />
         </Button>
       </div>
+      )}
 
       {memberships.length === 0 ? (
         <p className="text-gray-500 text-sm">Nobody is in this department yet.</p>
@@ -907,26 +959,30 @@ function MembersTab({
                   {m.member.callSign ?? "—"} · {m.member.rank}
                 </span>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <select
-                  value={m.role}
-                  onChange={(e) => onSetRole(m.id, e.target.value)}
-                  className="h-8 rounded-md border border-[#1e1e1e] bg-[#111111] px-2 text-xs text-white"
-                >
-                  {DEPARTMENT_ROLES.map((r) => (
-                    <option key={r} value={r}>
-                      {r}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  onClick={() => onRemove(m.id)}
-                  className="p-1 text-gray-600 hover:text-red-400"
-                  title="Remove from department"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
+              {canEdit ? (
+                <div className="flex items-center gap-2 shrink-0">
+                  <select
+                    value={m.role}
+                    onChange={(e) => onSetRole(m.id, e.target.value)}
+                    className="h-8 rounded-md border border-[#1e1e1e] bg-[#111111] px-2 text-xs text-white"
+                  >
+                    {DEPARTMENT_ROLES.map((r) => (
+                      <option key={r} value={r}>
+                        {r}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => onRemove(m.id)}
+                    className="p-1 text-gray-600 hover:text-red-400"
+                    title="Remove from department"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <span className="text-xs text-gray-500 shrink-0">{m.role}</span>
+              )}
             </div>
           ))}
         </div>

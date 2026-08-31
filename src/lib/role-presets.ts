@@ -32,8 +32,8 @@ export const ROLE_PRESETS: RolePreset[] = [
   },
   {
     name: "Assistant HR",
-    description: "Handles LOA, inactivity and onboarding review.",
-    sections: ["Roster", "HR", "Onboarding", "SOP"],
+    description: "Handles LOA, inactivity, onboarding and department join review.",
+    sections: ["Roster", "HR", "Onboarding", "Departments", "SOP"],
     permissions: [
       "roster.view",
       "hr.view",
@@ -43,6 +43,8 @@ export const ROLE_PRESETS: RolePreset[] = [
       "removal.request",
       "onboarding.view",
       "onboarding.approve",
+      "departments.view",
+      "departments.approve",
       "sop.view",
       "sop.edit",
     ],
@@ -65,8 +67,9 @@ export const ROLE_PRESETS: RolePreset[] = [
   },
   {
     name: "FTP",
-    description: "Field Training Program staff. Runs training and sign-offs.",
-    sections: ["Roster", "Training", "Sign-offs", "SOP"],
+    description:
+      "Field Training Program staff. Runs training, sign-offs and the FTP department.",
+    sections: ["Roster", "Training", "Sign-offs", "Departments", "SOP"],
     permissions: [
       "roster.view",
       "sop.view",
@@ -74,6 +77,11 @@ export const ROLE_PRESETS: RolePreset[] = [
       "training.view",
       "training.manage",
       "training.signoff.manage",
+      // FTP is a department now, so its staff review its join applications and
+      // set standing in it — but not create or delete departments generally.
+      "departments.view",
+      "departments.approve",
+      "departments.members",
     ],
   },
 ];

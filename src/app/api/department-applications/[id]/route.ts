@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
+import { DEPARTMENT_PERMISSIONS } from "@/lib/constants";
 import { normalizeDepartmentRole, departmentTag } from "@/lib/departments";
 import {
   getNotificationSettings,
@@ -13,7 +14,7 @@ import {
 import { addDepartmentDiscordRole } from "@/lib/discord-roles";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await requireAuth("onboarding.approve");
+  const auth = await requireAuth(DEPARTMENT_PERMISSIONS.approve);
   if (isDenied(auth)) return auth.error;
 
   try {
@@ -126,7 +127,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await requireAuth("onboarding.approve");
+  const auth = await requireAuth(DEPARTMENT_PERMISSIONS.approve);
   if (isDenied(auth)) return auth.error;
 
   try {
