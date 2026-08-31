@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
               steamId: r.steamId,
               characterName: r.characterName || existing.characterName,
               user: r.user || existing.user,
+              rank: r.rank || existing.rank,
             },
           });
           updated++;
@@ -51,6 +52,7 @@ export async function POST(req: NextRequest) {
               steamId: r.steamId,
               characterName: r.characterName || null,
               user: r.user || null,
+              rank: r.rank || null,
             },
           });
           created++;
@@ -72,6 +74,7 @@ export async function POST(req: NextRequest) {
           steamId: body.steamId,
           characterName: body.characterName || existing.characterName,
           user: body.user || existing.user,
+          rank: body.rank || existing.rank,
         },
       });
       return NextResponse.json(request, { status: 200 });
@@ -84,6 +87,7 @@ export async function POST(req: NextRequest) {
         steamId: body.steamId,
         characterName: body.characterName || null,
         user: body.user || null,
+        rank: body.rank || null,
       },
     });
     return NextResponse.json(request, { status: 201 });

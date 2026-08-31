@@ -355,6 +355,7 @@ model RecruitRequest {
   characterName   String?
   user            String?
   status          String   @default("Pending")
+  rank            String?
   reviewedBy      String?
   reviewNote      String?
   createdAt       DateTime @default(now())
@@ -367,7 +368,7 @@ model NotificationSettings {
   recruitDM            Boolean @default(true)
   recruitWebhookApprove String @default("Congratulations! Your EMS application has been Accepted, <@{discordId}> For further details, please check your DMs")
   recruitWebhookDecline String @default("Unfortunately, your EMS application has been Declined, <@{discordId}> For further details, please check your DMs")
-  recruitDMApprove     String @default("Congratulations, {name}! 🎉\n\nYour recruitment application has been **Accepted**!\n\nJoin our state Discord server to get started:\n{inviteLink}\n\nWelcome aboard! 🚑🚀")
+  recruitDMApprove     String @default("Congratulations, {name}! 🎉\n\nYour recruitment application has been **Accepted**!\n\n**Assigned Rank:** {rank}\n\nJoin our state Discord server to get started:\n{inviteLink}\n\nWelcome aboard! 🚑🚀")
   recruitDMDecline     String @default("Dear {name},\n\nWe regret to inform you that your recruitment application has been **Declined**.\n\nIf you have questions, please contact HR.")
   onboardingWebhook    Boolean @default(false)
   onboardingDM         Boolean @default(true)

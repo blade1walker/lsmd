@@ -15,7 +15,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await req.json();
-    const { status, reviewNote, customMessage, discordId, discordUsername, steamId, characterName, user } = body;
+    const { status, reviewNote, customMessage, discordId, discordUsername, steamId, characterName, user, rank } = body;
     const performedBy = actorLabel(auth.access);
 
     // The admin edit modal resends the request's current status alongside
@@ -33,6 +33,7 @@ export async function PATCH(
       ...(steamId && { steamId }),
       ...(characterName !== undefined && { characterName: characterName || null }),
       ...(user !== undefined && { user: user || null }),
+      ...(rank !== undefined && { rank: rank || null }),
       ...(reviewNote !== undefined && { reviewNote }),
     };
 
@@ -63,17 +64,31 @@ export async function PATCH(
       const inviteLink = settings.botSettings?.stateInvite || process.env.DISCORD_STATE_INVITE || "https://discord.gg/YOUR_INVITE";
 
       if (status === "Approved") {
+        // Read the rank back off the row rather than off the body, so a
+        // re-approval that carries no rank still names the one on record.
+        const assignedRank = request.rank || "";
+
         if (settings.recruitWebhook) {
           const msg = settings.recruitWebhookApprove
             .replace(/{discordId}/g, request.discordId)
             .replace(/{name}/g, request.characterName || "Recruit")
+            .replace(/{rank}/g, assignedRank || "N/A")
             .replace(/{inviteLink}/g, inviteLink);
           await postToAcceptWebhook(msg, "https://r2.fivemanage.com/kgAGMLox973pn5aee2Vbl/ems_approved.png", "recruit.approved");
         }
 
         if (settings.recruitDM) {
-          const msg = (customMessage || settings.recruitDMApprove)
+          const template = customMessage || settings.recruitDMApprove;
+          // Templates written before approvals carried a rank have no {rank}
+          // token, and the recruit still has to be told which rank they got —
+          // so append it instead of dropping it.
+          const withRank =
+            assignedRank && !template.includes("{rank}")
+              ? `${template}\n\n**Assigned Rank:** {rank}`
+              : template;
+          const msg = withRank
             .replace(/{name}/g, request.characterName || "Recruit")
+            .replace(/{rank}/g, assignedRank || "N/A")
             .replace(/{inviteLink}/g, inviteLink);
           await sendDiscordDM(request.discordId, msg, "recruit.approved");
         }
@@ -100,6 +115,7 @@ export async function PATCH(
         entityType: "RecruitRequest",
         entityId: request.id,
         entityLabel: request.characterName || request.discordId,
+        details: status === "Approved" ? { rank: request.rank || null } : undefined,
         performedBy,
       });
     }
