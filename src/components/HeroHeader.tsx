@@ -62,10 +62,10 @@ export function HeroHeader() {
               Enroll in Roster
             </a>
             <a
-              href="/ftp"
+              href="/departments"
               className="px-8 py-3 bg-white/5 hover:bg-white/10 text-white border border-white/10 font-semibold rounded-lg transition-all hover:scale-105 text-sm"
             >
-              FTP Interest
+              Join a Department
             </a>
             <a
               href="/sop"

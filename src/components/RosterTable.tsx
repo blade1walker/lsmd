@@ -5,7 +5,9 @@ import RankInsignia from "@/components/RankInsignia";
 import ActivityPill from "@/components/ActivityPill";
 import DeptBadge from "@/components/DeptBadge";
 import ClockButton from "@/components/ClockButton";
+import { DepartmentMark } from "@/components/DepartmentMark";
 import { getRankInfo } from "@/lib/constants";
+import { departmentTag } from "@/lib/departments";
 import { formatDuration } from "@/lib/utils";
 
 interface Member {
@@ -20,6 +22,16 @@ interface Member {
   tempRank?: string | null;
   /** At most one row: the leave the member is currently on. */
   loas?: { endDate: string | Date }[];
+  /** Which departments this member is in, and at what standing. */
+  departmentMemberships?: { departmentId: string; role: string }[];
+}
+
+/** A department that gets its own tick column. */
+export interface DepartmentColumn {
+  id: string;
+  name: string;
+  tag?: string | null;
+  color: string;
 }
 
 /** "Back 12/09/2026" under the status pill, for members listed in the LOA section. */
@@ -37,9 +49,16 @@ interface RosterTableProps {
   members: Member[];
   clockStatus?: Record<string, { isClockedIn: boolean; todayTotal: number }>;
   onMemberClick?: (member: Member) => void;
+  /** One tick column per department. Empty until departments are created. */
+  departments?: DepartmentColumn[];
 }
 
-export default function RosterTable({ members, clockStatus, onMemberClick }: RosterTableProps) {
+export default function RosterTable({
+  members,
+  clockStatus,
+  onMemberClick,
+  departments = [],
+}: RosterTableProps) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
@@ -51,6 +70,15 @@ export default function RosterTable({ members, clockStatus, onMemberClick }: Ros
             <th className="text-left py-3 px-4 text-gray-500 font-medium">Rank</th>
             <th className="text-left py-3 px-4 text-gray-500 font-medium">Dept</th>
             <th className="text-left py-3 px-4 text-gray-500 font-medium">Status</th>
+            {departments.map((dept) => (
+              <th
+                key={dept.id}
+                className="py-3 px-3 text-gray-500 font-medium text-center whitespace-nowrap"
+                title={dept.name}
+              >
+                {departmentTag(dept)}
+              </th>
+            ))}
             <th className="text-left py-3 px-4 text-gray-500 font-medium">Today</th>
           </tr>
         </thead>
@@ -58,6 +86,9 @@ export default function RosterTable({ members, clockStatus, onMemberClick }: Ros
           {members.map((member, idx) => {
             const rankInfo = getRankInfo(member.rank);
             const clock = clockStatus?.[member.id];
+            const standing = new Map(
+              (member.departmentMemberships ?? []).map((m) => [m.departmentId, m.role])
+            );
             return (
               <tr
                 key={member.id}
@@ -96,6 +127,11 @@ export default function RosterTable({ members, clockStatus, onMemberClick }: Ros
                   <ActivityPill activity={member.activity} />
                   <LeaveReturn member={member} />
                 </td>
+                {departments.map((dept) => (
+                  <td key={dept.id} className="py-3 px-3 text-center">
+                    <DepartmentMark role={standing.get(dept.id)} color={dept.color} />
+                  </td>
+                ))}
                 <td className="py-3 px-4 font-[family-name:var(--font-mono)] text-gray-400 text-xs">
                   {clock ? formatDuration(clock.todayTotal) : "—"}
                 </td>

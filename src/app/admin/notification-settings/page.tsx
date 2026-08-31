@@ -25,6 +25,12 @@ interface Settings {
   ftpDMApprove: string;
   ftpDMDecline: string;
   ftpWebhookApprove: string;
+  departmentWebhook: boolean;
+  departmentDM: boolean;
+  departmentWebhookSubmitted: string;
+  departmentWebhookApprove: string;
+  departmentDMApprove: string;
+  departmentDMDecline: string;
   loaWebhook: boolean;
   loaDM: boolean;
   loaWebhookApprove: string;
@@ -47,6 +53,7 @@ interface Settings {
     recruit?: string;
     onboarding?: string;
     ftp?: string;
+    department?: string;
     loa?: string;
     promotion?: string;
     callsign?: string;
@@ -72,6 +79,12 @@ const DEFAULTS: Settings = {
   ftpDMApprove: "Congratulations, {name}! 🎉\n\nYour Field Training Program (FTP) application has been **Accepted**! You have been assigned the FTP role and a trainer will reach out to you shortly.\n\nJoin our state Discord server:\n{inviteLink}",
   ftpDMDecline: "Dear {name},\n\nWe regret to inform you that your FTP application has been **Declined**.\n\nIf you have questions, please contact HR.",
   ftpWebhookApprove: "🎓 {name} ({callSign}) has enrolled in the Field Training Program!",
+  departmentWebhook: true,
+  departmentDM: true,
+  departmentWebhookSubmitted: "📥 **{department}** — new join application from **{name}** ({rank}) <@{discordId}>",
+  departmentWebhookApprove: "✅ <@{discordId}> **{name}** has joined **{department}**.",
+  departmentDMApprove: "Congratulations, {name}! 🎉\n\nYour application to join **{department}** has been **Accepted**.\n\nWelcome to the team!",
+  departmentDMDecline: "Dear {name},\n\nYour application to join **{department}** has been **Declined**.\n\nIf you have questions, please contact HR.",
   loaWebhook: true,
   loaDM: false,
   loaWebhookApprove: "<@{discordId}> **{name}** has been granted a Leave of Absence.",
@@ -98,6 +111,8 @@ const DEFAULTS: Settings = {
 const SAMPLE_VALUES: Record<string, string> = {
   name: "Sample Medic",
   rank: "Paramedic",
+  department: "Surgical",
+  tag: "Surgical",
   fromRank: "EMT",
   toRank: "Paramedic",
   callSign: "947",
@@ -114,7 +129,7 @@ const SAMPLE_VALUES: Record<string, string> = {
 
 type BooleanKey = { [K in keyof Settings]: Settings[K] extends boolean ? K : never }[keyof Settings];
 type StringKey = { [K in keyof Settings]: Settings[K] extends string ? K : never }[keyof Settings];
-type WebhookKind = "recruit" | "onboarding" | "ftp" | "loa" | "promotion" | "callsign";
+type WebhookKind = "recruit" | "onboarding" | "ftp" | "department" | "loa" | "promotion" | "callsign";
 
 interface ChannelDef {
   id: string;
@@ -227,6 +242,38 @@ const MESSAGE_GROUPS: GroupDef[] = [
         fields: [
           { key: "ftpDMApprove", label: "Approved" },
           { key: "ftpDMDecline", label: "Declined" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "department",
+    title: "Department Joins",
+    description: "Join applications, and the decision on them",
+    channels: [
+      {
+        id: "webhook",
+        label: "Webhook",
+        hint: "Posted in the department's own channel, or the shared department channel when it has none",
+        toggleKey: "departmentWebhook",
+        transport: "webhook",
+        webhookKind: "department",
+        variables: ["<@{discordId}>", "{department}", "{tag}", "{name}", "{rank}", "{callSign}"],
+        fields: [
+          { key: "departmentWebhookSubmitted", label: "Application received" },
+          { key: "departmentWebhookApprove", label: "Approved" },
+        ],
+      },
+      {
+        id: "dm",
+        label: "Direct Message",
+        hint: "Sent privately to the applicant by the bot",
+        toggleKey: "departmentDM",
+        transport: "dm",
+        variables: ["{department}", "{tag}", "{name}", "{rank}"],
+        fields: [
+          { key: "departmentDMApprove", label: "Approved" },
+          { key: "departmentDMDecline", label: "Declined" },
         ],
       },
     ],
@@ -347,6 +394,12 @@ const WEBHOOK_URL_FIELDS: { key: WebhookKind; label: string; env: string; note?:
   { key: "recruit", label: "Recruit (accept / decline)", env: "DISCORD_ACCEPT_WEBHOOK_URL" },
   { key: "onboarding", label: "Onboarding (enrollment)", env: "DISCORD_ENROLL_WEBHOOK_URL" },
   { key: "ftp", label: "FTP", env: "DISCORD_FTP_WEBHOOK_URL" },
+  {
+    key: "department",
+    label: "Department joins",
+    env: "DISCORD_DEPARTMENT_WEBHOOK_URL",
+    note: "Only used by departments with no webhook of their own. Leave both empty to post on the FTP channel instead.",
+  },
   { key: "loa", label: "LOA", env: "DISCORD_LOA_WEBHOOK_URL" },
   { key: "promotion", label: "Promotion / demotion", env: "DISCORD_PROMOTION_WEBHOOK_URL" },
   {

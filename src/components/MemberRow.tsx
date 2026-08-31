@@ -3,7 +3,9 @@
 import React, { useState } from "react";
 import RankInsignia from "@/components/RankInsignia";
 import ActivityPill from "@/components/ActivityPill";
+import { DepartmentMark } from "@/components/DepartmentMark";
 import { getRankInfo, RANK_LIST, ACTIVITY_STATUSES } from "@/lib/constants";
+import type { DepartmentColumn } from "@/components/RosterTable";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,18 +28,30 @@ interface Member {
   order: number;
   /** At most one row: the leave the member is currently on. */
   loas?: { endDate: string | Date }[];
+  /** Which departments this member is in, and at what standing. */
+  departmentMemberships?: { departmentId: string; role: string }[];
 }
 
 interface MemberRowProps {
   member: Member;
   departments: string[];
+  /** One read-only tick column per department. Standing is set in /admin/departments. */
+  departmentColumns?: DepartmentColumn[];
   onUpdate: (id: string, data: Partial<Member>) => void;
   onDelete: (id: string) => void;
   onPromote: (id: string) => void;
   onDemote: (id: string) => void;
 }
 
-export default function MemberRow({ member, departments, onUpdate, onDelete, onPromote, onDemote }: MemberRowProps) {
+export default function MemberRow({
+  member,
+  departments,
+  departmentColumns = [],
+  onUpdate,
+  onDelete,
+  onPromote,
+  onDemote,
+}: MemberRowProps) {
   const [editing, setEditing] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({
@@ -52,6 +66,16 @@ export default function MemberRow({ member, departments, onUpdate, onDelete, onP
   });
 
   const rankInfo = getRankInfo(member.rank);
+  const standing = new Map(
+    (member.departmentMemberships ?? []).map((m) => [m.departmentId, m.role])
+  );
+
+  /** Read-only in the roster: membership and standing are set in /admin/departments. */
+  const departmentCells = departmentColumns.map((dept) => (
+    <td key={dept.id} className="py-3 px-3 text-center">
+      <DepartmentMark role={standing.get(dept.id)} color={dept.color} />
+    </td>
+  ));
 
   const handleSave = () => {
     onUpdate(member.id, {
@@ -137,6 +161,15 @@ export default function MemberRow({ member, departments, onUpdate, onDelete, onP
           )}
         </td>
         <td className="py-2 px-4">
+          <Input
+            value={editForm.category}
+            onChange={(e) => setEditForm((p) => ({ ...p, category: e.target.value }))}
+            className="h-8 text-xs"
+            placeholder="Category"
+          />
+        </td>
+        {departmentCells}
+        <td className="py-2 px-4">
           <div className="flex items-center gap-1">
             <Button size="sm" className="h-7 text-xs" onClick={handleSave}>Save</Button>
             <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setEditing(false)}>Cancel</Button>
@@ -195,6 +228,7 @@ export default function MemberRow({ member, departments, onUpdate, onDelete, onP
           <span className="text-gray-600 text-xs">—</span>
         )}
       </td>
+      {departmentCells}
       <td className="py-3 px-4">
         <div className="flex items-center gap-1">
           <Link href={`/admin/roster/${member.id}`}>

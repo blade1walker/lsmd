@@ -31,6 +31,11 @@ const ACTIVE_LOA = {
   select: { endDate: true, startDate: true, reason: true },
 };
 
+/** Drives the roster's per-department tick columns. Public either way — the tags are on the public roster. */
+const DEPARTMENT_MEMBERSHIPS = {
+  select: { id: true, departmentId: true, role: true },
+} as const;
+
 /**
  * Stays reachable without a session because the public LOA request page needs
  * to list members. Anonymous callers get a reduced projection: the full row
@@ -46,8 +51,14 @@ export async function GET() {
         members: {
           orderBy: { order: "asc" },
           ...(full
-            ? { include: { loas: ACTIVE_LOA } }
-            : { select: { ...PUBLIC_MEMBER_FIELDS, loas: ACTIVE_LOA } }),
+            ? { include: { loas: ACTIVE_LOA, departmentMemberships: DEPARTMENT_MEMBERSHIPS } }
+            : {
+                select: {
+                  ...PUBLIC_MEMBER_FIELDS,
+                  loas: ACTIVE_LOA,
+                  departmentMemberships: DEPARTMENT_MEMBERSHIPS,
+                },
+              }),
         },
       },
       orderBy: { order: "asc" },

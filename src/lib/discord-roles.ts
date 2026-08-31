@@ -35,6 +35,27 @@ async function setGuildRole(discordId: string, roleId: string, action: "add" | "
   }
 }
 
+/**
+ * Grants a department's configured guild role. Departments each carry their
+ * own optional discordRoleId, so this takes the role rather than reading one
+ * fixed env var the way the FTP helpers below do.
+ */
+export async function addDepartmentDiscordRole(
+  discordId: string,
+  roleId: string | null | undefined
+): Promise<boolean> {
+  if (!discordId || !roleId) return false;
+  return setGuildRole(discordId, roleId, "add");
+}
+
+export async function removeDepartmentDiscordRole(
+  discordId: string,
+  roleId: string | null | undefined
+): Promise<boolean> {
+  if (!discordId || !roleId) return false;
+  return setGuildRole(discordId, roleId, "remove");
+}
+
 export async function addFtpDiscordRole(discordId: string): Promise<boolean> {
   const roleId = process.env.DISCORD_FTP_ROLE_ID;
   if (!roleId) return false;

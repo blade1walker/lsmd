@@ -63,7 +63,7 @@ export default function AdminAuditPage() {
   }, [fetchLogs]);
 
   const totalPages = Math.ceil(total / limit);
-  const entityTypes = ["Member", "AdminRole", "AdminUser", "LOA", "RemovalRequest", "InactivityRequest", "OnboardingRequest", "FTPRequest", "RecruitRequest"];
+  const entityTypes = ["Member", "AdminRole", "AdminUser", "LOA", "RemovalRequest", "InactivityRequest", "OnboardingRequest", "FTPRequest", "RecruitRequest", "DepartmentApplication", "DepartmentMembership"];
 
   if (loading) {
     return <div className="flex items-center justify-center h-64"><div className="text-gray-500">Loading audit logs...</div></div>;

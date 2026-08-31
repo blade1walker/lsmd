@@ -17,7 +17,7 @@ export async function GET() {
       pendingRemovals,
       pendingInactivity,
       pendingOnboarding,
-      pendingFTP,
+      pendingDepartments,
       pendingRecruits,
       totalClockEntries,
       recentPromotions,
@@ -32,7 +32,7 @@ export async function GET() {
       prisma.removalRequest.count({ where: { status: "Pending" } }),
       prisma.inactivityRequest.count({ where: { status: "Pending" } }),
       prisma.onboardingRequest.count({ where: { status: "Pending" } }),
-      prisma.fTPRequest.count({ where: { status: "Pending" } }),
+      prisma.departmentApplication.count({ where: { status: "Pending" } }),
       prisma.recruitRequest.count({ where: { status: "Pending" } }),
       prisma.clockEntry.count(),
       prisma.promotionNotification.findMany({
@@ -60,7 +60,7 @@ export async function GET() {
     ]);
 
     const totalPending =
-      pendingLOAs + pendingRemovals + pendingInactivity + pendingOnboarding + pendingFTP + pendingRecruits;
+      pendingLOAs + pendingRemovals + pendingInactivity + pendingOnboarding + pendingDepartments + pendingRecruits;
 
     const topClockHours = await prisma.clockEntry.groupBy({
       by: ["memberId"],
@@ -96,7 +96,7 @@ export async function GET() {
           removals: pendingRemovals,
           inactivity: pendingInactivity,
           onboarding: pendingOnboarding,
-          ftp: pendingFTP,
+          departments: pendingDepartments,
           recruits: pendingRecruits,
         },
       },

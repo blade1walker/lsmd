@@ -41,7 +41,7 @@ interface DashboardData {
       removals: number;
       inactivity: number;
       onboarding: number;
-      ftp: number;
+      departments: number;
       recruits: number;
     };
   };
@@ -226,7 +226,7 @@ export default function AdminDashboardPage() {
               { label: "Removals", count: stats.pendingBreakdown.removals },
               { label: "Inactivity", count: stats.pendingBreakdown.inactivity },
               { label: "Onboarding", count: stats.pendingBreakdown.onboarding },
-              { label: "FTP", count: stats.pendingBreakdown.ftp },
+              { label: "Departments", count: stats.pendingBreakdown.departments },
               { label: "Recruits", count: stats.pendingBreakdown.recruits },
             ].map((item) => (
               <div

@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Download } from "lucide-react";
 import { RANK_NAMES, SECTION_HINTS, ACTIVITY_STATUSES } from "@/lib/constants";
+import { departmentTag } from "@/lib/departments";
+import { DepartmentMarkLegend } from "@/components/DepartmentMark";
 import { toast } from "sonner";
 import { ErrorState } from "@/components/ui/error-state";
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
@@ -31,10 +33,16 @@ interface Section {
     category?: string | null;
     order: number;
     loas?: { endDate: string }[];
+    departmentMemberships?: { departmentId: string; role: string }[];
   }>;
 }
 
-interface DepartmentOption { id: string; name: string; }
+interface DepartmentOption {
+  id: string;
+  name: string;
+  tag?: string | null;
+  color: string;
+}
 
 /** Key for the LOA group — not a real Section, so it needs an id of its own. */
 const LOA_SECTION_ID = "__loa";
@@ -237,6 +245,7 @@ export default function AdminRosterPage() {
         <ErrorState title="Failed to load roster" message={error} onRetry={fetchData} />
       ) : (
         <div className="space-y-8">
+          {departmentOptions.length > 0 && <DepartmentMarkLegend />}
           {displaySections.map((section) => (
             <div key={section.id}>
               <h2 className="font-[family-name:var(--font-oswald)] text-lg font-semibold text-white uppercase mb-3">
@@ -253,6 +262,15 @@ export default function AdminRosterPage() {
                       <th className="text-left py-3 px-4 text-gray-500 font-medium">Temp Rank</th>
                       <th className="text-left py-3 px-4 text-gray-500 font-medium">Department</th>
                       <th className="text-left py-3 px-4 text-gray-500 font-medium">Category</th>
+                      {departmentOptions.map((dept) => (
+                        <th
+                          key={dept.id}
+                          className="py-3 px-3 text-gray-500 font-medium text-center whitespace-nowrap"
+                          title={dept.name}
+                        >
+                          {departmentTag(dept)}
+                        </th>
+                      ))}
                       <th className="text-left py-3 px-4 text-gray-500 font-medium">Actions</th>
                     </tr>
                   </thead>
@@ -262,6 +280,7 @@ export default function AdminRosterPage() {
                         key={member.id}
                         member={member}
                         departments={departmentOptions.map((d) => d.name)}
+                        departmentColumns={departmentOptions}
                         onUpdate={handleUpdate}
                         onDelete={handleDelete}
                         onPromote={handlePromote}

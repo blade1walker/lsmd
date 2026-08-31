@@ -33,6 +33,12 @@ export interface NotificationSettings {
   ftpDMApprove: string;
   ftpDMDecline: string;
   ftpWebhookApprove: string;
+  departmentWebhook: boolean;
+  departmentDM: boolean;
+  departmentWebhookSubmitted: string;
+  departmentWebhookApprove: string;
+  departmentDMApprove: string;
+  departmentDMDecline: string;
   loaWebhook: boolean;
   loaDM: boolean;
   loaWebhookApprove: string;
@@ -73,6 +79,12 @@ const FALLBACK_SETTINGS: NotificationSettings = {
   ftpDMApprove: "Congratulations, {name}! 🎉\n\nYour Field Training Program (FTP) application has been **Accepted**! You have been assigned the FTP role and a trainer will reach out to you shortly.\n\nJoin our state Discord server:\n{inviteLink}",
   ftpDMDecline: "Dear {name},\n\nWe regret to inform you that your FTP application has been **Declined**.\n\nIf you have questions, please contact HR.",
   ftpWebhookApprove: "🎓 {name} ({callSign}) has enrolled in the Field Training Program!",
+  departmentWebhook: true,
+  departmentDM: true,
+  departmentWebhookSubmitted: "📥 **{department}** — new join application from **{name}** ({rank}) <@{discordId}>",
+  departmentWebhookApprove: "✅ <@{discordId}> **{name}** has joined **{department}**.",
+  departmentDMApprove: "Congratulations, {name}! 🎉\n\nYour application to join **{department}** has been **Accepted**.\n\nWelcome to the team!",
+  departmentDMDecline: "Dear {name},\n\nYour application to join **{department}** has been **Declined**.\n\nIf you have questions, please contact HR.",
   loaWebhook: true,
   loaDM: false,
   loaWebhookApprove: "<@{discordId}> **{name}** has been granted a Leave of Absence.",
@@ -96,12 +108,13 @@ const FALLBACK_SETTINGS: NotificationSettings = {
 };
 
 /** Every channel a message can go out on. Maps to a webhook URL, or to the bot for DMs. */
-export type WebhookKind = "recruit" | "onboarding" | "ftp" | "loa" | "promotion" | "callsign";
+export type WebhookKind = "recruit" | "onboarding" | "ftp" | "department" | "loa" | "promotion" | "callsign";
 
 const WEBHOOK_ENV: Record<WebhookKind, string | undefined> = {
   recruit: process.env.DISCORD_ACCEPT_WEBHOOK_URL,
   onboarding: process.env.DISCORD_ENROLL_WEBHOOK_URL,
   ftp: process.env.DISCORD_FTP_WEBHOOK_URL,
+  department: process.env.DISCORD_DEPARTMENT_WEBHOOK_URL,
   loa: process.env.DISCORD_LOA_WEBHOOK_URL,
   promotion: process.env.DISCORD_PROMOTION_WEBHOOK_URL,
   callsign: process.env.DISCORD_CALLSIGN_WEBHOOK_URL,
@@ -115,6 +128,9 @@ const WEBHOOK_ENV: Record<WebhookKind, string | undefined> = {
  */
 const WEBHOOK_FALLBACK: Partial<Record<WebhookKind, WebhookKind>> = {
   callsign: "promotion",
+  // Department join applications grew out of the FTP form, so a deployment
+  // that only ever configured the FTP webhook keeps posting where it always did.
+  department: "ftp",
 };
 
 function ownUrl(kind: WebhookKind, settings: NotificationSettings): string {
@@ -294,10 +310,20 @@ export async function postContent(
   event: string,
   imageUrl?: string
 ): Promise<SendResult> {
-  const webhookUrl = await resolveWebhookUrl(kind);
+  return postToWebhookContent(await resolveWebhookUrl(kind), content, event, kind, imageUrl);
+}
+
+/** Plain-content post to an explicit URL — for a channel configured on the record itself. */
+export async function postToWebhookContent(
+  webhookUrl: string,
+  content: string,
+  event: string,
+  target: string,
+  imageUrl?: string
+): Promise<SendResult> {
   if (!webhookUrl) {
     const result: SendResult = { ok: false, skipped: "no-url" };
-    await logDelivery({ event, channel: "webhook", target: kind, content, result });
+    await logDelivery({ event, channel: "webhook", target, content, result });
     return result;
   }
 
@@ -310,7 +336,7 @@ export async function postContent(
     body: JSON.stringify(body),
   });
 
-  await logDelivery({ event, channel: "webhook", target: kind, content, result });
+  await logDelivery({ event, channel: "webhook", target, content, result });
   return result;
 }
 
@@ -324,6 +350,21 @@ export async function postToEnrollWebhook(embed: Embed, event = "onboarding.appr
 
 export async function postToFtpWebhook(content: string, event = "ftp.enrolled"): Promise<SendResult> {
   return postContent("ftp", content, event);
+}
+
+/**
+ * Department posts prefer the webhook stored on the department itself, so each
+ * department can land in its own channel; the shared "department" channel (and
+ * through it, "ftp") is the fallback when one has none of its own.
+ */
+export async function postToDepartmentWebhook(
+  content: string,
+  event: string,
+  departmentWebhookUrl?: string | null
+): Promise<SendResult> {
+  const own = departmentWebhookUrl?.trim();
+  if (own) return postToWebhookContent(own, content, event, "department");
+  return postContent("department", content, event);
 }
 
 export async function postToPromotionWebhook(content: string, event = "member.promoted"): Promise<SendResult> {

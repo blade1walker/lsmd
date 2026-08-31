@@ -19,12 +19,12 @@ import {
   Bell,
   LogOut,
   Mail,
-  BookOpen,
   ChevronLeft,
   MessageSquare,
   ScrollText,
   Menu,
   Hash,
+  Building2,
 } from "lucide-react";
 
 // `permission` mirrors the check on the matching API route, so a section is
@@ -35,7 +35,7 @@ const navItems = [
   { href: "/admin/callsigns", label: "Call Signs", icon: Hash, permission: "roster.edit" },
   { href: "/admin/onboarding", label: "Onboarding", icon: UserPlus, permission: "onboarding.view" },
   { href: "/admin/recruit", label: "Recruit", icon: Mail, permission: "onboarding.view" },
-  { href: "/admin/ftp", label: "FTP", icon: BookOpen, permission: "onboarding.view" },
+  { href: "/admin/departments", label: "Departments", icon: Building2, permission: "onboarding.view" },
   { href: "/admin/training", label: "Training", icon: GraduationCap, permission: "training.view" },
   { href: "/admin/sop", label: "SOP", icon: FileText, permission: "sop.edit" },
   { href: "/admin/radio-codes", label: "Radio Codes", icon: Radio, permission: "radio.edit" },

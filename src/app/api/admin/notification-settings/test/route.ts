@@ -16,6 +16,8 @@ import {
 const SAMPLE = {
   name: "Sample Medic",
   rank: "Paramedic",
+  department: "Surgical",
+  tag: "Surgical",
   fromRank: "EMT",
   toRank: "Paramedic",
   callSign: "947",
@@ -28,7 +30,7 @@ const SAMPLE = {
   reason: "Vacation",
 };
 
-const WEBHOOK_KINDS: WebhookKind[] = ["recruit", "onboarding", "ftp", "loa", "promotion", "callsign"];
+const WEBHOOK_KINDS: WebhookKind[] = ["recruit", "onboarding", "ftp", "department", "loa", "promotion", "callsign"];
 
 function isMessageField(key: string, settings: NotificationSettings): key is keyof NotificationSettings {
   return key in settings && typeof settings[key as keyof NotificationSettings] === "string";

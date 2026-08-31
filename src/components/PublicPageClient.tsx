@@ -6,12 +6,12 @@ import { HeroHeader } from "./HeroHeader";
 import { StatsBar } from "./StatsBar";
 import { FilterBar } from "./FilterBar";
 import { SectionHeader } from "./SectionHeader";
-import { RosterTable } from "./RosterTable";
+import { RosterTable, type DepartmentColumn } from "./RosterTable";
 import { MemberDrawer } from "./MemberDrawer";
 import { LOAModal } from "./LOAModal";
 import { UserNotificationBell } from "./UserNotificationBell";
 import { Footer } from "./Footer";
-import { RANKS, SECTION_HINTS } from "@/lib/constants";
+import { DepartmentMarkLegend } from "./DepartmentMark";
 
 interface Section {
   id: string;
@@ -22,12 +22,14 @@ interface Section {
 
 interface PublicPageClientProps {
   sections: Section[];
+  /** One tick column per department, in their configured order. */
+  departments?: DepartmentColumn[];
 }
 
 /** Collapse key for the LOA group — not a real Section, so it needs its own id. */
 const LOA_SECTION_ID = "__loa";
 
-export function PublicPageClient({ sections }: PublicPageClientProps) {
+export function PublicPageClient({ sections, departments = [] }: PublicPageClientProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [activityFilter, setActivityFilter] = useState("All");
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
@@ -143,7 +145,7 @@ export function PublicPageClient({ sections }: PublicPageClientProps) {
                   }
                 />
                 {openSections[section.id] && (
-                  <RosterTable members={section.members} />
+                  <RosterTable members={section.members} departments={departments} />
                 )}
               </div>
             ))}
@@ -162,9 +164,13 @@ export function PublicPageClient({ sections }: PublicPageClientProps) {
                   }
                 />
                 {(openSections[LOA_SECTION_ID] ?? true) && (
-                  <RosterTable members={membersOnLOA} />
+                  <RosterTable members={membersOnLOA} departments={departments} />
                 )}
               </div>
+            )}
+
+            {departments.length > 0 && (
+              <DepartmentMarkLegend className="mt-4 justify-end" />
             )}
 
             {/* Join EMS CTA */}

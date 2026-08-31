@@ -49,6 +49,7 @@ model Member {
   inactivityRequests InactivityRequest[]
   removalRequests    RemovalRequest[]
   ftoSignOffRecords  FTOSignOffRecord[]
+  departmentMemberships DepartmentMembership[]
 }
 
 model ClockEntry {
@@ -217,12 +218,105 @@ model CategoryTemplate {
  * "LSMD" default keep working without a migration). documentLink is one
  * link an admin can attach — SOPs, a roster doc, whatever that department
  * wants pinned.
+ *
+ * A department is also a join-application form: `questions` are what the
+ * public form asks, `applications` are what came back, and `memberships` are
+ * who got in. Its name doubles as the roster tag — the same way "FTP" was
+ * hard-coded before departments could be created freely.
  */
 model DepartmentTemplate {
   id           String  @id @default(cuid())
   name         String  @unique
   documentLink String?
   order        Int     @default(0)
+  /** Short label for the roster column header and the member tag. Falls back to `name`. */
+  tag          String?
+  /** Tag and tick colour on the roster. */
+  color        String  @default("#dc2626")
+  /** Blurb shown above the join form. */
+  description  String?
+  /** Where a submitted application is posted. Falls back to the shared "department" webhook. */
+  webhookUrl   String?
+  /** Whether the public join form accepts new applications. */
+  openForApplications Boolean @default(true)
+  /** Optional rank gate, by RANKS name. Null means every rank may apply. */
+  minRank      String?
+  /** Guild role granted on approval — inert until set (see lib/discord-roles). */
+  discordRoleId String?
+
+  questions    DepartmentQuestion[]
+  applications DepartmentApplication[]
+  memberships  DepartmentMembership[]
+}
+
+/**
+ * One question on a department's join form. Admin-authored, so each form asks
+ * whatever that department needs rather than the single fixed "previous
+ * experience" box the FTP form had.
+ */
+model DepartmentQuestion {
+  id           String  @id @default(cuid())
+  departmentId String
+  label        String
+  /** "text" | "textarea" | "select" | "checkbox" */
+  type         String  @default("textarea")
+  /** [string] — the choices, for a "select" question. */
+  options      Json    @default("[]")
+  placeholder  String?
+  /** Mandatory questions block submission until answered. */
+  required     Boolean @default(false)
+  order        Int     @default(0)
+
+  department   DepartmentTemplate @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@index([departmentId])
+}
+
+/**
+ * A submitted join request. Answers are snapshotted with their label, not just
+ * their questionId, so editing or deleting a question later does not rewrite
+ * what an applicant was actually asked.
+ */
+model DepartmentApplication {
+  id            String   @id @default(cuid())
+  departmentId  String
+  memberId      String?
+  characterName String
+  discordId     String
+  currentRank   String
+  /** [{ "questionId": string, "label": string, "answer": string }] */
+  answers       Json     @default("[]")
+  status        String   @default("Pending")
+  reviewedBy    String?
+  reviewNote    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  department    DepartmentTemplate @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@index([departmentId, status])
+  @@index([createdAt])
+}
+
+/**
+ * Who is in a department and at what standing. Separate from Member.dept
+ * (which holds one primary department name) because a member can sit in
+ * several departments at once — that is what the roster tick columns show.
+ */
+model DepartmentMembership {
+  id           String   @id @default(cuid())
+  departmentId String
+  memberId     String
+  /** One of DEPARTMENT_ROLES: "High Command" | "Command" | "Lead" | "Member". */
+  role         String   @default("Member")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  department   DepartmentTemplate @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  member       Member             @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([departmentId, memberId])
+  @@index([memberId])
 }
 
 model AdminUser {
@@ -380,6 +474,12 @@ model NotificationSettings {
   ftpDMApprove         String @default("Congratulations, {name}! 🎉\n\nYour Field Training Program (FTP) application has been **Accepted**! You have been assigned the FTP role and a trainer will reach out to you shortly.\n\nJoin our state Discord server:\n{inviteLink}")
   ftpDMDecline         String @default("Dear {name},\n\nYour Field Training Program (FTP) application has been **Declined**.\n\nIf you have questions, please contact HR.")
   ftpWebhookApprove    String @default("🎓 {name} ({callSign}) has enrolled in the Field Training Program!")
+  departmentWebhook          Boolean @default(true)
+  departmentDM               Boolean @default(true)
+  departmentWebhookSubmitted String  @default("📥 **{department}** — new join application from **{name}** ({rank}) <@{discordId}>")
+  departmentWebhookApprove   String  @default("✅ <@{discordId}> **{name}** has joined **{department}**.")
+  departmentDMApprove        String  @default("Congratulations, {name}! 🎉\n\nYour application to join **{department}** has been **Accepted**.\n\nWelcome to the team!")
+  departmentDMDecline        String  @default("Dear {name},\n\nYour application to join **{department}** has been **Declined**.\n\nIf you have questions, please contact HR.")
   loaWebhook           Boolean @default(true)
   loaDM                Boolean @default(false)
   loaWebhookApprove    String @default("<@{discordId}> **{name}** has been granted a Leave of Absence.")

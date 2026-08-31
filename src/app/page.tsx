@@ -5,26 +5,34 @@ export const dynamic = "force-dynamic";
 
 export default async function Home() {
   try {
-    const sections = await prisma.section.findMany({
-      include: {
-        members: {
-          orderBy: { order: "asc" },
-          // The leave a member is currently on, so the roster's LOA section can
-          // show when they are due back.
-          include: {
-            loas: {
-              where: { status: { in: ["Approved", "Active"] } },
-              orderBy: { endDate: "desc" },
-              take: 1,
-              select: { endDate: true },
+    const [sections, departments] = await Promise.all([
+      prisma.section.findMany({
+        include: {
+          members: {
+            orderBy: { order: "asc" },
+            // The leave a member is currently on, so the roster's LOA section can
+            // show when they are due back.
+            include: {
+              loas: {
+                where: { status: { in: ["Approved", "Active"] } },
+                orderBy: { endDate: "desc" },
+                take: 1,
+                select: { endDate: true },
+              },
+              // Drives the roster's per-department tick columns.
+              departmentMemberships: { select: { departmentId: true, role: true } },
             },
           },
         },
-      },
-      orderBy: { order: "asc" },
-    });
+        orderBy: { order: "asc" },
+      }),
+      prisma.departmentTemplate.findMany({
+        orderBy: { order: "asc" },
+        select: { id: true, name: true, tag: true, color: true },
+      }),
+    ]);
 
-    return <PublicPageClient sections={sections as any} />;
+    return <PublicPageClient sections={sections as any} departments={departments} />;
   } catch (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-[#0a0a0a] text-white p-8">
