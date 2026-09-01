@@ -50,6 +50,7 @@ model Member {
   removalRequests    RemovalRequest[]
   ftoSignOffRecords  FTOSignOffRecord[]
   departmentMemberships DepartmentMembership[]
+  shiftSignup        ShiftSignup?
 }
 
 model ClockEntry {
@@ -317,6 +318,24 @@ model DepartmentMembership {
 
   @@unique([departmentId, memberId])
   @@index([memberId])
+}
+
+/**
+ * One member's standing shift pick. A member's whole submission is a single
+ * row keyed on their id — resubmitting overwrites it rather than piling up
+ * history, since only the current pick matters for the schedule.
+ *
+ * primarySlot/secondarySlot are indexes into SHIFT_SLOTS (lib/shifts.ts):
+ * 0 = 12:00 AM-2:00 AM, 1 = 2:00 AM-4:00 AM, ... 11 = 10:00 PM-12:00 AM.
+ */
+model ShiftSignup {
+  memberId      String   @id
+  primarySlot   Int
+  secondarySlot Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  member        Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
 }
 
 model AdminUser {

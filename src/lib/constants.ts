@@ -81,6 +81,8 @@ export const ALL_PERMISSIONS = [
   "departments.members",
   "roles.manage",
   "audit.view",
+  "shifts.view",
+  "shifts.manage",
 ] as const;
 
 export type Permission = (typeof ALL_PERMISSIONS)[number];
@@ -131,6 +133,21 @@ export const DEPARTMENT_PERMISSIONS = {
 /** Every permission that opens the departments console, for the sidebar check. */
 export const DEPARTMENT_SECTION_PERMISSIONS: string[] = [
   ...new Set(Object.values(DEPARTMENT_PERMISSIONS).flat()),
+];
+
+/**
+ * Shift signup permissions. `view` covers both submitting a shift pick and
+ * reading the schedule — this is meant to be granted broadly to EMS members,
+ * not just admin staff. `manage` is only needed to clear someone else's entry.
+ */
+export const SHIFT_PERMISSIONS = {
+  view: ["shifts.view"],
+  manage: ["shifts.manage"],
+} as const satisfies Record<string, readonly string[]>;
+
+/** Every permission that opens the shifts section, for the sidebar check. */
+export const SHIFT_SECTION_PERMISSIONS: string[] = [
+  ...new Set(Object.values(SHIFT_PERMISSIONS).flat()),
 ];
 
 export function canSeeRosterPages(permissions: string[]): boolean {
