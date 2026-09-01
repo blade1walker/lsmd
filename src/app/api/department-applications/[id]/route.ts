@@ -95,17 +95,27 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         );
       }
     } else if (wonTransition && status === "Declined") {
+      const values = {
+        department: department.name,
+        tag: departmentTag(department),
+        name: application.characterName,
+        rank: application.currentRank,
+        discordId: application.discordId,
+      };
+
       if (settings.departmentDM) {
         await sendDiscordDM(
           application.discordId,
-          renderTemplate(settings.departmentDMDecline, {
-            department: department.name,
-            tag: departmentTag(department),
-            name: application.characterName,
-            rank: application.currentRank,
-            discordId: application.discordId,
-          }),
+          renderTemplate(settings.departmentDMDecline, values),
           "department.declined"
+        );
+      }
+
+      if (settings.departmentWebhook) {
+        await postToDepartmentWebhook(
+          renderTemplate(settings.departmentWebhookDecline, values),
+          "department.declined",
+          department.webhookUrl
         );
       }
     }

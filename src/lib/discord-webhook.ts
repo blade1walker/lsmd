@@ -38,6 +38,7 @@ export interface NotificationSettings {
   departmentDM: boolean;
   departmentWebhookSubmitted: string;
   departmentWebhookApprove: string;
+  departmentWebhookDecline: string;
   departmentDMApprove: string;
   departmentDMDecline: string;
   loaWebhook: boolean;
@@ -84,6 +85,7 @@ const FALLBACK_SETTINGS: NotificationSettings = {
   departmentDM: true,
   departmentWebhookSubmitted: "📥 **{department}** — new join application from **{name}** ({rank}) <@{discordId}>",
   departmentWebhookApprove: "✅ <@{discordId}> **{name}** has joined **{department}**.",
+  departmentWebhookDecline: "❌ **{name}**'s application to **{department}** has been declined.",
   departmentDMApprove: "Congratulations, {name}! 🎉\n\nYour application to join **{department}** has been **Accepted**.\n\nWelcome to the team!",
   departmentDMDecline: "Dear {name},\n\nYour application to join **{department}** has been **Declined**.\n\nIf you have questions, please contact HR.",
   loaWebhook: true,

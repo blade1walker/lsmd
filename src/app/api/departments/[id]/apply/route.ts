@@ -3,23 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, isDenied } from "@/lib/api-auth";
 import { apiError } from "@/lib/api-error";
 import { isRankAtLeast } from "@/lib/constants";
-import { collectAnswers, departmentTag, type SubmittedAnswer } from "@/lib/departments";
-import {
-  getNotificationSettings,
-  postToDepartmentWebhook,
-  renderTemplate,
-} from "@/lib/discord-webhook";
-
-/** Discord rejects a message body over 2000 characters outright. */
-const DISCORD_CONTENT_LIMIT = 2000;
-
-/** The submitted answers as readable lines under the announcement. */
-function formatAnswers(answers: SubmittedAnswer[]): string {
-  if (answers.length === 0) return "";
-  return answers
-    .map(({ label, answer }) => `\n**${label}**\n${answer || "—"}`)
-    .join("");
-}
+import { collectAnswers } from "@/lib/departments";
 
 /**
  * Submitting a join application.
@@ -121,23 +105,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       },
     });
 
-    // Posting the submission is the point of the webhook — reviewers see the
-    // application in Discord without opening the panel. A failed post must not
-    // fail the submission, which is already saved above.
-    const settings = await getNotificationSettings();
-    if (settings.departmentWebhook) {
-      const header = renderTemplate(settings.departmentWebhookSubmitted, {
-        department: department.name,
-        tag: departmentTag(department),
-        name: member.name,
-        rank: member.rank,
-        callSign: member.callSign,
-        discordId,
-      });
-      const content = `${header}${formatAnswers(collected.answers)}`.slice(0, DISCORD_CONTENT_LIMIT);
-      await postToDepartmentWebhook(content, "department.applied", department.webhookUrl);
-    }
-
+    // The webhook only posts the decision (approved/declined) — reviewers work
+    // from the admin panel's pending list, not a Discord announcement of every
+    // new application.
     return NextResponse.json(application, { status: 201 });
   } catch (error) {
     return apiError("Failed to submit application", error);

@@ -41,6 +41,7 @@ const STRING_FIELDS = [
   "ftpDMDecline",
   "departmentWebhookSubmitted",
   "departmentWebhookApprove",
+  "departmentWebhookDecline",
   "departmentDMApprove",
   "departmentDMDecline",
   "loaWebhookApprove",

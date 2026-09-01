@@ -478,6 +478,7 @@ model NotificationSettings {
   departmentDM               Boolean @default(true)
   departmentWebhookSubmitted String  @default("📥 **{department}** — new join application from **{name}** ({rank}) <@{discordId}>")
   departmentWebhookApprove   String  @default("✅ <@{discordId}> **{name}** has joined **{department}**.")
+  departmentWebhookDecline   String  @default("❌ **{name}**'s application to **{department}** has been declined.")
   departmentDMApprove        String  @default("Congratulations, {name}! 🎉\n\nYour application to join **{department}** has been **Accepted**.\n\nWelcome to the team!")
   departmentDMDecline        String  @default("Dear {name},\n\nYour application to join **{department}** has been **Declined**.\n\nIf you have questions, please contact HR.")
   loaWebhook           Boolean @default(true)

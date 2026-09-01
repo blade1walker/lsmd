@@ -29,6 +29,7 @@ interface Settings {
   departmentDM: boolean;
   departmentWebhookSubmitted: string;
   departmentWebhookApprove: string;
+  departmentWebhookDecline: string;
   departmentDMApprove: string;
   departmentDMDecline: string;
   loaWebhook: boolean;
@@ -83,6 +84,7 @@ const DEFAULTS: Settings = {
   departmentDM: true,
   departmentWebhookSubmitted: "📥 **{department}** — new join application from **{name}** ({rank}) <@{discordId}>",
   departmentWebhookApprove: "✅ <@{discordId}> **{name}** has joined **{department}**.",
+  departmentWebhookDecline: "❌ **{name}**'s application to **{department}** has been declined.",
   departmentDMApprove: "Congratulations, {name}! 🎉\n\nYour application to join **{department}** has been **Accepted**.\n\nWelcome to the team!",
   departmentDMDecline: "Dear {name},\n\nYour application to join **{department}** has been **Declined**.\n\nIf you have questions, please contact HR.",
   loaWebhook: true,
@@ -254,14 +256,14 @@ const MESSAGE_GROUPS: GroupDef[] = [
       {
         id: "webhook",
         label: "Webhook",
-        hint: "Posted in the department's own channel, or the shared department channel when it has none",
+        hint: "Posted in the department's own channel, or the shared department channel when it has none — only the decision, not the incoming application",
         toggleKey: "departmentWebhook",
         transport: "webhook",
         webhookKind: "department",
         variables: ["<@{discordId}>", "{department}", "{tag}", "{name}", "{rank}", "{callSign}"],
         fields: [
-          { key: "departmentWebhookSubmitted", label: "Application received" },
           { key: "departmentWebhookApprove", label: "Approved" },
+          { key: "departmentWebhookDecline", label: "Declined" },
         ],
       },
       {
