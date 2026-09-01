@@ -59,7 +59,7 @@ export function DiscordBar() {
               href="/admin/login"
               className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
             >
-              Admin Login
+              EMS Staff Login
             </a>
           </div>
 
@@ -93,7 +93,7 @@ export function DiscordBar() {
                   Training
                 </a>
                 <a href="/admin/login" className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg text-center mt-2">
-                  Admin Login
+                  EMS Staff Login
                 </a>
               </div>
             </motion.div>
