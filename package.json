@@ -14,6 +14,7 @@
     "db:check": "npx tsx scripts/db-check.ts",
     "db:radio-codes": "npx tsx scripts/update-radio-codes.ts",
     "db:migrate-sop": "npx tsx scripts/migrate-sop.ts",
+    "db:seed-ems-sop": "npx tsx scripts/seed-ems-sop.ts",
     "db:migrate-user-roles": "npx tsx scripts/migrate-user-roles.ts",
     "db:migrate-ftp-departments": "npx tsx scripts/migrate-ftp-departments.ts",
     "db:provision-admin-users": "npx tsx scripts/provision-admin-users.ts",
