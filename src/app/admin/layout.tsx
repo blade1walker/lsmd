@@ -26,8 +26,13 @@ import {
   Hash,
   Building2,
   CalendarClock,
+  Download,
 } from "lucide-react";
-import { DEPARTMENT_SECTION_PERMISSIONS, SHIFT_SECTION_PERMISSIONS } from "@/lib/constants";
+import {
+  DEPARTMENT_SECTION_PERMISSIONS,
+  EXPORT_SECTION_PERMISSIONS,
+  SHIFT_SECTION_PERMISSIONS,
+} from "@/lib/constants";
 
 // `permission` mirrors the check on the matching API route, so a section is
 // only offered when the calls behind it will actually succeed. An array means
@@ -59,6 +64,7 @@ const navItems: {
   { href: "/admin/notifications", label: "Notifications", icon: Bell, permission: "notifications" },
   { href: "/admin/messaging", label: "Bot Messaging", icon: MessageSquare, permission: "notifications" },
   { href: "/admin/audit", label: "Audit Log", icon: ScrollText, permission: "audit.view" },
+  { href: "/admin/export", label: "Export", icon: Download, permission: EXPORT_SECTION_PERMISSIONS },
 ];
 
 export default function AdminLayout({

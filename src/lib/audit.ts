@@ -1,7 +1,7 @@
 import { prisma } from "./prisma";
 
 export interface AuditAction {
-  action: "create" | "update" | "delete" | "approve" | "decline";
+  action: "create" | "update" | "delete" | "approve" | "decline" | "export";
   entityType: string;
   entityId: string;
   entityLabel: string;

@@ -83,6 +83,7 @@ export const ALL_PERMISSIONS = [
   "audit.view",
   "shifts.view",
   "shifts.manage",
+  "export.data",
 ] as const;
 
 export type Permission = (typeof ALL_PERMISSIONS)[number];
@@ -148,6 +149,21 @@ export const SHIFT_PERMISSIONS = {
 /** Every permission that opens the shifts section, for the sidebar check. */
 export const SHIFT_SECTION_PERMISSIONS: string[] = [
   ...new Set(Object.values(SHIFT_PERMISSIONS).flat()),
+];
+
+/**
+ * Data export. Held deliberately narrow and granted to nobody by default: one
+ * download carries every Discord ID, state ID, DM transcript and HR note in
+ * the panel, so this is a "who may take the whole database out of the
+ * building" permission, not a convenience.
+ */
+export const EXPORT_PERMISSIONS = {
+  data: ["export.data"],
+} as const satisfies Record<string, readonly string[]>;
+
+/** Every permission that opens the export section, for the sidebar check. */
+export const EXPORT_SECTION_PERMISSIONS: string[] = [
+  ...new Set(Object.values(EXPORT_PERMISSIONS).flat()),
 ];
 
 export function canSeeRosterPages(permissions: string[]): boolean {

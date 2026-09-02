@@ -21,6 +21,7 @@ const ACTION_COLORS: Record<string, string> = {
   delete: "bg-red-500/10 text-red-400",
   approve: "bg-green-500/10 text-green-400",
   decline: "bg-red-500/10 text-red-400",
+  export: "bg-amber-500/10 text-amber-400",
 };
 
 function detailsSummary(details: Record<string, unknown>): string | null {
