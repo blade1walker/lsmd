@@ -34,7 +34,7 @@ export async function GET(request: Request) {
       orderBy: { order: "asc" },
     });
 
-    const headers = ["Name", "Rank", "Call Sign", "Department", "Section", "Status", "Temp Rank", "Category", "Timezone", "Discord ID", "Date of Joining"];
+    const headers = ["Name", "Rank", "Call Sign", "Department", "Section", "Status", "Temp Rank", "Category", "Timezone", "Discord ID", "State ID", "Steam ID", "Date of Joining"];
     const rows = members.map((m) => [
       m.name,
       m.rank,
@@ -46,6 +46,8 @@ export async function GET(request: Request) {
       m.category,
       m.timezone,
       m.discordId,
+      m.stateId,
+      m.steamId,
       m.dateOfJoining?.toISOString().split("T")[0] ?? "",
     ]);
 

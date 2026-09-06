@@ -65,6 +65,7 @@ export async function PATCH(
           activity: "Active",
           discordId: request.discordId,
           stateId: request.stateId,
+          steamId: request.steamId,
           callSign,
           sectionId,
           dateOfJoining: new Date(),

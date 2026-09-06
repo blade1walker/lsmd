@@ -28,6 +28,8 @@ interface Section {
     sectionId?: string | null;
     timezone?: string | null;
     discordId?: string | null;
+    stateId?: string | null;
+    steamId?: string | null;
     ftoRole?: string | null;
     tempRank?: string | null;
     category?: string | null;
@@ -129,11 +131,13 @@ export default function AdminRosterPage() {
         if (deptFilter && m.dept !== deptFilter) return false;
         if (activityFilter && m.activity !== activityFilter) return false;
         if (!search) return true;
-        const q = search.toLowerCase();
-        return (
-          m.name.toLowerCase().includes(q) ||
-          (m.callSign && m.callSign.toLowerCase().includes(q)) ||
-          m.rank.toLowerCase().includes(q)
+        const q = search.trim().toLowerCase();
+        if (!q) return true;
+        // Identifiers are matched too, so an admin holding only a Discord,
+        // Steam or State ID — which is how members are reported in-game and on
+        // Discord — can find the row without knowing the character name.
+        return [m.name, m.callSign, m.rank, m.discordId, m.stateId, m.steamId].some(
+          (field) => field && field.toLowerCase().includes(q)
         );
       }),
     }))
@@ -168,17 +172,17 @@ export default function AdminRosterPage() {
             Roster Management
           </h1>
           <p className="text-gray-500 text-sm mt-1">
-            {rankFilter || deptFilter || activityFilter
+            {search || rankFilter || deptFilter || activityFilter
               ? `${filteredCount} of ${allMembers.length} members`
               : `${allMembers.length} total members`}
           </p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           <Input
-            placeholder="Search members..."
+            placeholder="Search name, call sign, Discord / Steam / State ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-56"
+            className="w-72"
           />
           <select
             value={rankFilter}

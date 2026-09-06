@@ -22,6 +22,8 @@ interface Member {
   sectionId?: string | null;
   timezone?: string | null;
   discordId?: string | null;
+  stateId?: string | null;
+  steamId?: string | null;
   ftoRole?: string | null;
   tempRank?: string | null;
   category?: string | null;
@@ -63,6 +65,9 @@ export default function MemberRow({
     timezone: member.timezone ?? "",
     tempRank: member.tempRank ?? "",
     category: member.category ?? "",
+    discordId: member.discordId ?? "",
+    stateId: member.stateId ?? "",
+    steamId: member.steamId ?? "",
   });
 
   const rankInfo = getRankInfo(member.rank);
@@ -87,13 +92,19 @@ export default function MemberRow({
       timezone: editForm.timezone || null,
       tempRank: editForm.tempRank || null,
       category: editForm.category || null,
+      discordId: editForm.discordId.trim() || null,
+      stateId: editForm.stateId.trim() || null,
+      steamId: editForm.steamId.trim() || null,
     });
     setEditing(false);
   };
 
   if (editing) {
+    // Name … Category, then one cell per department, then Actions.
+    const editColSpan = 7 + departmentColumns.length + 1;
     return (
-      <tr className="border-b border-[#1e1e1e]/50 bg-red-600/5">
+      <>
+      <tr className="bg-red-600/5">
         <td className="py-2 px-4">
           <Input
             value={editForm.name}
@@ -176,6 +187,42 @@ export default function MemberRow({
           </div>
         </td>
       </tr>
+      {/* The identifiers have no column of their own — the roster does not show
+          them — so editing them gets a full-width row under the member's own. */}
+      <tr className="border-b border-[#1e1e1e]/50 bg-red-600/5">
+        <td className="pb-3 px-4" colSpan={editColSpan}>
+          <div className="flex flex-wrap items-end gap-3">
+            <label className="flex flex-col gap-1">
+              <span className="text-[11px] text-gray-500">Discord ID</span>
+              <Input
+                value={editForm.discordId}
+                onChange={(e) => setEditForm((p) => ({ ...p, discordId: e.target.value }))}
+                className="h-8 text-xs w-48"
+                placeholder="e.g. 123456789012345678"
+              />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-[11px] text-gray-500">State ID</span>
+              <Input
+                value={editForm.stateId}
+                onChange={(e) => setEditForm((p) => ({ ...p, stateId: e.target.value }))}
+                className="h-8 text-xs w-36"
+                placeholder="e.g. 12345"
+              />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-[11px] text-gray-500">Steam ID</span>
+              <Input
+                value={editForm.steamId}
+                onChange={(e) => setEditForm((p) => ({ ...p, steamId: e.target.value }))}
+                className="h-8 text-xs w-48"
+                placeholder="e.g. 76561198000000000"
+              />
+            </label>
+          </div>
+        </td>
+      </tr>
+      </>
     );
   }
 

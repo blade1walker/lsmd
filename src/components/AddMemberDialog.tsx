@@ -25,6 +25,8 @@ const BLANK_FORM = {
   dept: "",
   timezone: "",
   discordId: "",
+  stateId: "",
+  steamId: "",
   ftoRole: "",
   tempRank: "",
   category: "",
@@ -159,6 +161,26 @@ export default function AddMemberDialog({ open, onOpenChange, sections, departme
                 value={form.timezone}
                 onChange={(e) => setForm((p) => ({ ...p, timezone: e.target.value }))}
                 placeholder="e.g. EST"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="stateId">State ID</Label>
+              <Input
+                id="stateId"
+                value={form.stateId}
+                onChange={(e) => setForm((p) => ({ ...p, stateId: e.target.value }))}
+                placeholder="e.g. 12345"
+              />
+            </div>
+            <div>
+              <Label htmlFor="steamId">Steam ID</Label>
+              <Input
+                id="steamId"
+                value={form.steamId}
+                onChange={(e) => setForm((p) => ({ ...p, steamId: e.target.value }))}
+                placeholder="e.g. 76561198000000000"
               />
             </div>
           </div>
