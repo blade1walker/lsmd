@@ -17,11 +17,32 @@ export async function GET() {
   }
 }
 
+/**
+ * The largest CSV import accepted in one request. Every row costs two
+ * sequential queries below, so an uncapped array is an open invitation to tie
+ * up a connection for as long as the caller likes.
+ */
+const MAX_IMPORT_ROWS = 500;
+
 export async function POST(req: NextRequest) {
+  // Mutating recruits, same as the PATCH and DELETE in ./[id]. Was previously
+  // ungated: the only callers are the admin recruit page's CSV import and its
+  // add form, both of which run authenticated, but the route accepted an
+  // anonymous array body and bulk-inserted every row in it.
+  const auth = await requireAuth("onboarding.approve");
+  if (isDenied(auth)) return auth.error;
+
   try {
     const body = await req.json();
 
     if (Array.isArray(body)) {
+      if (body.length > MAX_IMPORT_ROWS) {
+        return NextResponse.json(
+          { error: `Too many rows — import at most ${MAX_IMPORT_ROWS} at a time.` },
+          { status: 413 }
+        );
+      }
+
       let created = 0;
       let updated = 0;
 
@@ -60,6 +81,16 @@ export async function POST(req: NextRequest) {
       }
 
       return NextResponse.json({ count: created, updated }, { status: 201 });
+    }
+
+    // Guarded because Prisma treats `discordId: undefined` as "no filter", not
+    // as "matches nothing" — a body without one would match whichever recruit
+    // happened to be first and overwrite that unrelated row.
+    // Matches the array path's own `if (!r.discordId) continue` guard rather
+    // than demanding more — the CSV import and the add form both send a blank
+    // steamId happily, and that still has to keep working.
+    if (!body?.discordId) {
+      return NextResponse.json({ error: "discordId is required" }, { status: 400 });
     }
 
     const existing = await prisma.recruitRequest.findFirst({

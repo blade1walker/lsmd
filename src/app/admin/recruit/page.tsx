@@ -160,6 +160,12 @@ export default function AdminRecruitPage() {
         setImportCount(result.count);
         setImportUpdated(result.updated || 0);
         fetchRequests();
+      } else {
+        // The route rejects an oversized import and anyone without
+        // onboarding.approve. Silently doing nothing looked like the file
+        // had simply held no rows.
+        const result = await res.json().catch(() => ({}));
+        alert(result.error || result.detail || "Import failed");
       }
     } catch (err) {
       console.error(err);
@@ -185,6 +191,9 @@ export default function AdminRecruitPage() {
         setForm(EMPTY_FORM);
         setShowAddModal(false);
         fetchRequests();
+      } else {
+        const result = await res.json().catch(() => ({}));
+        alert(result.error || result.detail || "Failed to add recruit");
       }
     } catch (err) {
       console.error(err);
