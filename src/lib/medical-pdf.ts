@@ -80,43 +80,82 @@ const LOGO_MAX_WIDTH = 200;
 const SECONDARY_LOGO_MAX_HEIGHT = 34;
 const SECONDARY_LOGO_MAX_WIDTH = 140;
 
+interface LoadedLogo {
+  dataUrl: string;
+  width: number;
+  height: number;
+}
+
 /**
- * Fetches the letterhead logo as a data URL, with its natural dimensions so it
- * can be scaled without distortion.
+ * Fetches a letterhead logo and re-encodes it as PNG for jsPDF.
  *
- * Returns null on any failure — a missing or unreachable logo must never stop
- * a doctor exporting a document. The PDF simply prints without it.
+ * The re-encode is the point. jsPDF only draws a handful of formats — WebP is
+ * not among them — so handing it the bytes as downloaded meant a WebP logo
+ * uploaded cleanly, previewed correctly in the browser, and then silently
+ * failed to appear on the PDF. Painting it to a canvas first normalises
+ * anything the browser can decode into the one format jsPDF is reliable with,
+ * and yields the natural dimensions at the same time.
+ *
+ * Throws with a readable reason rather than returning null: a logo that
+ * quietly does not print is the hardest kind of fault to report, so the caller
+ * turns this into a warning the user can act on.
  */
-async function loadLogo(
-  url: string
-): Promise<{ dataUrl: string; width: number; height: number; format: string } | null> {
+async function loadLogo(url: string): Promise<LoadedLogo> {
+  let blob: Blob;
   try {
     const res = await fetch(url, { mode: "cors" });
-    if (!res.ok) return null;
-    const blob = await res.blob();
-
-    const dataUrl = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result));
-      reader.onerror = () => reject(reader.error);
-      reader.readAsDataURL(blob);
-    });
-
-    const size = await new Promise<{ width: number; height: number }>((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
-      img.onerror = () => reject(new Error("Could not decode the logo"));
-      img.src = dataUrl;
-    });
-
-    if (!size.width || !size.height) return null;
-
-    // jsPDF wants the format name, not the MIME type.
-    const format = blob.type === "image/png" ? "PNG" : blob.type === "image/webp" ? "WEBP" : "JPEG";
-    return { dataUrl, ...size, format };
-  } catch {
-    return null;
+    if (!res.ok) throw new Error(`the server answered ${res.status}`);
+    blob = await res.blob();
+  } catch (error) {
+    // Almost always CORS on a pasted third-party URL.
+    throw new Error(
+      `could not be fetched (${error instanceof Error ? error.message : "network error"}). ` +
+        "If it is hosted elsewhere, it must allow cross-origin reads."
+    );
   }
+
+  const objectUrl = URL.createObjectURL(blob);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error("the file could not be decoded as an image"));
+      image.src = objectUrl;
+    });
+
+    const width = img.naturalWidth;
+    const height = img.naturalHeight;
+    if (!width || !height) throw new Error("the image has no dimensions");
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("this browser would not provide a canvas to convert it");
+    ctx.drawImage(img, 0, 0);
+
+    return { dataUrl: canvas.toDataURL("image/png"), width, height };
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
+/** Draws a logo centred at `y`, returning the height it consumed. */
+function drawLogo(
+  pdf: { addImage: (d: string, f: string, x: number, y: number, w: number, h: number) => void },
+  logo: LoadedLogo,
+  pageWidth: number,
+  y: number,
+  maxWidth: number,
+  maxHeight: number
+): number {
+  // Fitted on whichever side binds first, so a wide banner and a square crest
+  // both sit correctly rather than one being stretched.
+  const scale = Math.min(maxWidth / logo.width, maxHeight / logo.height, 1);
+  const width = logo.width * scale;
+  const height = logo.height * scale;
+  pdf.addImage(logo.dataUrl, "PNG", (pageWidth - width) / 2, y, width, height);
+  return height;
 }
 
 /** A filename that sorts sensibly and never carries characters a filesystem rejects. */
@@ -125,7 +164,11 @@ export function pdfFileName(doc: PdfDocument): string {
   return `${id}`.replace(/[^\w.-]+/g, "_") + ".pdf";
 }
 
-export async function exportDocumentPdf(doc: PdfDocument, settings: PdfSettings): Promise<void> {
+export async function exportDocumentPdf(
+  doc: PdfDocument,
+  settings: PdfSettings
+): Promise<{ warnings: string[] }> {
+  const warnings: string[] = [];
   const [{ jsPDF }, { default: autoTable }] = await Promise.all([
     import("jspdf"),
     import("jspdf-autotable"),
@@ -146,15 +189,13 @@ export async function exportDocumentPdf(doc: PdfDocument, settings: PdfSettings)
 
   // ── Letterhead ───────────────────────────────────────────────────────────
   if (config.showLogo && settings.logoUrl) {
-    const logo = await loadLogo(settings.logoUrl);
-    if (logo) {
-      // Scaled to fit inside the box on its longer side, so a wide banner and a
-      // square crest both sit correctly rather than one being stretched.
-      const scale = Math.min(LOGO_MAX_WIDTH / logo.width, LOGO_MAX_HEIGHT / logo.height, 1);
-      const width = logo.width * scale;
-      const height = logo.height * scale;
-      pdf.addImage(logo.dataUrl, logo.format, (pageWidth - width) / 2, y, width, height);
-      y += height + 12;
+    try {
+      const logo = await loadLogo(settings.logoUrl);
+      y += drawLogo(pdf, logo, pageWidth, y, LOGO_MAX_WIDTH, LOGO_MAX_HEIGHT) + 12;
+    } catch (error) {
+      // The document still exports — a letterhead is never worth failing a
+      // medical record over — but the reason is reported rather than swallowed.
+      warnings.push(`The department logo ${error instanceof Error ? error.message : "could not be loaded"}.`);
     }
   }
 
@@ -204,17 +245,13 @@ export async function exportDocumentPdf(doc: PdfDocument, settings: PdfSettings)
 
   if (hasSecondary) {
     if (config.showSecondaryLogo && settings.secondaryLogoUrl) {
-      const mark = await loadLogo(settings.secondaryLogoUrl);
-      if (mark) {
-        const scale = Math.min(
-          SECONDARY_LOGO_MAX_WIDTH / mark.width,
-          SECONDARY_LOGO_MAX_HEIGHT / mark.height,
-          1
+      try {
+        const mark = await loadLogo(settings.secondaryLogoUrl);
+        y += drawLogo(pdf, mark, pageWidth, y, SECONDARY_LOGO_MAX_WIDTH, SECONDARY_LOGO_MAX_HEIGHT) + 8;
+      } catch (error) {
+        warnings.push(
+          `The second letterhead logo ${error instanceof Error ? error.message : "could not be loaded"}.`
         );
-        const width = mark.width * scale;
-        const height = mark.height * scale;
-        pdf.addImage(mark.dataUrl, mark.format, (pageWidth - width) / 2, y, width, height);
-        y += height + 8;
       }
     }
 
@@ -401,4 +438,5 @@ export async function exportDocumentPdf(doc: PdfDocument, settings: PdfSettings)
   }
 
   pdf.save(pdfFileName(doc));
+  return { warnings };
 }

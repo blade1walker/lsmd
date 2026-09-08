@@ -23,7 +23,7 @@ import {
 } from "@/lib/medical";
 import { exportDocumentPdf, type PdfSettings } from "@/lib/medical-pdf";
 import { toast } from "sonner";
-import { ArrowLeft, Download, Save, ShieldCheck, Unlock, Archive } from "lucide-react";
+import { ArrowLeft, Download, Save, ShieldCheck, Unlock, Archive, Trash2 } from "lucide-react";
 
 interface DocumentDetail {
   id: string;
@@ -193,7 +193,10 @@ export default function MedicalDocumentPage() {
     if (!doc || !settings) return;
     setBusy(true);
     try {
-      await exportDocumentPdf({ ...doc, answers }, settings);
+      const { warnings } = await exportDocumentPdf({ ...doc, answers }, settings);
+      // The PDF is already downloaded at this point; these say what did not
+      // make it onto it, which is otherwise invisible.
+      for (const warning of warnings) toast.warning(warning);
     } catch (err) {
       toast.error(errorMessage(err));
     } finally {
@@ -202,13 +205,36 @@ export default function MedicalDocumentPage() {
   };
 
   const remove = async () => {
-    if (!confirm("Delete this draft? This cannot be undone.")) return;
+    const issued = !!doc?.documentNumber;
+
+    if (issued) {
+      // Destroying an issued medical record is not something to hand to a
+      // stray click, so it asks for the document number back rather than a
+      // yes/no anyone dismisses on reflex.
+      const typed = prompt(
+        `Permanently delete ${doc.documentNumber}?\n\n` +
+          "This destroys the record and cannot be undone — archiving keeps it readable instead.\n\n" +
+          "Type the document number to confirm:"
+      );
+      if (typed === null) return;
+      if (typed.trim() !== doc.documentNumber) {
+        toast.error("That did not match the document number — nothing was deleted.");
+        return;
+      }
+    } else if (!confirm("Delete this draft? This cannot be undone.")) {
+      return;
+    }
+
+    setBusy(true);
     try {
-      await fetchJson(`/api/medical/documents/${documentId}`, { method: "DELETE" });
-      toast.success("Draft deleted");
+      await fetchJson(`/api/medical/documents/${documentId}${issued ? "?permanent=1" : ""}`, {
+        method: "DELETE",
+      });
+      toast.success(issued ? `${doc?.documentNumber} deleted` : "Draft deleted");
       router.push("/admin/medical");
     } catch (err) {
       toast.error(errorMessage(err));
+      setBusy(false);
     }
   };
 
@@ -290,11 +316,20 @@ export default function MedicalDocumentPage() {
               Archive
             </Button>
           )}
-          {!doc.documentNumber && (
-            <Button variant="ghost" className="text-red-400" onClick={remove} disabled={busy}>
-              Delete
-            </Button>
-          )}
+          <Button
+            variant="ghost"
+            className="text-red-400"
+            onClick={remove}
+            disabled={busy}
+            title={
+              doc.documentNumber
+                ? "Permanently destroys this issued record — archiving keeps it readable"
+                : undefined
+            }
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Delete
+          </Button>
         </div>
       </div>
 

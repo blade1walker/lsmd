@@ -109,36 +109,83 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 }
 
-/** Drafts can be deleted; anything that was ever finalized is archived instead. */
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+/**
+ * Deletes a document.
+ *
+ * A draft is the author's own working copy and deletes on a plain request. An
+ * issued document is a different thing entirely: it has a number that may
+ * already be cited elsewhere, so destroying it needs medical.review *and* an
+ * explicit `?permanent=1`, which is the caller stating it means this rather
+ * than reaching the branch by accident.
+ *
+ * Archiving remains the better answer in almost every case — it keeps the
+ * record readable. This exists for the cases archiving cannot serve: test data,
+ * a document raised against the wrong patient, a record that must actually go.
+ */
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAuth("medical.create");
   if (isDenied(auth)) return auth.error;
 
   try {
     const { id } = await params;
-    const existing = await prisma.medicalDocument.findUnique({ where: { id } });
+    const existing = await prisma.medicalDocument.findUnique({
+      where: { id },
+      include: {
+        documentType: { select: { name: true } },
+        formVersion: { select: { version: true, form: { select: { name: true } } } },
+      },
+    });
     if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    if (existing.authorDiscordId !== auth.access.discordId && !hasPermission(auth.access, "medical.review")) {
+    const issued = existing.documentNumber !== null;
+
+    if (issued) {
+      if (!hasPermission(auth.access, "medical.review")) {
+        return NextResponse.json(
+          {
+            error: "Forbidden",
+            detail: `${existing.documentNumber} has been issued. Deleting an issued document needs the "medical.review" permission.`,
+          },
+          { status: 403 }
+        );
+      }
+      if (req.nextUrl.searchParams.get("permanent") !== "1") {
+        return NextResponse.json(
+          {
+            error: "This document has been issued",
+            detail: `${existing.documentNumber} is on the record. Archiving keeps it readable; deleting destroys it and cannot be undone.`,
+          },
+          { status: 409 }
+        );
+      }
+    } else if (
+      existing.authorDiscordId !== auth.access.discordId &&
+      !hasPermission(auth.access, "medical.review")
+    ) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-    if (existing.documentNumber) {
-      return NextResponse.json(
-        {
-          error: "This document has been issued",
-          detail: `${existing.documentNumber} is on the record. Archive it instead of deleting it.`,
-        },
-        { status: 409 }
-      );
     }
 
     await prisma.medicalDocument.delete({ where: { id } });
 
+    // The row is gone, so the audit entry is the only remaining trace of what
+    // was destroyed — it carries enough to say what the record actually was.
     await logAudit({
       action: "delete",
       entityType: "MedicalDocument",
       entityId: id,
-      entityLabel: `Draft — ${existing.patientName}`,
+      entityLabel: issued
+        ? `${existing.documentNumber} — ${existing.patientName}`
+        : `Draft — ${existing.patientName}`,
+      details: {
+        issued,
+        status: existing.status,
+        patient: existing.patientName,
+        stateId: existing.patientStateId,
+        type: existing.documentType.name,
+        form: `${existing.formVersion.form.name} v${existing.formVersion.version}`,
+        author: existing.authorName,
+        finalizedAt: existing.finalizedAt?.toISOString() ?? null,
+      },
       performedBy: actorLabel(auth.access),
     });
 
