@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
 import { DOCUMENT_CATEGORIES, FORM_STATUSES } from "@/lib/medical";
 import { toast } from "sonner";
-import { Plus, ExternalLink, Trash2, Upload, Image as ImageIcon } from "lucide-react";
+import { Plus, ExternalLink, Trash2, Upload, Image as ImageIcon, Pencil } from "lucide-react";
 
 interface DocumentType {
   id: string;
@@ -162,6 +162,7 @@ export default function MedicalFormsPage() {
   const logoInputRef = useRef<HTMLInputElement>(null);
   const secondaryLogoInputRef = useRef<HTMLInputElement>(null);
   const [uploadingSlot, setUploadingSlot] = useState<LogoSlot | null>(null);
+  const [editingType, setEditingType] = useState<DocumentType | null>(null);
   const [showNewForm, setShowNewForm] = useState(false);
   const [newForm, setNewForm] = useState({ name: "", documentTypeId: "", description: "" });
   const [newType, setNewType] = useState({ name: "", category: "Report", numberPrefix: "EMS-MED", description: "" });
@@ -245,6 +246,36 @@ export default function MedicalFormsPage() {
       });
       toast.success("Document type added");
       setNewType({ name: "", category: "Report", numberPrefix: "EMS-MED", description: "" });
+      load();
+    } catch (err) {
+      toast.error(errorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /**
+   * Saves an edited document type. The number prefix is editable on purpose —
+   * changing it starts a fresh series for documents issued from now on, while
+   * every number already handed out stays exactly as it was printed.
+   */
+  const saveType = async () => {
+    if (!editingType || !editingType.name.trim()) return;
+    setSaving(true);
+    try {
+      await fetchJson(`/api/medical/document-types/${editingType.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: editingType.name,
+          description: editingType.description,
+          category: editingType.category,
+          numberPrefix: editingType.numberPrefix,
+          active: editingType.active,
+        }),
+      });
+      toast.success("Document type saved");
+      setEditingType(null);
       load();
     } catch (err) {
       toast.error(errorMessage(err));
@@ -483,7 +514,14 @@ export default function MedicalFormsPage() {
                 ) : (
                   types.map((type) => (
                     <tr key={type.id} className="border-b border-[#1e1e1e]/50">
-                      <td className="py-3 px-4 text-white">{type.name}</td>
+                      <td className="py-3 px-4">
+                        <span className="text-white">{type.name}</span>
+                        {!type.active && (
+                          <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-gray-500/15 text-gray-400">
+                            Inactive
+                          </span>
+                        )}
+                      </td>
                       <td className="py-3 px-4 text-gray-400 text-xs">{type.category}</td>
                       <td className="py-3 px-4 text-gray-400 text-xs font-[family-name:var(--font-mono)]">
                         {type.numberPrefix}
@@ -491,16 +529,27 @@ export default function MedicalFormsPage() {
                       <td className="py-3 px-4 text-gray-400 text-xs">{type._count.forms}</td>
                       <td className="py-3 px-4 text-gray-400 text-xs">{type._count.documents}</td>
                       <td className="py-3 px-4">
-                        {type._count.forms === 0 && type._count.documents === 0 && (
+                        <div className="flex items-center gap-1">
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-7 text-xs text-red-400"
-                            onClick={() => deleteType(type)}
+                            className="h-7 text-xs text-blue-400"
+                            onClick={() => setEditingType({ ...type })}
                           >
-                            <Trash2 className="w-3 h-3" />
+                            <Pencil className="w-3 h-3 mr-1" />
+                            Edit
                           </Button>
-                        )}
+                          {type._count.forms === 0 && type._count.documents === 0 && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 text-xs text-red-400"
+                              onClick={() => deleteType(type)}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -717,6 +766,83 @@ export default function MedicalFormsPage() {
           </Button>
         </div>
       )}
+
+      <Dialog open={editingType !== null} onOpenChange={(open) => !open && setEditingType(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit document type</DialogTitle>
+          </DialogHeader>
+          {editingType && (
+            <div className="space-y-4">
+              <div>
+                <Label>Name</Label>
+                <Input
+                  value={editingType.name}
+                  onChange={(e) => setEditingType({ ...editingType, name: e.target.value })}
+                  className="mt-1"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Category</Label>
+                  <Select
+                    value={editingType.category}
+                    onChange={(e) => setEditingType({ ...editingType, category: e.target.value })}
+                    className="mt-1"
+                  >
+                    {DOCUMENT_CATEGORIES.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div>
+                  <Label>Number prefix</Label>
+                  <Input
+                    value={editingType.numberPrefix}
+                    onChange={(e) => setEditingType({ ...editingType, numberPrefix: e.target.value })}
+                    className="mt-1 font-[family-name:var(--font-mono)]"
+                  />
+                </div>
+              </div>
+              {editingType._count.documents > 0 && (
+                <p className="text-yellow-500/80 text-xs">
+                  {editingType._count.documents} document(s) have been issued under this type. Changing the
+                  prefix starts a new series from the next one — every number already printed stays as it
+                  is.
+                </p>
+              )}
+              <div>
+                <Label>Description</Label>
+                <Textarea
+                  value={editingType.description ?? ""}
+                  onChange={(e) => setEditingType({ ...editingType, description: e.target.value })}
+                  rows={2}
+                  className="mt-1"
+                />
+              </div>
+              <label className="flex items-center gap-2 text-sm text-gray-400">
+                <input
+                  type="checkbox"
+                  checked={editingType.active}
+                  onChange={(e) => setEditingType({ ...editingType, active: e.target.checked })}
+                  className="accent-red-600"
+                />
+                Active — offered when building new forms
+              </label>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditingType(null)}>
+              Cancel
+            </Button>
+            <Button onClick={saveType} disabled={saving || !editingType?.name.trim()}>
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showNewForm} onOpenChange={setShowNewForm}>
         <DialogContent className="max-w-md">

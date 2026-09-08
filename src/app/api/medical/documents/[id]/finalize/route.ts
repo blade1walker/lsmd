@@ -70,12 +70,25 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
 
     const now = new Date();
-    const documentNumber = await claimDocumentNumber(document.documentType.numberPrefix, now);
+    // A reopened document keeps the number it was issued under. Claiming a
+    // fresh one would leave the original dangling in whatever already cites it,
+    // and burn a number out of the sequence for a record that is not new.
+    const documentNumber =
+      document.documentNumber ?? (await claimDocumentNumber(document.documentType.numberPrefix, now));
 
     const finalized = await prisma.medicalDocument.update({
       where: { id },
       data: {
         answers: answers as never,
+        // Patient details can be corrected right up to the moment of issue, so
+        // they are accepted here too — otherwise a fix made on the form and
+        // finalized in the same breath would be silently dropped.
+        ...(typeof body.patientName === "string" && body.patientName.trim()
+          ? { patientName: body.patientName.trim() }
+          : {}),
+        ...(body.patientStateId !== undefined
+          ? { patientStateId: String(body.patientStateId ?? "").trim() || null }
+          : {}),
         status: "Finalized",
         documentNumber,
         finalizedAt: now,
@@ -102,6 +115,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         version: finalized.formVersion.version,
         type: finalized.documentType.name,
         signed: finalized.signedBy ?? null,
+        // Distinguishes a first issue from a re-finalize after correction, so
+        // the trail shows a document was amended rather than freshly created.
+        refinalized: document.documentNumber !== null,
       },
       performedBy: actorLabel(auth.access),
     });

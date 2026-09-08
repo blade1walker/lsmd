@@ -11,13 +11,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import FieldInput from "@/components/medical/FieldInput";
-import { fetchJson, errorMessage } from "@/lib/fetch-json";
+import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
 import {
   FIELD_TYPES,
   FIELD_TYPE_LABELS,
   CHOICE_TYPES,
   PRESENTATIONAL_TYPES,
   DEFAULT_EXPORT_CONFIG,
+  FORM_STATUSES,
   parseFields,
   parseExportConfig,
   parseQuestionText,
@@ -62,6 +63,7 @@ interface FormDetail {
   id: string;
   name: string;
   description: string | null;
+  department: string | null;
   status: string;
   documentType: { id: string; name: string; numberPrefix: string };
   versions: VersionRow[];
@@ -95,15 +97,30 @@ export default function FormBuilderPage() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [panel, setPanel] = useState<"fields" | "export" | "versions">("fields");
+  const [panel, setPanel] = useState<"fields" | "export" | "details" | "versions">("fields");
   const [showPaste, setShowPaste] = useState(false);
   const [pasteText, setPasteText] = useState("");
+  const [types, setTypes] = useState<{ id: string; name: string; numberPrefix: string }[]>([]);
+  const [meta, setMeta] = useState({ name: "", description: "", department: "", documentTypeId: "", status: "Draft" });
+  const [metaDirty, setMetaDirty] = useState(false);
 
   const load = useCallback(async () => {
     setError(null);
     try {
-      const detail = await fetchJson<FormDetail>(`/api/medical/forms/${formId}`);
+      const [detail, typeList] = await Promise.all([
+        fetchJson<FormDetail>(`/api/medical/forms/${formId}`),
+        fetchList<{ id: string; name: string; numberPrefix: string }>("/api/medical/document-types"),
+      ]);
       setForm(detail);
+      setTypes(typeList);
+      setMeta({
+        name: detail.name,
+        description: detail.description ?? "",
+        department: detail.department ?? "",
+        documentTypeId: detail.documentType.id,
+        status: detail.status,
+      });
+      setMetaDirty(false);
       const latest = detail.versions[0];
       setFields(parseFields(latest?.fields));
       setExportConfig(parseExportConfig(latest?.exportConfig));
@@ -157,6 +174,34 @@ export default function FormBuilderPage() {
     setShowPaste(false);
     setPasteText("");
     toast.success(`${incoming.length} field${incoming.length === 1 ? "" : "s"} added`);
+  };
+
+  /**
+   * Form metadata saves on its own, separately from the field set — renaming a
+   * form or moving it to another document type is not a change to what it
+   * asks, so it must not mint a version.
+   */
+  const saveMeta = async () => {
+    setSaving(true);
+    try {
+      await fetchJson(`/api/medical/forms/${formId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: meta.name.trim(),
+          description: meta.description,
+          department: meta.department,
+          documentTypeId: meta.documentTypeId,
+          ...(meta.status !== form?.status ? { status: meta.status } : {}),
+        }),
+      });
+      toast.success("Form details saved");
+      await load();
+    } catch (err) {
+      toast.error(errorMessage(err));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const move = (index: number, delta: number) => {
@@ -263,6 +308,7 @@ export default function FormBuilderPage() {
         {([
           ["fields", `Fields (${fields.length})`],
           ["export", "Export layout"],
+          ["details", "Form details"],
           ["versions", `Versions (${form.versions.length})`],
         ] as const).map(([key, label]) => (
           <button
@@ -697,6 +743,106 @@ export default function FormBuilderPage() {
               Individual answers are controlled per field by &ldquo;Show in export&rdquo;.
             </p>
           </div>
+        </div>
+      )}
+
+      {panel === "details" && (
+        <div className="max-w-2xl space-y-4">
+          <div className="rounded-xl border border-[#1e1e28] bg-card p-4 space-y-4">
+            <div>
+              <Label className="text-xs">Form name</Label>
+              <Input
+                value={meta.name}
+                onChange={(e) => {
+                  setMeta({ ...meta, name: e.target.value });
+                  setMetaDirty(true);
+                }}
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label className="text-xs">Description</Label>
+              <Textarea
+                value={meta.description}
+                onChange={(e) => {
+                  setMeta({ ...meta, description: e.target.value });
+                  setMetaDirty(true);
+                }}
+                rows={2}
+                className="mt-1"
+                placeholder="Shown to doctors when they pick this form"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs">Document type</Label>
+                <Select
+                  value={meta.documentTypeId}
+                  onChange={(e) => {
+                    setMeta({ ...meta, documentTypeId: e.target.value });
+                    setMetaDirty(true);
+                  }}
+                  className="mt-1"
+                >
+                  {types.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name} ({t.numberPrefix})
+                    </option>
+                  ))}
+                </Select>
+                {meta.documentTypeId !== form.documentType.id && (
+                  <p className="text-yellow-500/80 text-xs mt-1">
+                    Only affects documents created from now on. Ones already issued keep the type and
+                    number they were given.
+                  </p>
+                )}
+              </div>
+              <div>
+                <Label className="text-xs">Status</Label>
+                <Select
+                  value={meta.status}
+                  onChange={(e) => {
+                    setMeta({ ...meta, status: e.target.value });
+                    setMetaDirty(true);
+                  }}
+                  className="mt-1"
+                >
+                  {FORM_STATUSES.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </Select>
+                <p className="text-gray-600 text-xs mt-1">
+                  Only Active forms can be filled in. A form goes Active by publishing a version.
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-xs">Department</Label>
+              <Input
+                value={meta.department}
+                onChange={(e) => {
+                  setMeta({ ...meta, department: e.target.value });
+                  setMetaDirty(true);
+                }}
+                className="mt-1"
+                placeholder="Leave blank for all of EMS"
+              />
+            </div>
+
+            <Button onClick={saveMeta} disabled={saving || !metaDirty || !meta.name.trim()}>
+              {saving ? "Saving…" : "Save details"}
+            </Button>
+          </div>
+
+          <p className="text-gray-600 text-xs">
+            These are the form&apos;s own details and save on their own — changing them never creates a
+            version, because they are not part of what the form asks.
+          </p>
         </div>
       )}
 

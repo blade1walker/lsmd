@@ -66,6 +66,8 @@ export default function MedicalDocumentPage() {
   const [settings, setSettings] = useState<PdfSettings | null>(null);
   const [answers, setAnswers] = useState<Answers>({});
   const [signature, setSignature] = useState("");
+  const [patientName, setPatientName] = useState("");
+  const [patientStateId, setPatientStateId] = useState("");
   const [signed, setSigned] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -84,6 +86,8 @@ export default function MedicalDocumentPage() {
       setSettings(letterhead);
       setAnswers(detail.answers ?? {});
       setSignature(detail.signedBy ?? "");
+      setPatientName(detail.patientName);
+      setPatientStateId(detail.patientStateId ?? "");
       setSigned(!!detail.signedAt);
       setDirty(false);
       if (isLocked(detail.status)) setMode("review");
@@ -115,7 +119,7 @@ export default function MedicalDocumentPage() {
       const updated = await fetchJson<DocumentDetail>(`/api/medical/documents/${documentId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ answers }),
+        body: JSON.stringify({ answers, patientName, patientStateId }),
       });
       setDoc(updated);
       setDirty(false);
@@ -142,7 +146,13 @@ export default function MedicalDocumentPage() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ answers, signed, signedBy: signature.trim() || undefined }),
+          body: JSON.stringify({
+            answers,
+            patientName,
+            patientStateId,
+            signed,
+            signedBy: signature.trim() || undefined,
+          }),
         }
       );
       setDoc(finalized);
@@ -268,22 +278,16 @@ export default function MedicalDocumentPage() {
               Finalize
             </Button>
           )}
-          {doc.status === "Finalized" && (
-            <>
-              <Button variant="outline" onClick={() => transition("reopen")} disabled={busy}>
-                <Unlock className="w-4 h-4 mr-2" />
-                Reopen
-              </Button>
-              <Button variant="outline" onClick={() => transition("archive")} disabled={busy}>
-                <Archive className="w-4 h-4 mr-2" />
-                Archive
-              </Button>
-            </>
-          )}
-          {doc.status === "Archived" && (
+          {locked && (
             <Button variant="outline" onClick={() => transition("reopen")} disabled={busy}>
               <Unlock className="w-4 h-4 mr-2" />
-              Reopen
+              Edit document
+            </Button>
+          )}
+          {doc.status === "Finalized" && (
+            <Button variant="outline" onClick={() => transition("archive")} disabled={busy}>
+              <Archive className="w-4 h-4 mr-2" />
+              Archive
             </Button>
           )}
           {!doc.documentNumber && (
@@ -296,8 +300,21 @@ export default function MedicalDocumentPage() {
 
       {locked && (
         <div className="rounded-xl border border-green-600/30 bg-green-600/5 p-3 mb-4 text-sm text-green-300">
-          This document is {doc.status.toLowerCase()} and read-only. Reopening it is recorded in the audit
-          log, and it keeps its document number.
+          This document is {doc.status.toLowerCase()} and read-only.{" "}
+          <span className="text-green-200/80">
+            &ldquo;Edit document&rdquo; reopens it for correction — it keeps its document number{" "}
+            {doc.documentNumber ? <span className="font-[family-name:var(--font-mono)]">({doc.documentNumber})</span> : null}{" "}
+            and the change is recorded in the audit log. Needs the{" "}
+            <span className="font-[family-name:var(--font-mono)]">medical.review</span> permission.
+          </span>
+        </div>
+      )}
+
+      {!locked && doc.documentNumber && (
+        <div className="rounded-xl border border-yellow-600/30 bg-yellow-600/5 p-3 mb-4 text-sm text-yellow-300">
+          Reopened for correction. It already carries{" "}
+          <span className="font-[family-name:var(--font-mono)]">{doc.documentNumber}</span> and keeps that
+          number — finalize again when the correction is done.
         </div>
       )}
 
@@ -320,6 +337,34 @@ export default function MedicalDocumentPage() {
 
       {mode === "fill" ? (
         <div className="rounded-xl border border-[#1e1e28] bg-card p-5 space-y-5">
+          {!locked && (
+            <div className="grid grid-cols-2 gap-4 pb-4 border-b border-[#1e1e28]">
+              <div>
+                <Label className="text-sm">Patient name</Label>
+                <Input
+                  value={patientName}
+                  onChange={(e) => {
+                    setPatientName(e.target.value);
+                    setDirty(true);
+                  }}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-sm">State ID</Label>
+                <Input
+                  value={patientStateId}
+                  onChange={(e) => {
+                    setPatientStateId(e.target.value);
+                    setDirty(true);
+                  }}
+                  className="mt-1"
+                  placeholder="e.g. 12345"
+                />
+              </div>
+            </div>
+          )}
+
           {shown.length === 0 ? (
             <p className="text-gray-500 text-sm">This form version has no fields.</p>
           ) : (

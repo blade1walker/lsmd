@@ -43,6 +43,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (body.description !== undefined) data.description = body.description?.trim() || null;
     if (body.department !== undefined) data.department = body.department?.trim() || null;
 
+    // Retargeting a form at a different document type only affects documents
+    // created from here on: an existing one stores its own documentTypeId, so
+    // its number and its heading stay as issued.
+    if (typeof body.documentTypeId === "string" && body.documentTypeId.trim()) {
+      const type = await prisma.medicalDocumentType.findUnique({
+        where: { id: body.documentTypeId.trim() },
+        select: { id: true },
+      });
+      if (!type) {
+        return NextResponse.json({ error: "That document type no longer exists" }, { status: 400 });
+      }
+      data.documentTypeId = type.id;
+    }
+
     if (body.status !== undefined) {
       const status = normalizeFormStatus(body.status);
       // Going Active is what publishing means, and publishing has to mint a
