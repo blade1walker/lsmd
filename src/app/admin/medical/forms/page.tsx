@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
 import { DOCUMENT_CATEGORIES, FORM_STATUSES } from "@/lib/medical";
 import { toast } from "sonner";
-import { Plus, ExternalLink, Trash2 } from "lucide-react";
+import { Plus, ExternalLink, Trash2, Upload, Image as ImageIcon } from "lucide-react";
 
 interface DocumentType {
   id: string;
@@ -57,7 +57,15 @@ interface Settings {
   contact: string | null;
   confidentialityNotice: string;
   disclaimer: string | null;
+  secondaryName: string | null;
+  secondaryLogoUrl: string | null;
+  secondaryAddress: string | null;
+  secondaryContact: string | null;
+  secondaryDetail: string | null;
 }
+
+/** The two settings fields a logo can be uploaded into. */
+type LogoSlot = "logoUrl" | "secondaryLogoUrl";
 
 const STATUS_STYLES: Record<string, string> = {
   Draft: "bg-gray-500/15 text-gray-400",
@@ -65,6 +73,82 @@ const STATUS_STYLES: Record<string, string> = {
   Inactive: "bg-yellow-500/15 text-yellow-400",
   Archived: "bg-red-500/15 text-red-400",
 };
+
+/**
+ * Upload-or-paste control for one letterhead mark, shared by both bands.
+ *
+ * The URL field is kept alongside the uploader rather than hidden behind it:
+ * Vercel Blob may not be configured on every deployment, and pasting a hosted
+ * image is the fallback that keeps the letterhead usable when it isn't.
+ */
+function LogoPicker({
+  label,
+  url,
+  inputRef,
+  uploading,
+  disabled,
+  onFile,
+  onUrlChange,
+}: {
+  label: string;
+  url: string | null;
+  inputRef: React.RefObject<HTMLInputElement | null>;
+  uploading: boolean;
+  disabled: boolean;
+  onFile: (file: File) => void;
+  onUrlChange: (url: string | null) => void;
+}) {
+  return (
+    <div>
+      <Label>{label}</Label>
+      <p className="text-gray-600 text-xs mt-1 mb-2">
+        PNG, JPEG or WebP up to 2MB. SVG can&apos;t be drawn into a PDF, so it isn&apos;t accepted.
+      </p>
+      <div className="flex items-start gap-4">
+        <div className="w-32 h-24 rounded-lg border border-[#1e1e28] bg-[#0a0a0f] flex items-center justify-center overflow-hidden shrink-0">
+          {url ? (
+            // eslint-disable-next-line @next/next/no-img-element -- a Blob URL on an unknown host; next/image would need it in remotePatterns.
+            <img src={url} alt="" className="max-w-full max-h-full object-contain" />
+          ) : (
+            <ImageIcon className="w-6 h-6 text-gray-700" />
+          )}
+        </div>
+        <div className="flex-1 space-y-2">
+          <div className="flex items-center gap-2">
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) onFile(file);
+              }}
+            />
+            <Button variant="outline" onClick={() => inputRef.current?.click()} disabled={disabled}>
+              <Upload className="w-4 h-4 mr-2" />
+              {uploading ? "Uploading…" : url ? "Replace" : "Upload logo"}
+            </Button>
+            {url && (
+              <Button variant="ghost" className="text-red-400" disabled={disabled} onClick={() => onUrlChange(null)}>
+                Remove
+              </Button>
+            )}
+          </div>
+          <Input
+            value={url ?? ""}
+            onChange={(e) => onUrlChange(e.target.value)}
+            placeholder="…or paste an image URL"
+            className="text-xs"
+          />
+          <p className="text-gray-600 text-xs">
+            A pasted URL must allow cross-origin reads, or the export prints without it.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function MedicalFormsPage() {
   const router = useRouter();
@@ -75,6 +159,9 @@ export default function MedicalFormsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const secondaryLogoInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingSlot, setUploadingSlot] = useState<LogoSlot | null>(null);
   const [showNewForm, setShowNewForm] = useState(false);
   const [newForm, setNewForm] = useState({ name: "", documentTypeId: "", description: "" });
   const [newType, setNewType] = useState({ name: "", category: "Report", numberPrefix: "EMS-MED", description: "" });
@@ -174,6 +261,34 @@ export default function MedicalFormsPage() {
       load();
     } catch (err) {
       toast.error(errorMessage(err));
+    }
+  };
+
+  /**
+   * Uploads the picked file and writes the URL straight back to the settings
+   * row, rather than holding it until Save. A logo that previews but vanishes
+   * because someone navigated away is worse than one extra request.
+   */
+  const uploadLogo = async (file: File, slot: LogoSlot) => {
+    if (!settings) return;
+    setUploadingSlot(slot);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const { url } = await fetchJson<{ url: string }>("/api/medical/upload", { method: "POST", body });
+      setSettings({ ...settings, [slot]: url });
+      await fetchJson("/api/medical/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [slot]: url }),
+      });
+      toast.success("Logo uploaded");
+    } catch (err) {
+      toast.error(errorMessage(err));
+    } finally {
+      setUploadingSlot(null);
+      const ref = slot === "logoUrl" ? logoInputRef : secondaryLogoInputRef;
+      if (ref.current) ref.current.value = "";
     }
   };
 
@@ -450,69 +565,156 @@ export default function MedicalFormsPage() {
       )}
 
       {tab === "letterhead" && settings && (
-        <div className="bg-card border border-[#1e1e1e] rounded-xl p-5 max-w-2xl">
-          <p className="text-gray-500 text-sm mb-4">
-            Printed at the top and bottom of every exported document. Each form decides which of these it
-            actually shows.
+        <div className="max-w-2xl space-y-6">
+          <p className="text-gray-500 text-sm">
+            Printed at the top of every exported document. Each form chooses which of these it shows, so
+            filling them in here does not force them onto anything.
           </p>
-          <div className="space-y-4">
-            <div>
-              <Label>Department name</Label>
-              <Input
-                value={settings.departmentName}
-                onChange={(e) => setSettings({ ...settings, departmentName: e.target.value })}
-                className="mt-1"
+
+          <div className="bg-card border border-[#1e1e1e] rounded-xl p-5">
+            <h2 className="text-white text-sm font-semibold">Main letterhead</h2>
+            <p className="text-gray-600 text-xs mt-1 mb-4">
+              The department banner across the top of the page.
+            </p>
+
+            <div className="space-y-4">
+              <LogoPicker
+                label="Logo"
+                url={settings.logoUrl}
+                inputRef={logoInputRef}
+                uploading={uploadingSlot === "logoUrl"}
+                disabled={uploadingSlot !== null}
+                onFile={(file) => uploadLogo(file, "logoUrl")}
+                onUrlChange={(url) => setSettings({ ...settings, logoUrl: url })}
               />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Sub-department</Label>
+                <Label>Department name</Label>
                 <Input
-                  value={settings.subDepartment ?? ""}
-                  onChange={(e) => setSettings({ ...settings, subDepartment: e.target.value })}
-                  placeholder="e.g. Office of the Chief Medical Officer"
+                  value={settings.departmentName}
+                  onChange={(e) => setSettings({ ...settings, departmentName: e.target.value })}
                   className="mt-1"
                 />
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Sub-department</Label>
+                  <Input
+                    value={settings.subDepartment ?? ""}
+                    onChange={(e) => setSettings({ ...settings, subDepartment: e.target.value })}
+                    placeholder="e.g. Office of the Chief Medical Officer"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label>Contact</Label>
+                  <Input
+                    value={settings.contact ?? ""}
+                    onChange={(e) => setSettings({ ...settings, contact: e.target.value })}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
               <div>
-                <Label>Contact</Label>
+                <Label>Address</Label>
                 <Input
-                  value={settings.contact ?? ""}
-                  onChange={(e) => setSettings({ ...settings, contact: e.target.value })}
+                  value={settings.address ?? ""}
+                  onChange={(e) => setSettings({ ...settings, address: e.target.value })}
                   className="mt-1"
                 />
               </div>
             </div>
-            <div>
-              <Label>Address</Label>
-              <Input
-                value={settings.address ?? ""}
-                onChange={(e) => setSettings({ ...settings, address: e.target.value })}
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label>Confidentiality notice</Label>
-              <Textarea
-                value={settings.confidentialityNotice}
-                onChange={(e) => setSettings({ ...settings, confidentialityNotice: e.target.value })}
-                rows={2}
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label>Disclaimer</Label>
-              <Textarea
-                value={settings.disclaimer ?? ""}
-                onChange={(e) => setSettings({ ...settings, disclaimer: e.target.value })}
-                rows={2}
-                className="mt-1"
-              />
-            </div>
-            <Button onClick={saveSettings} disabled={saving}>
-              {saving ? "Saving…" : "Save letterhead"}
-            </Button>
           </div>
+
+          <div className="bg-card border border-[#1e1e1e] rounded-xl p-5">
+            <h2 className="text-white text-sm font-semibold">Second letterhead</h2>
+            <p className="text-gray-600 text-xs mt-1 mb-4">
+              Printed directly beneath the main banner and set smaller, for the facility or division
+              issuing the document. Turn it on per form under{" "}
+              <span className="text-gray-400">Export layout → Second letterhead</span>.
+            </p>
+
+            <div className="space-y-4">
+              <LogoPicker
+                label="Logo"
+                url={settings.secondaryLogoUrl}
+                inputRef={secondaryLogoInputRef}
+                uploading={uploadingSlot === "secondaryLogoUrl"}
+                disabled={uploadingSlot !== null}
+                onFile={(file) => uploadLogo(file, "secondaryLogoUrl")}
+                onUrlChange={(url) => setSettings({ ...settings, secondaryLogoUrl: url })}
+              />
+              <div>
+                <Label>Name</Label>
+                <Input
+                  value={settings.secondaryName ?? ""}
+                  onChange={(e) => setSettings({ ...settings, secondaryName: e.target.value })}
+                  placeholder="e.g. Pillbox Hill Medical Center"
+                  className="mt-1"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Address</Label>
+                  <Input
+                    value={settings.secondaryAddress ?? ""}
+                    onChange={(e) => setSettings({ ...settings, secondaryAddress: e.target.value })}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label>Contact</Label>
+                  <Input
+                    value={settings.secondaryContact ?? ""}
+                    onChange={(e) => setSettings({ ...settings, secondaryContact: e.target.value })}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>Closing detail</Label>
+                <Textarea
+                  value={settings.secondaryDetail ?? ""}
+                  onChange={(e) => setSettings({ ...settings, secondaryDetail: e.target.value })}
+                  rows={3}
+                  placeholder="e.g. Licensed under the Los Santos Department of Public Health · Facility Registration No. 0042"
+                  className="mt-1"
+                />
+                <p className="text-gray-600 text-xs mt-1">
+                  The extra section that closes the second band — licence numbers, accreditation, a
+                  registrar line. Printed centred, just above the rule that separates the letterhead from
+                  the document.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-card border border-[#1e1e1e] rounded-xl p-5">
+            <h2 className="text-white text-sm font-semibold mb-4">Page footer</h2>
+            <div className="space-y-4">
+              <div>
+                <Label>Confidentiality notice</Label>
+                <Textarea
+                  value={settings.confidentialityNotice}
+                  onChange={(e) => setSettings({ ...settings, confidentialityNotice: e.target.value })}
+                  rows={2}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label>Disclaimer</Label>
+                <Textarea
+                  value={settings.disclaimer ?? ""}
+                  onChange={(e) => setSettings({ ...settings, disclaimer: e.target.value })}
+                  rows={2}
+                  className="mt-1"
+                />
+              </div>
+            </div>
+          </div>
+
+          <Button onClick={saveSettings} disabled={saving || uploadingSlot !== null}>
+            {saving ? "Saving…" : "Save letterhead"}
+          </Button>
         </div>
       )}
 

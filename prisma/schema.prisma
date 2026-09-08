@@ -795,5 +795,21 @@ model MedicalSettings {
   contact               String?
   confidentialityNotice String   @default("CONFIDENTIAL MEDICAL RECORD — This document contains privileged medical information intended only for the named recipient.")
   disclaimer            String?
-  updatedAt             DateTime @updatedAt
+
+  /**
+   * The secondary letterhead, printed directly beneath the main one — the
+   * issuing facility or division under the department's own banner, rather
+   * than a replacement for it.
+   *
+   * secondaryDetail is the extra block that closes it out: licence numbers,
+   * accreditation, a registrar line — whatever the second band has to carry
+   * that the department banner above it does not.
+   */
+  secondaryName    String?
+  secondaryLogoUrl String?
+  secondaryAddress String?
+  secondaryContact String?
+  secondaryDetail  String?
+
+  updatedAt DateTime @updatedAt
 }

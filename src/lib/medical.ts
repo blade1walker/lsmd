@@ -126,6 +126,11 @@ export interface ExportConfig {
   showDepartmentName: boolean;
   showAddress: boolean;
   showContact: boolean;
+  /** The second letterhead band, printed under the department's own. */
+  showSecondaryLetterhead: boolean;
+  showSecondaryLogo: boolean;
+  /** The extra detail block that closes the secondary band. */
+  showSecondaryDetail: boolean;
   showDocumentNumber: boolean;
   showDate: boolean;
   showDoctor: boolean;
@@ -147,6 +152,10 @@ export const DEFAULT_EXPORT_CONFIG: ExportConfig = {
   showDepartmentName: true,
   showAddress: true,
   showContact: true,
+  // Off by default: a form only grows the second band once someone fills it in.
+  showSecondaryLetterhead: false,
+  showSecondaryLogo: true,
+  showSecondaryDetail: true,
   showDocumentNumber: true,
   showDate: true,
   showDoctor: true,

@@ -48,6 +48,11 @@ export async function PATCH(req: NextRequest) {
           ? { confidentialityNotice: String(body.confidentialityNotice).trim() }
           : {}),
         ...(body.disclaimer !== undefined ? { disclaimer: text(body.disclaimer) } : {}),
+        ...(body.secondaryName !== undefined ? { secondaryName: text(body.secondaryName) } : {}),
+        ...(body.secondaryLogoUrl !== undefined ? { secondaryLogoUrl: text(body.secondaryLogoUrl) } : {}),
+        ...(body.secondaryAddress !== undefined ? { secondaryAddress: text(body.secondaryAddress) } : {}),
+        ...(body.secondaryContact !== undefined ? { secondaryContact: text(body.secondaryContact) } : {}),
+        ...(body.secondaryDetail !== undefined ? { secondaryDetail: text(body.secondaryDetail) } : {}),
       },
     });
 

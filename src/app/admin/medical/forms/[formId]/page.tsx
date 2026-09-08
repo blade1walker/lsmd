@@ -635,9 +635,13 @@ export default function FormBuilderPage() {
             <h2 className="text-white text-sm font-semibold mb-3">What appears on the PDF</h2>
             <div className="grid grid-cols-2 gap-2">
               {([
+                ["showLogo", "Department logo"],
                 ["showDepartmentName", "Department name"],
                 ["showAddress", "Address"],
                 ["showContact", "Contact"],
+                ["showSecondaryLetterhead", "Second letterhead"],
+                ["showSecondaryLogo", "— its logo"],
+                ["showSecondaryDetail", "— its closing detail"],
                 ["showDocumentNumber", "Document number"],
                 ["showDate", "Date"],
                 ["showPatient", "Patient block"],

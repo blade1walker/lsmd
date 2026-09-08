@@ -372,11 +372,48 @@ export default function MedicalDocumentPage() {
       ) : (
         <div className="rounded-xl border border-[#1e1e28] bg-card p-6">
           <div className="text-center border-b border-[#1e1e28] pb-4 mb-5">
+            {config.showLogo && settings?.logoUrl && (
+              // eslint-disable-next-line @next/next/no-img-element -- a Blob URL on an unknown host; next/image would need it in remotePatterns.
+              <img
+                src={settings.logoUrl}
+                alt=""
+                className="max-h-16 mx-auto mb-3 object-contain"
+              />
+            )}
             <div className="text-[#dc2626] font-[family-name:var(--font-oswald)] font-bold text-lg uppercase">
               {settings?.departmentName ?? "Emergency Medical Services"}
             </div>
             {settings?.subDepartment && (
               <div className="text-gray-500 text-xs mt-0.5">{settings.subDepartment}</div>
+            )}
+            {[settings?.address, settings?.contact].filter(Boolean).length > 0 && (
+              <div className="text-gray-600 text-[11px] mt-0.5">
+                {[settings?.address, settings?.contact].filter(Boolean).join("  ·  ")}
+              </div>
+            )}
+
+            {config.showSecondaryLetterhead && settings?.secondaryName && (
+              <div className="mt-3 pt-3 border-t border-[#1e1e28]/60">
+                {config.showSecondaryLogo && settings.secondaryLogoUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element -- a Blob URL on an unknown host; next/image would need it in remotePatterns.
+                  <img
+                    src={settings.secondaryLogoUrl}
+                    alt=""
+                    className="max-h-10 mx-auto mb-2 object-contain"
+                  />
+                )}
+                <div className="text-gray-200 text-sm font-semibold uppercase">{settings.secondaryName}</div>
+                {[settings.secondaryAddress, settings.secondaryContact].filter(Boolean).length > 0 && (
+                  <div className="text-gray-600 text-[11px] mt-0.5">
+                    {[settings.secondaryAddress, settings.secondaryContact].filter(Boolean).join("  ·  ")}
+                  </div>
+                )}
+                {config.showSecondaryDetail && settings.secondaryDetail && (
+                  <div className="text-gray-600 text-[11px] mt-1 whitespace-pre-wrap">
+                    {settings.secondaryDetail}
+                  </div>
+                )}
+              </div>
             )}
             <div className="text-white font-semibold mt-3 uppercase text-sm">
               {config.documentTitle?.trim() || doc.formVersion.form.name}

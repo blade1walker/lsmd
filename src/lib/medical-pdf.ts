@@ -26,6 +26,12 @@ export interface PdfSettings {
   contact?: string | null;
   confidentialityNotice: string;
   disclaimer?: string | null;
+  /** The second letterhead band, printed beneath the department's own. */
+  secondaryName?: string | null;
+  secondaryLogoUrl?: string | null;
+  secondaryAddress?: string | null;
+  secondaryContact?: string | null;
+  secondaryDetail?: string | null;
 }
 
 export interface PdfDocument {
@@ -66,6 +72,53 @@ function formatDate(value: string | Date | null | undefined): string {
   return date ? date.toLocaleString(undefined, { dateStyle: "long", timeStyle: "short" }) : "—";
 }
 
+/** Tallest the letterhead mark is allowed to print, in points. */
+const LOGO_MAX_HEIGHT = 54;
+const LOGO_MAX_WIDTH = 200;
+
+/** The second band is subordinate to the first, so its mark is set smaller. */
+const SECONDARY_LOGO_MAX_HEIGHT = 34;
+const SECONDARY_LOGO_MAX_WIDTH = 140;
+
+/**
+ * Fetches the letterhead logo as a data URL, with its natural dimensions so it
+ * can be scaled without distortion.
+ *
+ * Returns null on any failure — a missing or unreachable logo must never stop
+ * a doctor exporting a document. The PDF simply prints without it.
+ */
+async function loadLogo(
+  url: string
+): Promise<{ dataUrl: string; width: number; height: number; format: string } | null> {
+  try {
+    const res = await fetch(url, { mode: "cors" });
+    if (!res.ok) return null;
+    const blob = await res.blob();
+
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(blob);
+    });
+
+    const size = await new Promise<{ width: number; height: number }>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      img.onerror = () => reject(new Error("Could not decode the logo"));
+      img.src = dataUrl;
+    });
+
+    if (!size.width || !size.height) return null;
+
+    // jsPDF wants the format name, not the MIME type.
+    const format = blob.type === "image/png" ? "PNG" : blob.type === "image/webp" ? "WEBP" : "JPEG";
+    return { dataUrl, ...size, format };
+  } catch {
+    return null;
+  }
+}
+
 /** A filename that sorts sensibly and never carries characters a filesystem rejects. */
 export function pdfFileName(doc: PdfDocument): string {
   const id = doc.documentNumber ?? `DRAFT-${doc.patientName}`;
@@ -92,6 +145,19 @@ export async function exportDocumentPdf(doc: PdfDocument, settings: PdfSettings)
   let y = MARGIN;
 
   // ── Letterhead ───────────────────────────────────────────────────────────
+  if (config.showLogo && settings.logoUrl) {
+    const logo = await loadLogo(settings.logoUrl);
+    if (logo) {
+      // Scaled to fit inside the box on its longer side, so a wide banner and a
+      // square crest both sit correctly rather than one being stretched.
+      const scale = Math.min(LOGO_MAX_WIDTH / logo.width, LOGO_MAX_HEIGHT / logo.height, 1);
+      const width = logo.width * scale;
+      const height = logo.height * scale;
+      pdf.addImage(logo.dataUrl, logo.format, (pageWidth - width) / 2, y, width, height);
+      y += height + 12;
+    }
+  }
+
   if (config.showDepartmentName) {
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(18);
@@ -126,7 +192,69 @@ export async function exportDocumentPdf(doc: PdfDocument, settings: PdfSettings)
   pdf.setDrawColor(...RED);
   pdf.setLineWidth(1.5);
   pdf.line(MARGIN, y, pageWidth - MARGIN, y);
-  y += 24;
+  y += 18;
+
+  // ── Secondary letterhead ─────────────────────────────────────────────────
+  // The issuing facility or division, sitting under the department's banner
+  // rather than replacing it — so it is deliberately set smaller, and closed
+  // with its own thin rule to read as a distinct band.
+  const hasSecondary =
+    config.showSecondaryLetterhead &&
+    !!(settings.secondaryName || settings.secondaryAddress || settings.secondaryContact || settings.secondaryDetail);
+
+  if (hasSecondary) {
+    if (config.showSecondaryLogo && settings.secondaryLogoUrl) {
+      const mark = await loadLogo(settings.secondaryLogoUrl);
+      if (mark) {
+        const scale = Math.min(
+          SECONDARY_LOGO_MAX_WIDTH / mark.width,
+          SECONDARY_LOGO_MAX_HEIGHT / mark.height,
+          1
+        );
+        const width = mark.width * scale;
+        const height = mark.height * scale;
+        pdf.addImage(mark.dataUrl, mark.format, (pageWidth - width) / 2, y, width, height);
+        y += height + 8;
+      }
+    }
+
+    if (settings.secondaryName) {
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(12);
+      pdf.setTextColor(...INK);
+      pdf.text(settings.secondaryName.toUpperCase(), pageWidth / 2, y + 2, { align: "center" });
+      y += 16;
+    }
+
+    const secondaryContactLine = [settings.secondaryAddress, settings.secondaryContact]
+      .filter(Boolean)
+      .join("  ·  ");
+    if (secondaryContactLine) {
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(8.5);
+      pdf.setTextColor(...MUTED);
+      pdf.text(secondaryContactLine, pageWidth / 2, y, { align: "center" });
+      y += 12;
+    }
+
+    // The extra section that closes the second band out.
+    if (config.showSecondaryDetail && settings.secondaryDetail?.trim()) {
+      const lines = pdf.splitTextToSize(settings.secondaryDetail.trim(), contentWidth - 80);
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(8);
+      pdf.setTextColor(...MUTED);
+      pdf.text(lines, pageWidth / 2, y + 2, { align: "center" });
+      y += lines.length * 10 + 4;
+    }
+
+    y += 4;
+    pdf.setDrawColor(200, 200, 200);
+    pdf.setLineWidth(0.5);
+    pdf.line(MARGIN + 60, y, pageWidth - MARGIN - 60, y);
+    y += 18;
+  } else {
+    y += 6;
+  }
 
   // ── Title ────────────────────────────────────────────────────────────────
   const title = (config.documentTitle?.trim() || doc.formVersion.form.name).toUpperCase();
