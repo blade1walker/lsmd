@@ -39,6 +39,9 @@ const PERMISSION_GROUP_LABELS: Record<string, string> = {
   departments: "Departments",
   roles: "Roles",
   audit: "Audit",
+  medical: "Medical Documentation",
+  shifts: "Shifts",
+  export: "Export",
 };
 
 /**

@@ -84,7 +84,35 @@ export const ALL_PERMISSIONS = [
   "shifts.view",
   "shifts.manage",
   "export.data",
+  // Medical documentation. Split along the three roles the module is built
+  // for: a doctor writes and finalizes, a senior doctor reviews and reopens,
+  // and medical command builds the forms everyone else fills in.
+  "medical.view",
+  "medical.create",
+  "medical.finalize",
+  "medical.review",
+  "medical.export",
+  "medical.forms.manage",
+  "medical.types.manage",
 ] as const;
+
+/**
+ * Any permission that should open the Medical Documentation section — a
+ * doctor who can only fill forms and a commander who only builds them both
+ * belong in there.
+ */
+export const MEDICAL_SECTION_PERMISSIONS: string[] = [
+  "medical.view",
+  "medical.create",
+  "medical.finalize",
+  "medical.review",
+  "medical.export",
+  "medical.forms.manage",
+  "medical.types.manage",
+];
+
+/** Permissions that open the Form Builder and the rest of the admin side of the module. */
+export const MEDICAL_ADMIN_PERMISSIONS: string[] = ["medical.forms.manage", "medical.types.manage"];
 
 export type Permission = (typeof ALL_PERMISSIONS)[number];
 

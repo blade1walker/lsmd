@@ -1,7 +1,20 @@
 import { prisma } from "./prisma";
 
 export interface AuditAction {
-  action: "create" | "update" | "delete" | "approve" | "decline" | "export";
+  action:
+    | "create"
+    | "update"
+    | "delete"
+    | "approve"
+    | "decline"
+    | "export"
+    // Medical documentation. A finalized document is a legal-ish record, so
+    // every transition that changes what it says, or who may still change it,
+    // gets its own verb rather than collapsing into "update".
+    | "finalize"
+    | "reopen"
+    | "publish"
+    | "archive";
   entityType: string;
   entityId: string;
   entityLabel: string;

@@ -52,6 +52,8 @@ model Member {
   ftoSignOffRecords  FTOSignOffRecord[]
   departmentMemberships DepartmentMembership[]
   shiftSignup        ShiftSignup?
+  /** Medical documents naming this member as the patient. */
+  medicalDocuments   MedicalDocument[]
 }
 
 model ClockEntry {
@@ -613,4 +615,185 @@ model DirectMessage {
   thread    DMThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
 
   @@index([threadId, sentAt])
+}
+
+// ─── Medical Documentation ──────────────────────────────────────────────────
+//
+// A configurable documentation platform rather than a page per document. A
+// document type names the kind of record, a form version defines the fields,
+// and a medical document stores one doctor's answers against the exact
+// version they filled in. Command adds a type, builds a form and publishes
+// it; doctors can use it immediately, with no new code.
+
+model MedicalDocumentType {
+  id           String   @id @default(cuid())
+  name         String   @unique
+  description  String?
+  /** Groups the type in the UI: Report, Certificate, Evaluation, Other. */
+  category     String   @default("Report")
+  /**
+   * Leading segment of every document number issued under this type —
+   * "EMS-MED" gives EMS-MED-2026-000124. Certificates usually get their own
+   * so they number in their own series.
+   */
+  numberPrefix String   @default("EMS-MED")
+  order        Int      @default(0)
+  active       Boolean  @default(true)
+  createdBy    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  forms     MedicalForm[]
+  documents MedicalDocument[]
+}
+
+model MedicalForm {
+  id             String    @id @default(cuid())
+  name           String
+  description    String?
+  documentTypeId String
+  /** Draft | Active | Inactive | Archived — only Active forms can be filled in. */
+  status         String    @default("Draft")
+  /** Free-text department, matching Member.dept, or null for all of EMS. */
+  department     String?
+  createdBy      String?
+  publishedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  documentType MedicalDocumentType  @relation(fields: [documentTypeId], references: [id], onDelete: Restrict)
+  versions     MedicalFormVersion[]
+
+  @@index([documentTypeId])
+  @@index([status])
+}
+
+/**
+ * One snapshot of a form's field set, treated as immutable once it leaves
+ * draft.
+ *
+ * Editing a published version mints a new one instead of writing to it, so a
+ * completed medical record always renders with exactly the fields the doctor
+ * saw and answered. Changing a form must never alter history — that guarantee
+ * is the whole reason versions are a table rather than a column.
+ */
+model MedicalFormVersion {
+  id            String   @id @default(cuid())
+  formId        String
+  /** "1.0", "1.1", … shown beside the form name wherever it is offered. */
+  version       String
+  /** FormField[] — shape defined in src/lib/medical.ts. */
+  fields        Json     @default("[]")
+  /** ExportConfig — which sections and fields reach the PDF, and in what order. */
+  exportConfig  Json     @default("{}")
+  /** required | optional | disabled */
+  signatureMode String   @default("optional")
+  published     Boolean  @default(false)
+  createdBy     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  form      MedicalForm       @relation(fields: [formId], references: [id], onDelete: Cascade)
+  documents MedicalDocument[]
+
+  @@unique([formId, version])
+  @@index([formId])
+}
+
+model MedicalDocument {
+  id             String  @id @default(cuid())
+  /**
+   * EMS-MED-2026-000124. Null until the document is finalized — a draft has
+   * no official number, and the number is what makes the record citable.
+   */
+  documentNumber String? @unique
+  documentTypeId String
+  formVersionId  String
+  /** Draft | Review | Finalized | Archived */
+  status         String  @default("Draft")
+
+  /**
+   * Linked to a roster Member when the patient is one, so their rank and call
+   * sign can be pulled in — but a plain name and State ID otherwise, because
+   * most patients are civilians who will never be on the EMS roster.
+   */
+  patientMemberId String?
+  patientName     String
+  patientStateId  String?
+
+  /** Answers keyed by FormField.name. */
+  answers Json @default("{}")
+
+  authorDiscordId String
+  authorName      String
+  authorRank      String?
+
+  signedBy    String?
+  signedAt    DateTime?
+  finalizedAt DateTime?
+  finalizedBy String?
+  archivedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  documentType MedicalDocumentType @relation(fields: [documentTypeId], references: [id], onDelete: Restrict)
+  formVersion  MedicalFormVersion  @relation(fields: [formVersionId], references: [id], onDelete: Restrict)
+  patient      Member?             @relation(fields: [patientMemberId], references: [id], onDelete: SetNull)
+  attachments  MedicalAttachment[]
+
+  @@index([status])
+  @@index([patientMemberId])
+  @@index([authorDiscordId])
+  @@index([documentTypeId])
+  @@index([createdAt])
+}
+
+model MedicalAttachment {
+  id          String   @id @default(cuid())
+  documentId  String
+  /** The FormField.name this file was attached to. */
+  fieldName   String
+  fileName    String
+  url         String
+  contentType String
+  size        Int
+  uploadedBy  String?
+  createdAt   DateTime @default(now())
+
+  document MedicalDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+}
+
+/**
+ * The counter behind document numbers, one row per (prefix, year) so that
+ * EMS-MED and EMS-CERT number independently and each year restarts at 1.
+ * Incremented in a single atomic statement — two doctors finalizing at once
+ * must never be handed the same number.
+ */
+model MedicalNumberSequence {
+  id         String @id @default(cuid())
+  prefix     String
+  year       Int
+  lastNumber Int    @default(0)
+
+  @@unique([prefix, year])
+}
+
+/**
+ * Department branding for exported documents — the letterhead every PDF is
+ * printed on. One row; per-form layout choices live in the version's
+ * exportConfig instead.
+ */
+model MedicalSettings {
+  id                    String   @id @default("singleton")
+  departmentName        String   @default("EMERGENCY MEDICAL SERVICES")
+  subDepartment         String?
+  logoUrl               String?
+  address               String?
+  contact               String?
+  confidentialityNotice String   @default("CONFIDENTIAL MEDICAL RECORD — This document contains privileged medical information intended only for the named recipient.")
+  disclaimer            String?
+  updatedAt             DateTime @updatedAt
 }

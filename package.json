@@ -15,6 +15,7 @@
     "db:radio-codes": "npx tsx scripts/update-radio-codes.ts",
     "db:migrate-sop": "npx tsx scripts/migrate-sop.ts",
     "db:seed-ems-sop": "npx tsx scripts/seed-ems-sop.ts",
+    "db:seed-medical-types": "npx tsx scripts/seed-medical-types.ts",
     "lookup-discord-ids": "npx tsx scripts/lookup-discord-ids.ts",
     "db:migrate-user-roles": "npx tsx scripts/migrate-user-roles.ts",
     "db:migrate-ftp-departments": "npx tsx scripts/migrate-ftp-departments.ts",

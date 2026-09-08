@@ -27,11 +27,15 @@ import {
   Building2,
   CalendarClock,
   Download,
+  Stethoscope,
+  LayoutTemplate,
 } from "lucide-react";
 import {
   DEPARTMENT_SECTION_PERMISSIONS,
   EXPORT_SECTION_PERMISSIONS,
   SHIFT_SECTION_PERMISSIONS,
+  MEDICAL_SECTION_PERMISSIONS,
+  MEDICAL_ADMIN_PERMISSIONS,
 } from "@/lib/constants";
 
 // `permission` mirrors the check on the matching API route, so a section is
@@ -51,6 +55,8 @@ const navItems: {
   { href: "/admin/recruit", label: "Recruit", icon: Mail, permission: "onboarding.view" },
   { href: "/admin/departments", label: "Departments", icon: Building2, permission: DEPARTMENT_SECTION_PERMISSIONS },
   { href: "/admin/shifts", label: "Shifts", icon: CalendarClock, permission: SHIFT_SECTION_PERMISSIONS },
+  { href: "/admin/medical", label: "Medical Docs", icon: Stethoscope, permission: MEDICAL_SECTION_PERMISSIONS },
+  { href: "/admin/medical/forms", label: "Form Builder", icon: LayoutTemplate, permission: MEDICAL_ADMIN_PERMISSIONS },
   { href: "/admin/training", label: "Training", icon: GraduationCap, permission: "training.view" },
   { href: "/admin/sop", label: "SOP", icon: FileText, permission: "sop.edit" },
   { href: "/admin/radio-codes", label: "Radio Codes", icon: Radio, permission: "radio.edit" },
