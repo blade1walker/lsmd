@@ -151,6 +151,55 @@ export default function FormBuilderPage() {
   const updateField = (id: string, patch: Partial<FormField>) =>
     mutate(fields.map((f) => (f.id === id ? { ...f, ...patch } : f)));
 
+  /**
+   * Retypes a field in place, keeping its name so answers already recorded
+   * under it stay attached, and carrying the rest of its configuration across.
+   *
+   * Existing documents are untouched regardless: they render against the form
+   * version they were filled in on, and this edit lands in a new version.
+   */
+  const changeFieldType = (id: string, type: FieldType) => {
+    const field = fields.find((f) => f.id === id);
+    if (!field || field.type === type) return;
+
+    const patch: Partial<FormField> = { type };
+
+    // A choice field with no options renders as an empty control, so it gets a
+    // starting pair to edit rather than nothing. Options already entered are
+    // kept when moving between choice types, and kept but unused otherwise, so
+    // switching away and back does not lose the list.
+    if (CHOICE_TYPES.includes(type) && (field.options ?? []).length === 0) {
+      patch.options = ["Option 1", "Option 2"];
+    }
+
+    // Headings and separators collect no answer, so they cannot be required
+    // and cannot control a condition.
+    if (PRESENTATIONAL_TYPES.includes(type)) {
+      patch.required = false;
+
+      const dependents = fields.filter((f) => f.condition?.field === field.name && f.id !== id);
+      if (dependents.length > 0) {
+        // Left in place, those conditions could never be satisfied and their
+        // fields would silently disappear from the form — a far worse outcome
+        // than losing a rule the builder can see was dropped.
+        mutate(
+          fields.map((f) => {
+            if (f.id === id) return { ...f, ...patch };
+            return f.condition?.field === field.name ? { ...f, condition: undefined } : f;
+          })
+        );
+        toast.warning(
+          `"${field.label}" no longer collects an answer, so the condition on ${dependents
+            .map((d) => `"${d.label}"`)
+            .join(", ")} was removed.`
+        );
+        return;
+      }
+    }
+
+    updateField(id, patch);
+  };
+
   const addField = (type: FieldType) => {
     const field = blankField(type, fields.length, fields.map((f) => f.name));
     mutate([...fields, field]);
@@ -407,6 +456,21 @@ export default function FormBuilderPage() {
 
                       {open && (
                         <div className="border-t border-[#1e1e28] p-3 space-y-3">
+                          <div>
+                            <Label className="text-xs">Field type</Label>
+                            <Select
+                              value={field.type}
+                              onChange={(e) => changeFieldType(field.id, e.target.value as FieldType)}
+                              className="mt-1 h-8 text-sm"
+                            >
+                              {FIELD_TYPES.map((t) => (
+                                <option key={t} value={t}>
+                                  {FIELD_TYPE_LABELS[t]}
+                                </option>
+                              ))}
+                            </Select>
+                          </div>
+
                           <div className="grid grid-cols-2 gap-3">
                             <div>
                               <Label className="text-xs">Display label</Label>
