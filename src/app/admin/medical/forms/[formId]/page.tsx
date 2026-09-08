@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,8 @@ import {
   DEFAULT_EXPORT_CONFIG,
   parseFields,
   parseExportConfig,
+  parseQuestionText,
+  fieldNameFrom,
   visibleFields,
   type FormField,
   type FieldType,
@@ -27,7 +29,22 @@ import {
   type Answers,
 } from "@/lib/medical";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowUp, ArrowDown, Trash2, Plus, ChevronDown, ChevronRight } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { ArrowLeft, ArrowUp, ArrowDown, Trash2, Plus, ChevronDown, ChevronRight, ClipboardPaste } from "lucide-react";
+
+const PASTE_EXAMPLE = `# Examination
+1. Was the patient injured? *
+   - Yes
+   - No
+2. Describe the injury [long]
+3. Date of examination [date]
+
+# Assessment
+Fitness status
+  - Fit for duty
+  - Fit with restrictions
+  - Not fit
+Doctor's remarks [long]`;
 
 interface VersionRow {
   id: string;
@@ -50,26 +67,12 @@ interface FormDetail {
   versions: VersionRow[];
 }
 
-/** A machine key derived from the label, so builders never have to invent one. */
-function keyFrom(label: string, taken: string[]): string {
-  const base =
-    label
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "_")
-      .replace(/^_+|_+$/g, "")
-      .slice(0, 40) || "field";
-  if (!taken.includes(base)) return base;
-  let n = 2;
-  while (taken.includes(`${base}_${n}`)) n++;
-  return `${base}_${n}`;
-}
-
 function blankField(type: FieldType, order: number, taken: string[]): FormField {
   const label = FIELD_TYPE_LABELS[type];
   return {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     type,
-    name: keyFrom(label, taken),
+    name: fieldNameFrom(label, taken),
     label,
     required: false,
     order,
@@ -93,6 +96,8 @@ export default function FormBuilderPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [panel, setPanel] = useState<"fields" | "export" | "versions">("fields");
+  const [showPaste, setShowPaste] = useState(false);
+  const [pasteText, setPasteText] = useState("");
 
   const load = useCallback(async () => {
     setError(null);
@@ -133,6 +138,25 @@ export default function FormBuilderPage() {
     const field = blankField(type, fields.length, fields.map((f) => f.name));
     mutate([...fields, field]);
     setExpanded(field.id);
+  };
+
+  // Parsed on every keystroke so the dialog can show exactly what will be
+  // created before anything is committed — the import is only worth trusting
+  // if you can see it read your text correctly first.
+  const parsed = useMemo(
+    () => parseQuestionText(pasteText, fields.map((f) => f.name)),
+    [pasteText, fields]
+  );
+
+  const applyPaste = (replace: boolean) => {
+    if (parsed.fields.length === 0) return;
+    // Re-parsed against nothing when replacing, so names come out clean rather
+    // than avoiding collisions with fields that are about to be discarded.
+    const incoming = replace ? parseQuestionText(pasteText).fields : parsed.fields;
+    mutate(replace ? incoming : [...fields, ...incoming]);
+    setShowPaste(false);
+    setPasteText("");
+    toast.success(`${incoming.length} field${incoming.length === 1 ? "" : "s"} added`);
   };
 
   const move = (index: number, delta: number) => {
@@ -269,6 +293,10 @@ export default function FormBuilderPage() {
                   </option>
                 ))}
               </Select>
+              <Button variant="outline" onClick={() => setShowPaste(true)}>
+                <ClipboardPaste className="w-4 h-4 mr-2" />
+                Paste questions
+              </Button>
               <span className="text-gray-600 text-xs">
                 Answers are keyed by field name — renaming one orphans existing answers.
               </span>
@@ -708,6 +736,101 @@ export default function FormBuilderPage() {
           </table>
         </div>
       )}
+
+      <Dialog open={showPaste} onOpenChange={setShowPaste}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Paste questions</DialogTitle>
+          </DialogHeader>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <Label className="text-xs">Your questions</Label>
+              <Textarea
+                value={pasteText}
+                onChange={(e) => setPasteText(e.target.value)}
+                rows={16}
+                placeholder={PASTE_EXAMPLE}
+                className="mt-1 text-sm font-[family-name:var(--font-mono)]"
+              />
+              <div className="text-gray-600 text-xs mt-2 space-y-0.5">
+                <div>
+                  <span className="text-gray-400">#&nbsp;Heading</span> starts a section ·{" "}
+                  <span className="text-gray-400">##&nbsp;Heading</span> is a heading field ·{" "}
+                  <span className="text-gray-400">---</span> a separator
+                </div>
+                <div>
+                  <span className="text-gray-400">-&nbsp;option</span> lines under a question become its
+                  answers · <span className="text-gray-400">*</span> at the end marks it required
+                </div>
+                <div>
+                  <span className="text-gray-400">[date]</span>, <span className="text-gray-400">[long]</span>
+                  , <span className="text-gray-400">[number]</span>,{" "}
+                  <span className="text-gray-400">[yesno]</span>,{" "}
+                  <span className="text-gray-400">[select]</span>… set the field type. Without one it is
+                  guessed from the wording.
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-xs">
+                Preview — {parsed.fields.length} field{parsed.fields.length === 1 ? "" : "s"}
+              </Label>
+              <div className="mt-1 rounded-lg border border-[#1e1e28] bg-[#0a0a0f] h-[calc(16rem+8px)] overflow-y-auto p-2 space-y-1">
+                {parsed.fields.length === 0 ? (
+                  <p className="text-gray-600 text-xs p-2">
+                    Paste your question list on the left and it will be read here before anything is added.
+                  </p>
+                ) : (
+                  parsed.fields.map((f) => (
+                    <div key={f.id} className="rounded border border-[#1e1e28] px-2 py-1.5">
+                      <div className="text-white text-xs">
+                        {f.label || <span className="text-gray-600 italic">(no label)</span>}
+                        {f.required && <span className="text-red-500 ml-1">*</span>}
+                      </div>
+                      <div className="text-gray-600 text-[11px]">
+                        {FIELD_TYPE_LABELS[f.type]}
+                        {f.section && ` · ${f.section}`}
+                        {f.options && f.options.length > 0 && ` · ${f.options.join(" / ")}`}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+              {parsed.warnings.length > 0 && pasteText.trim() !== "" && (
+                <ul className="text-yellow-500/80 text-[11px] mt-2 list-disc list-inside space-y-0.5">
+                  {parsed.warnings.slice(0, 4).map((w) => (
+                    <li key={w}>{w}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowPaste(false)}>
+              Cancel
+            </Button>
+            {fields.length > 0 && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (confirm(`Replace all ${fields.length} existing field(s) with these ${parsed.fields.length}?`)) {
+                    applyPaste(true);
+                  }
+                }}
+                disabled={parsed.fields.length === 0}
+              >
+                Replace all fields
+              </Button>
+            )}
+            <Button onClick={() => applyPaste(false)} disabled={parsed.fields.length === 0}>
+              Add {parsed.fields.length > 0 ? parsed.fields.length : ""} to form
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -398,6 +398,261 @@ export function groupBySection(
   return ordered;
 }
 
+/**
+ * A machine key derived from a label, unique against the names already taken.
+ * Answers are stored under this, so it has to be stable and collision-free.
+ */
+export function fieldNameFrom(label: string, taken: string[]): string {
+  const base =
+    label
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(0, 40) || "field";
+  if (!taken.includes(base)) return base;
+  let n = 2;
+  while (taken.includes(`${base}_${n}`)) n++;
+  return `${base}_${n}`;
+}
+
+/** Type hints a question line can carry in square brackets, e.g. "Date of birth [date]". */
+const TYPE_HINTS: Record<string, FieldType> = {
+  text: "shortText",
+  short: "shortText",
+  long: "longText",
+  paragraph: "longText",
+  textarea: "longText",
+  number: "number",
+  num: "number",
+  date: "date",
+  time: "time",
+  datetime: "datetime",
+  select: "dropdown",
+  dropdown: "dropdown",
+  multi: "multiSelect",
+  multiselect: "multiSelect",
+  radio: "radio",
+  yesno: "yesNo",
+  "yes/no": "yesNo",
+  bool: "yesNo",
+  checkbox: "checkbox",
+  signature: "signature",
+  assessment: "assessment",
+  file: "fileAttachment",
+  image: "imageAttachment",
+  patient: "patientInfo",
+  doctor: "doctorInfo",
+};
+
+export interface ParsedQuestions {
+  fields: FormField[];
+  warnings: string[];
+}
+
+/**
+ * Turns a plain-text question list into form fields.
+ *
+ * Written for the way people already have their questions written down —
+ * numbered lines, bullet answers underneath, a heading here and there — rather
+ * than a format anyone has to learn:
+ *
+ *     # Examination
+ *     1. Was the patient injured? *
+ *        - Yes
+ *        - No
+ *     2. Describe the injury [long]
+ *     3. Date of examination [date]
+ *
+ * Rules, in the order they are tried per line:
+ *   `#  Heading`     section, grouping the fields under it
+ *   `## Heading`     a heading field printed in the form
+ *   `---`            a separator
+ *   `- option`       an answer option, when a question is open above it
+ *   anything else    a question
+ *
+ * A trailing `*` or `(required)` marks a question required; a `[hint]` sets its
+ * type. With no hint, the type is inferred: two Yes/No options give Yes/No,
+ * a few options give radio buttons, many give a dropdown, and a bare question
+ * is read from its wording. Everything stays editable afterwards, so a wrong
+ * guess costs one dropdown rather than a re-type.
+ */
+export function parseQuestionText(text: string, takenNames: string[] = []): ParsedQuestions {
+  const fields: FormField[] = [];
+  const warnings: string[] = [];
+  const taken = [...takenNames];
+
+  let section: string | undefined;
+  let pending:
+    | { label: string; required: boolean; hint?: FieldType; options: string[]; indent: number; fromBullet: boolean }
+    | null = null;
+
+  const push = () => {
+    if (!pending) return;
+    const { label, required, hint, options } = pending;
+    pending = null;
+
+    const type = hint ?? inferType(label, options);
+    const name = fieldNameFrom(label, taken);
+    taken.push(name);
+
+    fields.push({
+      id: `p-${fields.length}-${Math.random().toString(36).slice(2, 8)}`,
+      type,
+      name,
+      label,
+      required,
+      order: fields.length,
+      visible: true,
+      inExport: true,
+      section,
+      options: CHOICE_TYPES.includes(type) ? (options.length > 0 ? options : ["Option 1", "Option 2"]) : undefined,
+    });
+  };
+
+  const addPresentational = (type: FieldType, label: string) => {
+    const name = fieldNameFrom(label || type, taken);
+    taken.push(name);
+    fields.push({
+      id: `p-${fields.length}-${Math.random().toString(36).slice(2, 8)}`,
+      type,
+      name,
+      label,
+      required: false,
+      order: fields.length,
+      visible: true,
+      inExport: true,
+      section,
+    });
+  };
+
+  const lines = text.split(/\r?\n/);
+
+  /**
+   * Whether a bullet at this indent belongs to the open question.
+   *
+   * Indentation is what separates "a question with answers under it" from "a
+   * list where every line is its own question" — a bullet only becomes an
+   * option when it sits deeper than its question, or when the question above
+   * it was not a bullet itself.
+   */
+  const isOptionOf = (indent: number) =>
+    !!pending && (indent > pending.indent || !pending.fromBullet);
+
+  lines.forEach((raw, index) => {
+    const line = raw.trim();
+    if (!line) return;
+    const indent = raw.length - raw.trimStart().length;
+
+    // ── separator ──
+    if (/^(-{3,}|_{3,}|={3,})$/.test(line)) {
+      push();
+      addPresentational("separator", "");
+      return;
+    }
+
+    // ── heading field ──
+    if (/^##\s+/.test(line)) {
+      push();
+      addPresentational("heading", line.replace(/^##\s+/, "").trim());
+      return;
+    }
+
+    // ── section ──
+    if (/^#\s+/.test(line)) {
+      push();
+      section = line.replace(/^#\s+/, "").trim() || undefined;
+      return;
+    }
+    // "Patient History:" — a short colon-terminated line that isn't a question.
+    if (/:$/.test(line) && !line.includes("?") && line.length <= 60 && !/^[-*•+]/.test(line)) {
+      push();
+      section = line.replace(/:$/, "").trim() || undefined;
+      return;
+    }
+
+    // ── answer option ──
+    const optionMatch = /^[-*•+o]\s+(.*)$/i.exec(line) ?? /^\[\s*\]\s*(.*)$/.exec(line);
+    if (optionMatch) {
+      if (isOptionOf(indent)) {
+        const option = optionMatch[1].trim();
+        if (option) pending!.options.push(option);
+      } else {
+        // A bullet list where nothing is indented is a list of questions, not
+        // one question with the rest as its answers.
+        push();
+        pending = { ...readQuestion(optionMatch[1].trim()), indent, fromBullet: true };
+        if (!pending.label) pending = null;
+      }
+      return;
+    }
+
+    // Lettered answers: "a) Yes" / "b. No".
+    const letteredMatch = /^[a-z][.)]\s+(.*)$/i.exec(line);
+    if (letteredMatch && isOptionOf(indent)) {
+      pending!.options.push(letteredMatch[1].trim());
+      return;
+    }
+
+    // ── question ──
+    push();
+    const question = { ...readQuestion(line), indent, fromBullet: false };
+    if (!question.label) {
+      warnings.push(`Line ${index + 1} had no question text and was skipped.`);
+      return;
+    }
+    pending = question;
+  });
+
+  push();
+
+  if (fields.length === 0) warnings.push("Nothing recognisable was found in that text.");
+  return { fields, warnings };
+}
+
+/** Strips numbering, the required marker and any type hint off one question line. */
+function readQuestion(line: string): { label: string; required: boolean; hint?: FieldType; options: string[] } {
+  let text = line.replace(/^(?:q(?:uestion)?\s*)?\d+\s*[.):\]]\s*/i, "").trim();
+
+  let hint: FieldType | undefined;
+  const hintMatch = /\[([^\]]+)\]/.exec(text);
+  if (hintMatch) {
+    const key = hintMatch[1].trim().toLowerCase();
+    if (TYPE_HINTS[key]) {
+      hint = TYPE_HINTS[key];
+      text = text.replace(hintMatch[0], "").trim();
+    }
+  }
+
+  let required = false;
+  if (/\(required\)$/i.test(text)) {
+    required = true;
+    text = text.replace(/\(required\)$/i, "").trim();
+  } else if (/\*$/.test(text)) {
+    required = true;
+    text = text.replace(/\*+$/, "").trim();
+  }
+
+  return { label: text.replace(/\s{2,}/g, " "), required, hint, options: [] };
+}
+
+/** Best guess at a field's type from its options and its wording. */
+function inferType(label: string, options: string[]): FieldType {
+  if (options.length > 0) {
+    const normalized = options.map((o) => o.toLowerCase().trim());
+    if (normalized.length === 2 && normalized.includes("yes") && normalized.includes("no")) return "yesNo";
+    return options.length > 5 ? "dropdown" : "radio";
+  }
+
+  const text = label.toLowerCase();
+  if (/\bsignature\b|\bsigned by\b/.test(text)) return "signature";
+  if (/^(describe|explain|detail|summar|outline|state the reason)/.test(text)) return "longText";
+  if (/\b(notes?|comments?|remarks?|findings?|observations?|history|reason)\b/.test(text)) return "longText";
+  if (/\b(date of|date|dob|d\.o\.b)\b/.test(text)) return "date";
+  if (/\btime\b/.test(text)) return "time";
+  if (/\b(age|how many|number of|count|weight|height|dosage|bpm|pulse)\b/.test(text)) return "number";
+  return "shortText";
+}
+
 /** One answer rendered for display — in the review pane and the PDF alike. */
 export function displayAnswer(field: FormField, answers: Answers): string {
   const value = answers[field.name];
