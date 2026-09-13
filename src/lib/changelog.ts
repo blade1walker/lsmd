@@ -42,6 +42,13 @@ export const CHANGELOG: ChangelogEntry[] = [
       { type: "improvement", text: "The admin roster groups each section by rank, the same way as the public roster" },
       { type: "security", text: "Visitors who are not signed in no longer receive members' private details with the roster page" },
       { type: "fix", text: "Editing a member on the admin roster: the fields are wider and larger so their values are readable, and the table scrolls sideways instead of squashing the columns" },
+      { type: "improvement", text: "Training now follows an EMS curriculum — Foundations, Core Clinical Skills, Advanced Care & Operations, and a Probationary Evaluation — replacing the police academy topics carried over from the old roster" },
+      { type: "feature", text: "Every training skill explains what it covers, and the trainer who signed it off and the date are recorded automatically" },
+      { type: "feature", text: "Probationary evaluation tracks supervised patient calls and patient care reports filed against a target" },
+      { type: "improvement", text: "The Training page lists every roster member, with search, progress filters and expandable checklists" },
+      { type: "fix", text: "Signing off a skill on the Training page now saves" },
+      { type: "fix", text: "The cadet Training Progress page now shows skills that have been signed off" },
+      { type: "fix", text: "The Training Portal page loads again, showing each trainee's progress through every phase of the EMS curriculum" },
     ],
   },
   {

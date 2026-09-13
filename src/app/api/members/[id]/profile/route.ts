@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, isDenied } from "@/lib/api-auth";
 import { apiError } from "@/lib/api-error";
+import { parseEmsProgress } from "@/lib/training";
 
 export async function GET(
   _req: NextRequest,
@@ -47,7 +48,7 @@ export async function GET(
 
     return NextResponse.json({
       member,
-      trainingRecord,
+      trainingRecord: { ...trainingRecord, emsProgress: parseEmsProgress(trainingRecord.emsProgress) },
       clockEntries,
       loaHistory,
     });

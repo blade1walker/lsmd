@@ -20,6 +20,7 @@ import {
   ClipboardCheck,
 } from "lucide-react";
 import ActivityPill from "@/components/ActivityPill";
+import { EMS_TRAINING, overallProgress, phaseProgress, type EmsProgress } from "@/lib/training";
 
 interface MemberProfileData {
   member: {
@@ -36,50 +37,7 @@ interface MemberProfileData {
     section: { id: string; name: string } | null;
   };
   trainingRecord: {
-    cadetPhase1COC: boolean;
-    cadetPhase1COCby: string | null;
-    cadetPhase1PCRS: boolean;
-    cadetPhase1PCRSby: string | null;
-    cadetPhase1UoF: boolean;
-    cadetPhase1UoFby: string | null;
-    cadetPhase1Situation: boolean;
-    cadetPhase1Situationby: string | null;
-    cadetPhase2Legal: boolean;
-    cadetPhase2Legalby: string | null;
-    cadetPhase2Constitution: boolean;
-    cadetPhase2Constitutionby: string | null;
-    cadetPhase2Radio: boolean;
-    cadetPhase2Radioby: string | null;
-    cadetPhase2Report: boolean;
-    cadetPhase2Reportby: string | null;
-    cadetPhase3Negotiation: boolean;
-    cadetPhase3Negotiationby: string | null;
-    cadetPhase3Hostage: boolean;
-    cadetPhase3Hostageby: string | null;
-    cadetPhase3Traffic: boolean;
-    cadetPhase3Trafficby: string | null;
-    cadetPhase3Ticket: boolean;
-    cadetPhase3Ticketby: string | null;
-    cadetPhase3Pursuit: boolean;
-    cadetPhase3Pursuitby: string | null;
-    probationaryTrafficStops: number;
-    probationaryMDTReports: number;
-    probationaryNegotiation: boolean;
-    probationaryNegotiationby: string | null;
-    probationaryCommunication: boolean;
-    probationaryCommunicationby: string | null;
-    probationaryRecommendation: boolean;
-    probationaryRecommendationby: string | null;
-    probationaryTheory: boolean;
-    probationaryTheoryby: string | null;
-    probationaryPractical: boolean;
-    probationaryPracticalby: string | null;
-    phase2Signoff: boolean;
-    phase2SignedBy: string | null;
-    phase2SignedAt: string | null;
-    phase3Signoff: boolean;
-    phase3SignedBy: string | null;
-    phase3SignedAt: string | null;
+    emsProgress: EmsProgress;
   };
   clockEntries: Array<{
     id: string;
@@ -97,35 +55,6 @@ interface MemberProfileData {
     createdAt: string;
   }>;
 }
-
-const TRAINING_CHECKPOINTS = [
-  { phase: "Phase 1", items: [
-    { label: "Code of Conduct", checkedKey: "cadetPhase1COC", byKey: "cadetPhase1COCby" },
-    { label: "PCRS", checkedKey: "cadetPhase1PCRS", byKey: "cadetPhase1PCRSby" },
-    { label: "Use of Force", checkedKey: "cadetPhase1UoF", byKey: "cadetPhase1UoFby" },
-    { label: "Situation Responding", checkedKey: "cadetPhase1Situation", byKey: "cadetPhase1Situationby" },
-  ]},
-  { phase: "Phase 2", items: [
-    { label: "Legal Knowledge", checkedKey: "cadetPhase2Legal", byKey: "cadetPhase2Legalby" },
-    { label: "Basic Constitution", checkedKey: "cadetPhase2Constitution", byKey: "cadetPhase2Constitutionby" },
-    { label: "Radio Etiquette", checkedKey: "cadetPhase2Radio", byKey: "cadetPhase2Radioby" },
-    { label: "Report Processing", checkedKey: "cadetPhase2Report", byKey: "cadetPhase2Reportby" },
-  ]},
-  { phase: "Phase 3", items: [
-    { label: "Negotiation", checkedKey: "cadetPhase3Negotiation", byKey: "cadetPhase3Negotiationby" },
-    { label: "Hostage Handling", checkedKey: "cadetPhase3Hostage", byKey: "cadetPhase3Hostageby" },
-    { label: "Traffic Stop", checkedKey: "cadetPhase3Traffic", byKey: "cadetPhase3Trafficby" },
-    { label: "Ticket Issuing", checkedKey: "cadetPhase3Ticket", byKey: "cadetPhase3Ticketby" },
-    { label: "Pursuit", checkedKey: "cadetPhase3Pursuit", byKey: "cadetPhase3Pursuitby" },
-  ]},
-  { phase: "Probationary", items: [
-    { label: "Negotiation", checkedKey: "probationaryNegotiation", byKey: "probationaryNegotiationby" },
-    { label: "Communication", checkedKey: "probationaryCommunication", byKey: "probationaryCommunicationby" },
-    { label: "Recommendation", checkedKey: "probationaryRecommendation", byKey: "probationaryRecommendationby" },
-    { label: "Theory", checkedKey: "probationaryTheory", byKey: "probationaryTheoryby" },
-    { label: "Practical", checkedKey: "probationaryPractical", byKey: "probationaryPracticalby" },
-  ]},
-];
 
 function formatDuration(sec: number | null): string {
   if (!sec) return "—";
@@ -194,17 +123,8 @@ export default function MemberProfilePage() {
   const clockEntries = data.clockEntries ?? [];
   const loaHistory = data.loaHistory ?? [];
 
-  const trainingCheckpoints: Array<{ label: string; checked: boolean; by: string | null }> = [];
-  for (const phase of TRAINING_CHECKPOINTS) {
-    for (const item of phase.items) {
-      trainingCheckpoints.push({
-        label: item.label,
-        checked: Boolean(trainingRecord[item.checkedKey as keyof typeof trainingRecord]),
-        by: trainingRecord[item.byKey as keyof typeof trainingRecord] as string | null,
-      });
-    }
-  }
-  const completedCount = trainingCheckpoints.filter((c) => c.checked).length;
+  const progress = trainingRecord.emsProgress;
+  const overall = overallProgress(progress);
 
   return (
     <div>
@@ -277,10 +197,10 @@ export default function MemberProfilePage() {
         >
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-[family-name:var(--font-oswald)] text-lg font-bold text-white uppercase">
-              Training Record
+              EMS Training Record
             </h2>
             <span className="text-sm text-gray-400">
-              {completedCount}/{trainingCheckpoints.length} completed
+              {overall.done}/{overall.total} completed
             </span>
           </div>
 
@@ -288,44 +208,72 @@ export default function MemberProfilePage() {
           <div className="h-2 bg-[#1e1e28] rounded-full overflow-hidden mb-5">
             <div
               className="h-full bg-gradient-to-r from-green-600 to-green-500 rounded-full transition-all"
-              style={{ width: `${trainingCheckpoints.length > 0 ? (completedCount / trainingCheckpoints.length) * 100 : 0}%` }}
+              style={{ width: `${overall.percent}%` }}
             />
           </div>
 
           <div className="space-y-5">
-            {TRAINING_CHECKPOINTS.map((phase) => (
-              <div key={phase.phase}>
-                <h3 className="text-xs font-bold text-gray-400 uppercase mb-2">{phase.phase}</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {phase.items.map((item) => {
-                    const checked = Boolean(trainingRecord[item.checkedKey as keyof typeof trainingRecord]);
-                    const by = trainingRecord[item.byKey as keyof typeof trainingRecord] as string | null;
-                    return (
-                      <div
-                        key={item.checkedKey}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
-                          checked ? "bg-green-500/10" : "bg-[#0a0a0f]"
-                        }`}
-                      >
-                        <ClipboardCheck
-                          className={`w-4 h-4 shrink-0 ${checked ? "text-green-500" : "text-gray-600"}`}
-                        />
-                        <div className="min-w-0">
-                          <div className={`text-xs font-medium ${checked ? "text-green-400" : "text-gray-400"}`}>
-                            {item.label}
-                          </div>
-                          {by && (
-                            <div className="text-[10px] text-gray-600 truncate">
-                              Signed by {by}
+            {EMS_TRAINING.map((phase) => {
+              const stats = phaseProgress(phase, progress);
+              return (
+                <div key={phase.key}>
+                  <div className="mb-2 flex items-baseline justify-between">
+                    <h3 className="text-xs font-bold text-gray-400 uppercase">{phase.title}</h3>
+                    <span className="text-[11px] text-gray-600">
+                      {stats.done}/{stats.total}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {phase.checkpoints.map((item) => {
+                      const mark = progress.checkpoints[item.key];
+                      return (
+                        <div
+                          key={item.key}
+                          title={item.description}
+                          className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
+                            mark ? "bg-green-500/10" : "bg-[#0a0a0f]"
+                          }`}
+                        >
+                          <ClipboardCheck
+                            className={`w-4 h-4 shrink-0 ${mark ? "text-green-500" : "text-gray-600"}`}
+                          />
+                          <div className="min-w-0">
+                            <div className={`text-xs font-medium ${mark ? "text-green-400" : "text-gray-400"}`}>
+                              {item.label}
                             </div>
-                          )}
+                            {mark && (
+                              <div className="text-[10px] text-gray-600 truncate">
+                                Signed by {mark.by ?? "unknown"}
+                                {mark.at && ` · ${new Date(mark.at).toLocaleDateString()}`}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                    {(phase.counters ?? []).map((counter) => {
+                      const value = progress.counters[counter.key] ?? 0;
+                      const met = value >= counter.target;
+                      return (
+                        <div
+                          key={counter.key}
+                          className={`flex items-center justify-between gap-2 px-3 py-2 rounded-lg ${
+                            met ? "bg-green-500/10" : "bg-[#0a0a0f]"
+                          }`}
+                        >
+                          <span className={`text-xs font-medium ${met ? "text-green-400" : "text-gray-400"}`}>
+                            {counter.label}
+                          </span>
+                          <span className="font-[family-name:var(--font-mono)] text-xs text-gray-500">
+                            {value}/{counter.target}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </motion.div>
       </div>

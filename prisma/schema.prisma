@@ -141,6 +141,18 @@ model TrainingRecord {
   phase3SignedBy  String?
   phase3SignedAt  DateTime?
 
+  /**
+   * EMS training progress: { checkpoints: { [key]: { by, at } }, counters: { [key]: n } },
+   * keyed by the curriculum in src/lib/training.ts.
+   *
+   * Every cadetPhase* and probationary* column above is a police academy topic
+   * inherited from the PD roster (Use of Force, Hostage Handling, Traffic
+   * Stops...). They are left in place and unread rather than relabelled or
+   * dropped: relabelling would silently re-assign every existing tick to a
+   * different skill, and dropping would destroy it.
+   */
+  emsProgress     Json       @default("{}")
+
   member  Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
   remarks Remark[]
 }
