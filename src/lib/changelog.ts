@@ -49,6 +49,9 @@ export const CHANGELOG: ChangelogEntry[] = [
       { type: "fix", text: "Signing off a skill on the Training page now saves" },
       { type: "fix", text: "The cadet Training Progress page now shows skills that have been signed off" },
       { type: "fix", text: "The Training Portal page loads again, showing each trainee's progress through every phase of the EMS curriculum" },
+      { type: "feature", text: "EMS Call Log: log every patient contact — time, location, call type, priority, responding medics with a lead, outcome and receiving hospital — each with its own call number" },
+      { type: "feature", text: "Call Log statistics: calls today, this week and this month, transport rate, the most common call types and the most active medics" },
+      { type: "security", text: "Medics see the calls they logged or responded to; reading the whole Call Log, which includes patient details, needs supervisor access" },
     ],
   },
   {

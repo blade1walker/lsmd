@@ -41,6 +41,7 @@ const PERMISSION_GROUP_LABELS: Record<string, string> = {
   audit: "Audit",
   medical: "Medical Documentation",
   changelog: "Changelog",
+  calls: "EMS Call Log",
   shifts: "Shifts",
   export: "Export",
 };

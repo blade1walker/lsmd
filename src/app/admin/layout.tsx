@@ -31,6 +31,7 @@ import {
   LayoutTemplate,
   Megaphone,
   History,
+  Ambulance,
 } from "lucide-react";
 import {
   DEPARTMENT_SECTION_PERMISSIONS,
@@ -38,6 +39,7 @@ import {
   SHIFT_SECTION_PERMISSIONS,
   MEDICAL_SECTION_PERMISSIONS,
   MEDICAL_ADMIN_PERMISSIONS,
+  CALL_SECTION_PERMISSIONS,
 } from "@/lib/constants";
 
 // `permission` mirrors the check on the matching API route, so a section is
@@ -58,6 +60,7 @@ const navItems: {
   { href: "/admin/recruit", label: "Recruit", icon: Mail, permission: "onboarding.view" },
   { href: "/admin/departments", label: "Departments", icon: Building2, permission: DEPARTMENT_SECTION_PERMISSIONS },
   { href: "/admin/shifts", label: "Shifts", icon: CalendarClock, permission: SHIFT_SECTION_PERMISSIONS },
+  { href: "/admin/calls", label: "Call Log", icon: Ambulance, permission: CALL_SECTION_PERMISSIONS },
   { href: "/admin/medical", label: "Medical Docs", icon: Stethoscope, permission: MEDICAL_SECTION_PERMISSIONS },
   { href: "/admin/medical/forms", label: "Form Builder", icon: LayoutTemplate, permission: MEDICAL_ADMIN_PERMISSIONS },
   { href: "/admin/training", label: "Training", icon: GraduationCap, permission: "training.view" },

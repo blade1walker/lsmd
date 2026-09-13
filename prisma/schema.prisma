@@ -54,6 +54,8 @@ model Member {
   shiftSignup        ShiftSignup?
   /** Medical documents naming this member as the patient. */
   medicalDocuments   MedicalDocument[]
+  /** EMS calls this member responded to. */
+  callResponses      EmsCallResponder[]
 }
 
 model ClockEntry {
@@ -840,4 +842,56 @@ model RosterBanner {
   message   String   @default("")
   updatedBy String?
   updatedAt DateTime @updatedAt
+}
+
+// ─── EMS Call Log ───────────────────────────────────────────────────────────
+
+/**
+ * One patient contact or EMS response: when and where, what it was, who went,
+ * and how it ended. Quick to log from the field — the formal write-up is a
+ * MedicalDocument, which a call can point at by its document number.
+ */
+model EmsCall {
+  id                    String   @id @default(cuid())
+  /** EMS-CALL-2026-000124, from the same per-prefix counter as document numbers. */
+  callNumber            String   @unique
+  occurredAt            DateTime
+  location              String
+  /** One of CALL_NATURES in src/lib/calls.ts. */
+  nature                String
+  /** P1 | P2 | P3 */
+  priority              String   @default("P2")
+  /** One of CALL_OUTCOMES. */
+  outcome               String
+  /** Receiving facility, set when the patient was transported. */
+  hospital              String?
+  patientName           String?
+  patientStateId        String?
+  notes                 String?
+  /** The formal medical document for this call, by its document number. */
+  medicalDocumentNumber String?
+  createdByDiscordId    String
+  createdByName         String
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  responders EmsCallResponder[]
+
+  @@index([occurredAt])
+  @@index([patientStateId])
+  @@index([createdByDiscordId])
+}
+
+model EmsCallResponder {
+  id       String @id @default(cuid())
+  callId   String
+  memberId String
+  /** "Lead" for the medic in charge of the patient, otherwise "Responder". */
+  role     String @default("Responder")
+
+  call   EmsCall @relation(fields: [callId], references: [id], onDelete: Cascade)
+  member Member  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([callId, memberId])
+  @@index([memberId])
 }

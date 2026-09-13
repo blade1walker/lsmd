@@ -102,6 +102,11 @@ export const ALL_PERMISSIONS = [
   // Clocking yourself on and off duty. Distinct from clock.view, which is
   // reading everyone's hours and clocking other members.
   "clock.self",
+  // EMS Call Log. create logs a call and sees your own calls; view reads the
+  // whole log (calls carry patient details); manage edits or deletes any call.
+  "calls.view",
+  "calls.create",
+  "calls.manage",
 ] as const;
 
 /**
@@ -185,6 +190,22 @@ export const SHIFT_PERMISSIONS = {
 /** Every permission that opens the shifts section, for the sidebar check. */
 export const SHIFT_SECTION_PERMISSIONS: string[] = [
   ...new Set(Object.values(SHIFT_PERMISSIONS).flat()),
+];
+
+/**
+ * EMS Call Log permissions. Split three ways because a call carries a patient's
+ * name and State ID: every medic can log calls and see their own, but reading
+ * the whole log is a supervisor's view.
+ */
+export const CALL_PERMISSIONS = {
+  create: ["calls.create"],
+  view: ["calls.view"],
+  manage: ["calls.manage"],
+} as const satisfies Record<string, readonly string[]>;
+
+/** Any permission that opens the Call Log, for the sidebar check. */
+export const CALL_SECTION_PERMISSIONS: string[] = [
+  ...new Set(Object.values(CALL_PERMISSIONS).flat()),
 ];
 
 /**

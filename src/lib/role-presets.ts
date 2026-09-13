@@ -26,9 +26,12 @@ export const DEFAULT_MEMBER_ROLE = "EMS Member";
 export const ROLE_PRESETS: RolePreset[] = [
   {
     name: "EMS Member",
-    description: "Baseline member access. Read-only, plus shift signup, clocking on duty and the changelog.",
-    sections: ["Roster", "SOP", "Shifts", "Changelog"],
-    permissions: ["roster.view", "sop.view", "shifts.view", "changelog.view", "clock.self"],
+    description:
+      "Baseline member access. Read-only, plus shift signup, clocking on duty, logging their own EMS calls and the changelog.",
+    sections: ["Roster", "SOP", "Shifts", "Call Log", "Changelog"],
+    // calls.create, not calls.view: every medic logs the calls they run, but
+    // the full log carries other medics' patients' names and State IDs.
+    permissions: ["roster.view", "sop.view", "shifts.view", "changelog.view", "clock.self", "calls.create"],
   },
   {
     name: "Assistant HR",
