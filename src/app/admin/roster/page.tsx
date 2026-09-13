@@ -256,7 +256,7 @@ export default function AdminRosterPage() {
               <h2 className="font-[family-name:var(--font-oswald)] text-lg font-semibold text-white uppercase mb-3">
                 {section.name} ({section.members.length})
               </h2>
-              <div className="bg-card border border-[#1e1e1e] rounded-xl overflow-hidden">
+              <div className="bg-card border border-[#1e1e1e] rounded-xl overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[#1e1e1e]">

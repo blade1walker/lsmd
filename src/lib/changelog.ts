@@ -41,6 +41,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       { type: "feature", text: "This changelog page, listing every change made to the site" },
       { type: "improvement", text: "The admin roster groups each section by rank, the same way as the public roster" },
       { type: "security", text: "Visitors who are not signed in no longer receive members' private details with the roster page" },
+      { type: "fix", text: "Editing a member on the admin roster: the fields are wider and larger so their values are readable, and the table scrolls sideways instead of squashing the columns" },
     ],
   },
   {

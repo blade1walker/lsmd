@@ -109,21 +109,21 @@ export default function MemberRow({
           <Input
             value={editForm.name}
             onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))}
-            className="h-8 text-xs"
+            className="h-9 text-sm min-w-[190px]"
           />
         </td>
         <td className="py-2 px-4">
           <Input
             value={editForm.callSign}
             onChange={(e) => setEditForm((p) => ({ ...p, callSign: e.target.value }))}
-            className="h-8 text-xs"
+            className="h-9 text-sm min-w-[84px]"
           />
         </td>
         <td className="py-2 px-4">
           <Select
             value={editForm.rank}
             onChange={(e) => setEditForm((p) => ({ ...p, rank: e.target.value }))}
-            className="h-8 text-xs"
+            className="h-9 text-sm min-w-[185px]"
           >
             {RANK_LIST.map((r) => (
               <option key={r} value={r}>{r}</option>
@@ -134,7 +134,7 @@ export default function MemberRow({
           <Select
             value={editForm.activity}
             onChange={(e) => setEditForm((p) => ({ ...p, activity: e.target.value }))}
-            className="h-8 text-xs"
+            className="h-9 text-sm min-w-[120px]"
           >
             {ACTIVITY_STATUSES.map((s) => (
               <option key={s} value={s}>{s}</option>
@@ -145,7 +145,7 @@ export default function MemberRow({
           <Input
             value={editForm.tempRank}
             onChange={(e) => setEditForm((p) => ({ ...p, tempRank: e.target.value }))}
-            className="h-8 text-xs"
+            className="h-9 text-sm min-w-[140px]"
             placeholder="Temp rank"
           />
         </td>
@@ -154,7 +154,7 @@ export default function MemberRow({
             <Select
               value={editForm.dept}
               onChange={(e) => setEditForm((p) => ({ ...p, dept: e.target.value }))}
-              className="h-8 text-xs"
+              className="h-9 text-sm min-w-[130px]"
             >
               {!departments.includes(editForm.dept) && (
                 <option value={editForm.dept}>{editForm.dept}</option>
@@ -167,7 +167,7 @@ export default function MemberRow({
             <Input
               value={editForm.dept}
               onChange={(e) => setEditForm((p) => ({ ...p, dept: e.target.value }))}
-              className="h-8 text-xs"
+              className="h-9 text-sm min-w-[130px]"
             />
           )}
         </td>
@@ -175,15 +175,15 @@ export default function MemberRow({
           <Input
             value={editForm.category}
             onChange={(e) => setEditForm((p) => ({ ...p, category: e.target.value }))}
-            className="h-8 text-xs"
+            className="h-9 text-sm min-w-[140px]"
             placeholder="Category"
           />
         </td>
         {departmentCells}
         <td className="py-2 px-4">
           <div className="flex items-center gap-1">
-            <Button size="sm" className="h-7 text-xs" onClick={handleSave}>Save</Button>
-            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setEditing(false)}>Cancel</Button>
+            <Button size="sm" className="h-9 text-sm" onClick={handleSave}>Save</Button>
+            <Button size="sm" variant="ghost" className="h-9 text-sm" onClick={() => setEditing(false)}>Cancel</Button>
           </div>
         </td>
       </tr>
@@ -193,29 +193,29 @@ export default function MemberRow({
         <td className="pb-3 px-4" colSpan={editColSpan}>
           <div className="flex flex-wrap items-end gap-3">
             <label className="flex flex-col gap-1">
-              <span className="text-[11px] text-gray-500">Discord ID</span>
+              <span className="text-xs text-gray-500">Discord ID</span>
               <Input
                 value={editForm.discordId}
                 onChange={(e) => setEditForm((p) => ({ ...p, discordId: e.target.value }))}
-                className="h-8 text-xs w-48"
+                className="h-9 text-sm w-56"
                 placeholder="e.g. 123456789012345678"
               />
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-[11px] text-gray-500">State ID</span>
+              <span className="text-xs text-gray-500">State ID</span>
               <Input
                 value={editForm.stateId}
                 onChange={(e) => setEditForm((p) => ({ ...p, stateId: e.target.value }))}
-                className="h-8 text-xs w-36"
+                className="h-9 text-sm w-40"
                 placeholder="e.g. 12345"
               />
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-[11px] text-gray-500">Steam ID</span>
+              <span className="text-xs text-gray-500">Steam ID</span>
               <Input
                 value={editForm.steamId}
                 onChange={(e) => setEditForm((p) => ({ ...p, steamId: e.target.value }))}
-                className="h-8 text-xs w-48"
+                className="h-9 text-sm w-56"
                 placeholder="e.g. 76561198000000000"
               />
             </label>
