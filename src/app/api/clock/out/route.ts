@@ -10,8 +10,13 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { memberId } = body;
 
-    if (auth.access.memberId !== memberId && !hasPermission(auth.access, "clock.view")) {
-      return NextResponse.json({ error: "Cannot clock out for another member" }, { status: 403 });
+    // Same rule as clock in: yourself needs clock.self, anyone else clock.view.
+    const isSelf = typeof memberId === "string" && auth.access.memberId === memberId;
+    if (isSelf ? !hasPermission(auth.access, "clock.self") && !hasPermission(auth.access, "clock.view") : !hasPermission(auth.access, "clock.view")) {
+      return NextResponse.json(
+        { error: isSelf ? "You don't have permission to clock off duty" : "Cannot clock out for another member" },
+        { status: 403 }
+      );
     }
 
     const entry = await prisma.clockEntry.findFirst({

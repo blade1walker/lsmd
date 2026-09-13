@@ -29,6 +29,8 @@ import {
   Download,
   Stethoscope,
   LayoutTemplate,
+  Megaphone,
+  History,
 } from "lucide-react";
 import {
   DEPARTMENT_SECTION_PERMISSIONS,
@@ -50,6 +52,7 @@ const navItems: {
 }[] = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, permission: "roster.view" },
   { href: "/admin/roster", label: "Roster", icon: Users, permission: "roster.view" },
+  { href: "/admin/roster-banner", label: "Roster Banner", icon: Megaphone, permission: "roster.announce" },
   { href: "/admin/callsigns", label: "Call Signs", icon: Hash, permission: "roster.edit" },
   { href: "/admin/onboarding", label: "Onboarding", icon: UserPlus, permission: "onboarding.view" },
   { href: "/admin/recruit", label: "Recruit", icon: Mail, permission: "onboarding.view" },
@@ -70,6 +73,7 @@ const navItems: {
   { href: "/admin/notifications", label: "Notifications", icon: Bell, permission: "notifications" },
   { href: "/admin/messaging", label: "Bot Messaging", icon: MessageSquare, permission: "notifications" },
   { href: "/admin/audit", label: "Audit Log", icon: ScrollText, permission: "audit.view" },
+  { href: "/admin/changelog", label: "Changelog", icon: History, permission: "changelog.view" },
   { href: "/admin/export", label: "Export", icon: Download, permission: EXPORT_SECTION_PERMISSIONS },
 ];
 

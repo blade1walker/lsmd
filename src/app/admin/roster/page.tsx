@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Download } from "lucide-react";
 import { RANK_NAMES, SECTION_HINTS, ACTIVITY_STATUSES } from "@/lib/constants";
 import { departmentTag } from "@/lib/departments";
+import { groupByRank } from "@/lib/roster-shared";
 import { DepartmentMarkLegend } from "@/components/DepartmentMark";
 import { toast } from "sonner";
 import { ErrorState } from "@/components/ui/error-state";
@@ -279,17 +280,32 @@ export default function AdminRosterPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {section.members.map((member) => (
-                      <MemberRow
-                        key={member.id}
-                        member={member}
-                        departments={departmentOptions.map((d) => d.name)}
-                        departmentColumns={departmentOptions}
-                        onUpdate={handleUpdate}
-                        onDelete={handleDelete}
-                        onPromote={handlePromote}
-                        onDemote={handleDemote}
-                      />
+                    {/* One heading row per rank, most senior first — the same
+                        classification the public roster shows. */}
+                    {groupByRank(section.members).map((group) => (
+                      <React.Fragment key={group.rank}>
+                        <tr className="border-b border-[#1e1e1e]/60 bg-white/[0.015]">
+                          <td colSpan={7 + departmentOptions.length + 1} className="py-1.5 px-4">
+                            <span className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-red-400">
+                              <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                              {group.rank}
+                              <span className="font-medium tracking-normal text-gray-600">— {group.members.length}</span>
+                            </span>
+                          </td>
+                        </tr>
+                        {group.members.map((member) => (
+                          <MemberRow
+                            key={member.id}
+                            member={member}
+                            departments={departmentOptions.map((d) => d.name)}
+                            departmentColumns={departmentOptions}
+                            onUpdate={handleUpdate}
+                            onDelete={handleDelete}
+                            onPromote={handlePromote}
+                            onDemote={handleDemote}
+                          />
+                        ))}
+                      </React.Fragment>
                     ))}
                   </tbody>
                 </table>

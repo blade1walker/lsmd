@@ -94,6 +94,14 @@ export const ALL_PERMISSIONS = [
   "medical.export",
   "medical.forms.manage",
   "medical.types.manage",
+  // Reading what changed on the site. Meant for every member, so it sits in
+  // the EMS Member preset.
+  "changelog.view",
+  // Editing the spotlight strip across the public roster.
+  "roster.announce",
+  // Clocking yourself on and off duty. Distinct from clock.view, which is
+  // reading everyone's hours and clocking other members.
+  "clock.self",
 ] as const;
 
 /**

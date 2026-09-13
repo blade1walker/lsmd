@@ -813,3 +813,19 @@ model MedicalSettings {
 
   updatedAt DateTime @updatedAt
 }
+
+/**
+ * The spotlight strip across the public roster, under the hero — department
+ * news or a shout-out. One row; inactive or empty means no strip is shown.
+ */
+model RosterBanner {
+  id        String   @id @default("singleton")
+  active    Boolean  @default(false)
+  /** Bold leading label, e.g. "DEPARTMENT SPOTLIGHT". */
+  label     String   @default("")
+  /** The name or phrase set in the accent colour. */
+  highlight String   @default("")
+  message   String   @default("")
+  updatedBy String?
+  updatedAt DateTime @updatedAt
+}

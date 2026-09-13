@@ -26,9 +26,9 @@ export const DEFAULT_MEMBER_ROLE = "EMS Member";
 export const ROLE_PRESETS: RolePreset[] = [
   {
     name: "EMS Member",
-    description: "Baseline member access. Read-only, plus shift signup.",
-    sections: ["Roster", "SOP", "Shifts"],
-    permissions: ["roster.view", "sop.view", "shifts.view"],
+    description: "Baseline member access. Read-only, plus shift signup, clocking on duty and the changelog.",
+    sections: ["Roster", "SOP", "Shifts", "Changelog"],
+    permissions: ["roster.view", "sop.view", "shifts.view", "changelog.view", "clock.self"],
   },
   {
     name: "Assistant HR",

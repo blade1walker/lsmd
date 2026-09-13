@@ -27,3 +27,22 @@ export function isValidShiftSlot(value: unknown): value is number {
 export function shiftSlotLabel(slot: number): string {
   return SHIFT_SLOTS[slot] ?? "Unknown";
 }
+
+/**
+ * The day in four 6-hour bands, for filtering the roster by shift. Twelve
+ * 2-hour chips would be unreadable; these group the same slot indices, so a
+ * band is always derived from the stored slot rather than stored separately.
+ */
+export const SHIFT_BANDS = [
+  { key: "night", label: "Night", hours: "12 AM – 6 AM", slots: [0, 1, 2] },
+  { key: "morning", label: "Morning", hours: "6 AM – 12 PM", slots: [3, 4, 5] },
+  { key: "afternoon", label: "Afternoon", hours: "12 PM – 6 PM", slots: [6, 7, 8] },
+  { key: "evening", label: "Evening", hours: "6 PM – 12 AM", slots: [9, 10, 11] },
+] as const;
+
+export type ShiftBandKey = (typeof SHIFT_BANDS)[number]["key"];
+
+export function shiftBandOf(slot: number | null | undefined): ShiftBandKey | null {
+  if (slot === null || slot === undefined) return null;
+  return SHIFT_BANDS.find((b) => (b.slots as readonly number[]).includes(slot))?.key ?? null;
+}

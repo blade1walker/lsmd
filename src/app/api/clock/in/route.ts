@@ -11,9 +11,14 @@ export async function POST(request: Request) {
     const { memberId } = body;
 
     // memberId arrives in the body, so without this check any signed-in user
-    // could clock any member in and falsify their activity hours.
-    if (auth.access.memberId !== memberId && !hasPermission(auth.access, "clock.view")) {
-      return NextResponse.json({ error: "Cannot clock in for another member" }, { status: 403 });
+    // could clock any member in and falsify their activity hours. Clocking
+    // yourself needs clock.self; clocking anyone else needs clock.view.
+    const isSelf = typeof memberId === "string" && auth.access.memberId === memberId;
+    if (isSelf ? !hasPermission(auth.access, "clock.self") && !hasPermission(auth.access, "clock.view") : !hasPermission(auth.access, "clock.view")) {
+      return NextResponse.json(
+        { error: isSelf ? "You don't have permission to clock on duty" : "Cannot clock in for another member" },
+        { status: 403 }
+      );
     }
 
     const existingEntry = await prisma.clockEntry.findFirst({
