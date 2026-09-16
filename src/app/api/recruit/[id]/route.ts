@@ -64,31 +64,24 @@ export async function PATCH(
       const inviteLink = settings.botSettings?.stateInvite || process.env.DISCORD_STATE_INVITE || "https://discord.gg/YOUR_INVITE";
 
       if (status === "Approved") {
-        // Read the rank back off the row rather than off the body, so a
-        // re-approval that carries no rank still names the one on record.
-        const assignedRank = request.rank || "";
-
         if (settings.recruitWebhook) {
           const msg = settings.recruitWebhookApprove
             .replace(/{discordId}/g, request.discordId)
             .replace(/{name}/g, request.characterName || "Recruit")
-            .replace(/{rank}/g, assignedRank || "N/A")
+            .replace(/\s*\*\*Assigned Rank:\*\*\s*\{rank\}/g, "")
+            .replace(/{rank}/g, "")
             .replace(/{inviteLink}/g, inviteLink);
           await postToAcceptWebhook(msg, "https://r2.fivemanage.com/kgAGMLox973pn5aee2Vbl/ems_approved.png", "recruit.approved");
         }
 
         if (settings.recruitDM) {
           const template = customMessage || settings.recruitDMApprove;
-          // Templates written before approvals carried a rank have no {rank}
-          // token, and the recruit still has to be told which rank they got —
-          // so append it instead of dropping it.
-          const withRank =
-            assignedRank && !template.includes("{rank}")
-              ? `${template}\n\n**Assigned Rank:** {rank}`
-              : template;
-          const msg = withRank
+          // Approvals no longer assign a rank, so a leftover {rank} token in an
+          // older template is dropped rather than DM'd to the recruit as-is.
+          const msg = template
             .replace(/{name}/g, request.characterName || "Recruit")
-            .replace(/{rank}/g, assignedRank || "N/A")
+            .replace(/\s*\*\*Assigned Rank:\*\*\s*\{rank\}/g, "")
+            .replace(/{rank}/g, "")
             .replace(/{inviteLink}/g, inviteLink);
           await sendDiscordDM(request.discordId, msg, "recruit.approved");
         }
@@ -115,7 +108,6 @@ export async function PATCH(
         entityType: "RecruitRequest",
         entityId: request.id,
         entityLabel: request.characterName || request.discordId,
-        details: status === "Approved" ? { rank: request.rank || null } : undefined,
         performedBy,
       });
     }

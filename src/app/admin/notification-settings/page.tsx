@@ -68,7 +68,7 @@ const DEFAULTS: Settings = {
   recruitDM: true,
   recruitWebhookApprove: "Congratulations! Your EMS application has been Accepted, <@{discordId}> For further details, please check your DMs",
   recruitWebhookDecline: "Unfortunately, your EMS application has been Declined, <@{discordId}> For further details, please check your DMs",
-  recruitDMApprove: "Congratulations, {name}! 🎉\n\nYour recruitment application has been **Accepted**!\n\n**Assigned Rank:** {rank}\n\nJoin our state Discord server to get started:\n{inviteLink}\n\nWelcome aboard! 🚑🚀",
+  recruitDMApprove: "Congratulations, {name}! 🎉\n\nYour recruitment application has been **Accepted**!\n\nJoin our state Discord server to get started:\n{inviteLink}\n\nWelcome aboard! 🚑🚀",
   recruitDMDecline: "Dear {name},\n\nWe regret to inform you that your recruitment application has been **Declined**.\n\nIf you have questions, please contact HR.",
   onboardingWebhook: false,
   onboardingDM: true,
@@ -170,7 +170,7 @@ const MESSAGE_GROUPS: GroupDef[] = [
         toggleKey: "recruitWebhook",
         transport: "webhook",
         webhookKind: "recruit",
-        variables: ["<@{discordId}>", "{name}", "{rank}", "{inviteLink}"],
+        variables: ["<@{discordId}>", "{name}", "{inviteLink}"],
         fields: [
           { key: "recruitWebhookApprove", label: "Approved" },
           { key: "recruitWebhookDecline", label: "Declined" },
@@ -182,7 +182,7 @@ const MESSAGE_GROUPS: GroupDef[] = [
         hint: "Sent privately to the applicant by the bot",
         toggleKey: "recruitDM",
         transport: "dm",
-        variables: ["{name}", "{rank}", "{inviteLink}"],
+        variables: ["{name}", "{inviteLink}"],
         fields: [
           { key: "recruitDMApprove", label: "Approved" },
           { key: "recruitDMDecline", label: "Declined" },

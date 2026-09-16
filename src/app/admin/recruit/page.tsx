@@ -9,9 +9,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { RANK_NAMES } from "@/lib/constants";
 import * as XLSX from "xlsx";
 
-/** Rank a recruit is approved into unless the reviewer picks another. */
-const DEFAULT_APPROVE_RANK = "Medical Intern";
-
 interface RecruitRequest {
   id: string;
   discordId: string;
@@ -65,11 +62,6 @@ export default function AdminRecruitPage() {
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<RecruitRequest | null>(null);
-  // The row whose inline rank picker is open, and the rank the reviewer has
-  // chosen for it. Approving from the table takes the same rank decision as
-  // approving from the review modal — it just asks for it in place.
-  const [approvingId, setApprovingId] = useState<string | null>(null);
-  const [approveRank, setApproveRank] = useState(DEFAULT_APPROVE_RANK);
   const [reviewNote, setReviewNote] = useState("");
   const [customMessage, setCustomMessage] = useState("");
   const [importing, setImporting] = useState(false);
@@ -235,24 +227,17 @@ export default function AdminRecruitPage() {
     fetchRequests();
   };
 
-  const handleAction = async (id: string, status: string, rank?: string) => {
+  const handleAction = async (id: string, status: string) => {
     setProcessingId(id);
-    // Only an approval carries a rank — a decline leaves whatever is on record
-    // untouched rather than stamping a rank the recruit never received.
-    const assignedRank = status === "Approved" ? rank || DEFAULT_APPROVE_RANK : undefined;
     try {
       const res = await fetch(`/api/recruit/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status, reviewNote, customMessage, ...(assignedRank && { rank: assignedRank }) }),
+        body: JSON.stringify({ status, reviewNote, customMessage }),
       });
       if (res.ok) {
-        setRequests((prev) =>
-          prev.map((r) => (r.id === id ? { ...r, status, reviewNote, rank: assignedRank ?? r.rank } : r))
-        );
+        setRequests((prev) => prev.map((r) => (r.id === id ? { ...r, status, reviewNote } : r)));
         setSelectedRequest(null);
-        setApprovingId(null);
-        setApproveRank(DEFAULT_APPROVE_RANK);
         setReviewNote("");
         setCustomMessage("");
       }
@@ -434,43 +419,23 @@ export default function AdminRecruitPage() {
                           <td className="py-3 px-4 text-gray-400 text-xs">{req.steamId}</td>
                           <td className="py-3 px-4 text-gray-500 text-xs">{new Date(req.createdAt).toLocaleDateString()}</td>
                           <td className="py-3 px-4">
-                            {approvingId === req.id ? (
-                              <div className="flex items-center gap-2">
-                                <select
-                                  value={approveRank}
-                                  onChange={(e) => setApproveRank(e.target.value)}
-                                  className="h-9 rounded-md border border-[#1e1e1e] bg-black text-white px-2 text-xs"
-                                  style={{ colorScheme: "dark" }}
-                                >
-                                  {RANK_NAMES.map((r) => (
-                                    <option key={r} value={r} className="bg-black text-white">{r}</option>
-                                  ))}
-                                </select>
-                                <Button size="sm" onClick={() => handleAction(req.id, "Approved", approveRank)} disabled={processingId === req.id} className="bg-green-600 hover:bg-green-700 text-white">
-                                  {processingId === req.id ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <CheckCircle className="w-4 h-4 mr-1" />}
-                                  Confirm
-                                </Button>
-                                <Button size="sm" onClick={() => setApprovingId(null)} variant="ghost" className="text-gray-400">Cancel</Button>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-1">
-                                <Button size="sm" onClick={() => { setApproveRank(req.rank || DEFAULT_APPROVE_RANK); setSelectedRequest(req); }} variant="outline" className="border-[#1e1e1e] text-gray-400">
-                                  <Eye className="w-4 h-4" />
-                                </Button>
-                                <Button size="sm" onClick={() => openEditModal(req)} variant="outline" className="border-[#1e1e1e] text-gray-400">
-                                  <Pencil className="w-4 h-4" />
-                                </Button>
-                                <Button size="sm" onClick={() => { setApproveRank(req.rank || DEFAULT_APPROVE_RANK); setApprovingId(req.id); }} disabled={processingId === req.id} className="bg-green-600 hover:bg-green-700 text-white">
-                                  {processingId === req.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-                                </Button>
-                                <Button size="sm" onClick={() => handleAction(req.id, "Declined")} disabled={processingId === req.id} className="bg-red-600 hover:bg-red-700 text-white">
-                                  {processingId === req.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
-                                </Button>
-                                <Button size="sm" onClick={() => setDeleteId(req.id)} variant="ghost" className="text-gray-500 hover:text-red-400">
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            )}
+                            <div className="flex items-center gap-1">
+                              <Button size="sm" onClick={() => setSelectedRequest(req)} variant="outline" className="border-[#1e1e1e] text-gray-400">
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              <Button size="sm" onClick={() => openEditModal(req)} variant="outline" className="border-[#1e1e1e] text-gray-400">
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                              <Button size="sm" onClick={() => handleAction(req.id, "Approved")} disabled={processingId === req.id} className="bg-green-600 hover:bg-green-700 text-white">
+                                {processingId === req.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                              </Button>
+                              <Button size="sm" onClick={() => handleAction(req.id, "Declined")} disabled={processingId === req.id} className="bg-red-600 hover:bg-red-700 text-white">
+                                {processingId === req.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
+                              </Button>
+                              <Button size="sm" onClick={() => setDeleteId(req.id)} variant="ghost" className="text-gray-500 hover:text-red-400">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -556,20 +521,6 @@ export default function AdminRecruitPage() {
               <div><span className="text-gray-500 text-sm">Steam ID:</span><span className="text-white ml-2">{selectedRequest.steamId}</span></div>
             </div>
             <div className="mb-4">
-              <Label className="text-gray-400 text-sm">Rank on Approval</Label>
-              <select
-                value={approveRank}
-                onChange={(e) => setApproveRank(e.target.value)}
-                className="mt-1 w-full h-9 rounded-md border border-[#1e1e1e] bg-[#0a0a0a] text-white px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#dc2626]"
-                style={{ colorScheme: "dark" }}
-              >
-                {RANK_NAMES.map((r) => (
-                  <option key={r} value={r} className="bg-black text-white">{r}</option>
-                ))}
-              </select>
-              <p className="text-gray-600 text-xs mt-1">Included in the approval DM as <code className="bg-white/5 px-1 rounded">{"{rank}"}</code>.</p>
-            </div>
-            <div className="mb-4">
               <Label className="text-gray-400 text-sm">Custom DM Message (optional)</Label>
               <textarea value={customMessage} onChange={(e) => setCustomMessage(e.target.value)} placeholder="Leave empty for default message..." rows={4} className="mt-1 w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#dc2626] resize-none" />
             </div>
@@ -578,7 +529,7 @@ export default function AdminRecruitPage() {
               <textarea value={reviewNote} onChange={(e) => setReviewNote(e.target.value)} rows={2} className="mt-1 w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#dc2626] resize-none" />
             </div>
             <div className="flex gap-3">
-              <Button onClick={() => handleAction(selectedRequest.id, "Approved", approveRank)} disabled={processingId === selectedRequest.id} className="flex-1 bg-green-600 hover:bg-green-700 text-white">Approve</Button>
+              <Button onClick={() => handleAction(selectedRequest.id, "Approved")} disabled={processingId === selectedRequest.id} className="flex-1 bg-green-600 hover:bg-green-700 text-white">Approve</Button>
               <Button onClick={() => handleAction(selectedRequest.id, "Declined")} disabled={processingId === selectedRequest.id} className="flex-1 bg-red-600 hover:bg-red-700 text-white">Decline</Button>
               <Button onClick={() => { setSelectedRequest(null); setReviewNote(""); setCustomMessage(""); }} variant="outline" className="border-[#1e1e1e] text-gray-400">Cancel</Button>
             </div>

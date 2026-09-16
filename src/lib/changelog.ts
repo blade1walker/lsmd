@@ -28,6 +28,12 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: "2026-09-16",
+    changes: [
+      { type: "improvement", text: "Approving a recruit no longer asks for a rank — approve straight from the list or the review window, and set the rank on the roster instead" },
+    ],
+  },
+  {
     date: "2026-09-14",
     title: "EMS roster redesign, duty tracking and the changelog",
     changes: [
