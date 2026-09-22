@@ -54,6 +54,7 @@ try {
   // exit immediately with "unknown or unexpected option".
   execSync("npx prisma db push", { stdio: "inherit" });
   console.log("[deploy-schema] Schema is up to date.");
+  backfillPromotionHistory();
 } catch {
   // `db push` without --accept-data-loss refuses destructive changes rather
   // than performing them, so this also covers "would drop a column/table".
@@ -70,4 +71,18 @@ try {
       "[deploy-schema] against it yourself.\n" +
       "[deploy-schema] ==================================================\n"
   );
+}
+
+/**
+ * Copies promotions made before Promotion History existed into it. Safe on
+ * every deploy: it skips anything already copied, so after the first run it
+ * finds nothing to do. Never fails the deploy — the history is a convenience,
+ * and the script can be re-run by hand with `npm run db:backfill-promotions`.
+ */
+function backfillPromotionHistory() {
+  try {
+    execSync("npx tsx scripts/backfill-promotion-history.ts", { stdio: "inherit" });
+  } catch {
+    console.warn("[deploy-schema] Promotion history backfill failed — run `npm run db:backfill-promotions` by hand.");
+  }
 }

@@ -28,6 +28,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: "2026-09-22",
+    title: "Trainees and Promotion History",
+    changes: [
+      { type: "feature", text: "Trainees section: every Medical Intern on the roster with their joining date and how many days they have been in EMS, counted automatically" },
+      { type: "feature", text: "Trainees leave the Trainees section on their own as soon as their rank is changed on the roster" },
+      { type: "feature", text: "Promotion History: every rank change made on the roster is recorded with the previous and new rank, the date and who made it, and kept permanently" },
+      { type: "feature", text: "Pick an employee in Promotion History to see their whole career on one timeline; filter by promotions or demotions" },
+      { type: "improvement", text: "Promotions made before Promotion History existed are carried into it" },
+      { type: "security", text: "New permissions: trainees.view and promotions.view, granted to the HR roles; FTP staff get trainees.view" },
+    ],
+  },
+  {
     date: "2026-09-16",
     changes: [
       { type: "improvement", text: "Approving a recruit no longer asks for a rank — approve straight from the list or the review window, and set the rank on the roster instead" },

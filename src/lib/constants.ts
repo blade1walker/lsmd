@@ -32,6 +32,17 @@ export const SECTION_HINTS: Record<string, string[]> = {
   Probationary: ["Medical Intern"],
 };
 
+/**
+ * Roster ranks that count as a trainee. The Trainee Section lists exactly the
+ * members on one of these ranks, read live from the roster — so changing a
+ * member's rank to anything else takes them off it with nothing to clean up.
+ */
+export const TRAINEE_RANKS: string[] = ["Medical Intern"];
+
+export function isTraineeRank(rank: string | null | undefined): boolean {
+  return !!rank && TRAINEE_RANKS.includes(rank);
+}
+
 export const ACTIVITY_STATUSES = ["Active", "Reserve", "LOA"] as const;
 
 /**
@@ -107,6 +118,10 @@ export const ALL_PERMISSIONS = [
   "calls.view",
   "calls.create",
   "calls.manage",
+  // Trainee Section: every member still on a trainee rank, with days served.
+  "trainees.view",
+  // Promotion History: the permanent record of every rank change.
+  "promotions.view",
 ] as const;
 
 /**

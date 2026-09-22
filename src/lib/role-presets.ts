@@ -50,6 +50,8 @@ export const ROLE_PRESETS: RolePreset[] = [
       "departments.approve",
       "sop.view",
       "sop.edit",
+      "trainees.view",
+      "promotions.view",
     ],
     aliases: ["HR Assistant"],
   },
@@ -66,6 +68,8 @@ export const ROLE_PRESETS: RolePreset[] = [
       "removal.request",
       "sop.view",
       "sop.edit",
+      "trainees.view",
+      "promotions.view",
     ],
   },
   {
@@ -85,6 +89,8 @@ export const ROLE_PRESETS: RolePreset[] = [
       "departments.view",
       "departments.approve",
       "departments.members",
+      // FTP staff run the trainees' training, so they see who is still one.
+      "trainees.view",
     ],
   },
 ];

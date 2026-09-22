@@ -32,6 +32,7 @@ import {
   Megaphone,
   History,
   Ambulance,
+  TrendingUp,
 } from "lucide-react";
 import {
   DEPARTMENT_SECTION_PERMISSIONS,
@@ -56,6 +57,8 @@ const navItems: {
   { href: "/admin/roster", label: "Roster", icon: Users, permission: "roster.view" },
   { href: "/admin/roster-banner", label: "Roster Banner", icon: Megaphone, permission: "roster.announce" },
   { href: "/admin/callsigns", label: "Call Signs", icon: Hash, permission: "roster.edit" },
+  { href: "/admin/trainees", label: "Trainees", icon: GraduationCap, permission: "trainees.view" },
+  { href: "/admin/promotions", label: "Promotion History", icon: TrendingUp, permission: "promotions.view" },
   { href: "/admin/onboarding", label: "Onboarding", icon: UserPlus, permission: "onboarding.view" },
   { href: "/admin/recruit", label: "Recruit", icon: Mail, permission: "onboarding.view" },
   { href: "/admin/departments", label: "Departments", icon: Building2, permission: DEPARTMENT_SECTION_PERMISSIONS },

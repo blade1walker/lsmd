@@ -130,6 +130,23 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       await removeFtpDiscordRole(member.discordId);
     }
 
+    // Promotion History. Written for every rank change this request won — up
+    // or down — so the record is complete; only the winner of the atomic
+    // claim above gets here, so a double-submit writes one row, not two.
+    if ((isPromotion || isDemotion) && before) {
+      await prisma.promotionRecord.create({
+        data: {
+          memberId: member.id,
+          memberName: member.name,
+          callSign: member.callSign,
+          fromRank: before.rank,
+          toRank: member.rank,
+          direction: isPromotion ? "Promotion" : "Demotion",
+          promotedBy: actorLabel(auth.access),
+        },
+      });
+    }
+
     if (isPromotion && before) {
       const performedBy = actorLabel(auth.access);
 

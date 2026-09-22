@@ -44,6 +44,8 @@ const PERMISSION_GROUP_LABELS: Record<string, string> = {
   calls: "EMS Call Log",
   shifts: "Shifts",
   export: "Export",
+  trainees: "Trainees",
+  promotions: "Promotion History",
 };
 
 /**

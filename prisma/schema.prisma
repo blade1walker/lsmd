@@ -895,3 +895,26 @@ model EmsCallResponder {
   @@unique([callId, memberId])
   @@index([memberId])
 }
+
+/// Permanent record of every rank change made through the roster. Written by
+/// the member PATCH route whenever it wins a rank change, and never updated or
+/// deleted afterwards. memberId is a plain column rather than a relation so a
+/// member leaving the roster does not take their history with them — the name,
+/// call sign and ranks are copied in at the time of the change.
+model PromotionRecord {
+  id         String   @id @default(cuid())
+  memberId   String?
+  memberName String
+  callSign   String?
+  fromRank   String
+  toRank     String
+  /// "Promotion" when the new rank weighs more than the old one, "Demotion" otherwise.
+  direction  String   @default("Promotion")
+  promotedBy String
+  promotedAt DateTime @default(now())
+  /// The PromotionNotification this was backfilled from, so the backfill script is safe to re-run.
+  legacyNotificationId String? @unique
+
+  @@index([memberId])
+  @@index([promotedAt])
+}
