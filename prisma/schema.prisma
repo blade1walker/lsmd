@@ -914,7 +914,164 @@ model PromotionRecord {
   promotedAt DateTime @default(now())
   /// The PromotionNotification this was backfilled from, so the backfill script is safe to re-run.
   legacyNotificationId String? @unique
+  /// Set when the change came out of a promotion examination rather than a
+  /// hand edit on the roster, so Promotion History can show the panel score
+  /// and open the interview behind it.
+  interviewId          String?
+  interviewSessionId   String?
+  finalScore           Int?
 
   @@index([memberId])
   @@index([promotedAt])
+}
+
+/// Scoring thresholds and announcement wiring for the Promotion & Interview
+/// section. A singleton, like MedicalSettings and NotificationSettings — EMS
+/// management edits these rather than a developer editing a constant, which is
+/// the whole point of the row existing.
+model PromotionSettings {
+  id                  String   @id @default("singleton")
+  /// Panel score needed to pass, 0-100.
+  passingScore        Int      @default(70)
+  /// Per-category floors. A panel average below one of these fails the
+  /// interview even when the overall score clears passingScore.
+  minSopScore         Int      @default(60)
+  minMedicalScore     Int      @default(60)
+  minSituationScore   Int      @default(60)
+  minOverallScore     Int      @default(60)
+  /// Eligibility rules, all checked when an interview is created.
+  minDaysInRank       Int      @default(14)
+  minDaysInDepartment Int      @default(30)
+  minTrainingPercent  Int      @default(0)
+  /// Departments a candidate must belong to, by DepartmentTemplate name.
+  requiredDepartments String[] @default([])
+  /// Whether a candidate must be Active on the roster (not Reserve or on LOA).
+  requireActive       Boolean  @default(true)
+  /// Days a failed candidate waits before another interview may be created.
+  cooldownDays        Int      @default(14)
+  /// Whether a Lead must tick "training verified" before finalizing.
+  requireTrainingCheck Boolean @default(true)
+  /// Promotion announcement. Posts to the channel below, falling back to the
+  /// shared promotion webhook so an existing deployment announces with nothing
+  /// filled in.
+  announceWebhook     Boolean  @default(true)
+  announcementWebhookUrl String?
+  announcementTemplate String  @default("**EMS PROMOTION ANNOUNCEMENT**\n\nCongratulations to <@{discordId}> **{name}** on successfully clearing the EMS Promotion Examination.\n\n**Previous Rank:** {fromRank}\n**New Rank:** {toRank}\n**Final Score:** {finalScore}%\n**Exam Status:** PASSED\n\nThe employee's EMS roster has been updated accordingly.\n\n**Interview Panel:**\n{panel}")
+  updatedAt           DateTime @updatedAt @default(now())
+  updatedBy           String?
+}
+
+/// One promotion examination. The candidate's details are copied in at
+/// creation rather than read through a relation, for the same reason
+/// PromotionRecord copies them: a member leaving the roster must not take the
+/// examination record with them. Never edited after finalizing, and a failed
+/// attempt is never reused — a re-interview is a new row.
+model PromotionInterview {
+  id          String   @id @default(cuid())
+  /// EMS-PROMO-2026-0042, from a per-year counter.
+  sessionId   String   @unique
+  memberId    String?
+  memberName  String
+  callSign    String?
+  discordId   String?
+  /// The candidate's rank when the session was created. The finalize step
+  /// re-checks the live roster against this before promoting anyone.
+  currentRank String
+  targetRank  String
+  /// Snapshots of the roster dates the eligibility check ran against.
+  joinedEmsAt DateTime?
+  rankSince   DateTime?
+  /// "Ongoing" | "Finalized" | "Cancelled"
+  status      String   @default("Ongoing")
+  /// "Pending" | "Passed" | "Failed" | "Review Required"
+  result      String   @default("Pending")
+  /// Panel score at finalize, 0-100. Null while the result is Pending — the
+  /// live score is computed from the panel, this is the frozen copy.
+  finalScore  Int?
+  /// { sop, medical, situation, overall } panel averages at finalize.
+  categoryScores Json?
+  /// The eligibility verdict as it stood when the session was created:
+  /// { eligible: boolean, reasons: string[] }.
+  eligibility Json     @default("{}")
+  /// Set when the session was created despite failing eligibility.
+  eligibilityOverride Boolean @default(false)
+  trainingVerified   Boolean   @default(false)
+  trainingVerifiedBy String?
+  trainingVerifiedAt DateTime?
+  /// Set on a failed attempt. Blocks a new interview for this member until it passes.
+  cooldownUntil    DateTime?
+  /// Management's recommendations for a failed candidate.
+  improvementNotes String?
+  /// True once the roster rank change went through, so a retry cannot promote twice.
+  rosterUpdated    Boolean  @default(false)
+  /// The PromotionRecord this examination wrote, when it passed.
+  promotionRecordId String?
+  /// "Sent" | "Failed" | "Disabled" | "Not applicable", plus the reason.
+  announcementStatus String?
+  announcementDetail String?
+  createdByDiscordId String
+  createdByName      String
+  finalizedByDiscordId String?
+  finalizedByName      String?
+  finalizedAt          DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  panel InterviewPanelist[]
+  notes InterviewNote[]
+
+  @@index([memberId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+/// One person on an interview panel, with their own evaluation. Scores live
+/// here rather than on the interview so no interviewer can overwrite another's
+/// assessment — the panel score is the average of these rows.
+model InterviewPanelist {
+  id          String @id @default(cuid())
+  interviewId String
+  discordId   String
+  name        String
+  /// Roster rank at the time they joined the panel, for the panel table.
+  rank        String?
+  memberId    String?
+  /// "Lead Interviewer" | "Interviewer" | "Observer" | "Management Reviewer"
+  role        String @default("Interviewer")
+  /// 0-100 each, null until scored. An Observer never has any.
+  sopScore       Int?
+  medicalScore   Int?
+  situationScore Int?
+  overallScore   Int?
+  sopNotes       String?
+  medicalNotes   String?
+  situationNotes String?
+  overallNotes   String?
+  /// "Recommend Promotion" | "Do Not Recommend" | "Further Evaluation Required".
+  /// Part of the record; it never replaces the finalized result.
+  recommendation String?
+  /// Set when they submit. A submitted evaluation is what counts toward the panel score.
+  submittedAt DateTime?
+  joinedAt    DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  interview PromotionInterview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+
+  @@unique([interviewId, discordId])
+  @@index([interviewId])
+}
+
+/// A general note on an interview. Append-only and one row per note, so
+/// several interviewers can record findings without overwriting each other.
+model InterviewNote {
+  id              String   @id @default(cuid())
+  interviewId     String
+  authorDiscordId String
+  authorName      String
+  body            String
+  createdAt       DateTime @default(now())
+
+  interview PromotionInterview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+
+  @@index([interviewId])
 }

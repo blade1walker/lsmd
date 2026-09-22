@@ -27,6 +27,33 @@ const GRANTS: { id: string; roles: Record<string, string[]> }[] = [
       FTP: ["trainees.view"],
     },
   },
+  {
+    id: "2026-09-23-promotion-interviews",
+    roles: {
+      // Everything, including the thresholds and the announcement channel.
+      "Super Admin": [
+        "interviews.view",
+        "interviews.create",
+        "interviews.score",
+        "interviews.finalize",
+        "interviews.manage",
+      ],
+      "Roster Admin": [
+        "interviews.view",
+        "interviews.create",
+        "interviews.score",
+        "interviews.finalize",
+        "interviews.manage",
+      ],
+      // HR runs promotion examinations end to end but does not set the
+      // thresholds — that stays with the roles above.
+      "HR Admin": ["interviews.view", "interviews.create", "interviews.score", "interviews.finalize"],
+      // Assistant HR sits on panels and reads the records.
+      "Assistant HR": ["interviews.view", "interviews.score"],
+      "Training Admin": ["interviews.view", "interviews.score"],
+      FTP: ["interviews.view", "interviews.score"],
+    },
+  },
 ];
 
 const prisma = (() => {

@@ -122,6 +122,14 @@ export const ALL_PERMISSIONS = [
   "trainees.view",
   // Promotion History: the permanent record of every rank change.
   "promotions.view",
+  // Promotion & Interview. Split along what each person on a panel actually
+  // does: an Observer reads, an Interviewer scores, a Lead finalizes, and
+  // only management creates sessions or edits the thresholds.
+  "interviews.view",
+  "interviews.create",
+  "interviews.score",
+  "interviews.finalize",
+  "interviews.manage",
 ] as const;
 
 /**
@@ -236,6 +244,32 @@ export const EXPORT_PERMISSIONS = {
 /** Every permission that opens the export section, for the sidebar check. */
 export const EXPORT_SECTION_PERMISSIONS: string[] = [
   ...new Set(Object.values(EXPORT_PERMISSIONS).flat()),
+];
+
+/**
+ * Promotion & Interview permissions.
+ *
+ * `view` is the Observer's read of a session; `score` lets someone join a
+ * panel and submit their own evaluation; `finalize` is the Lead Interviewer's
+ * authority to settle the result and trigger the promotion; `create` opens a
+ * session and builds its panel; `manage` covers the thresholds, cancelling a
+ * session and deleting one.
+ *
+ * Deliberately separate from `roster.promote`: a panel member scores a
+ * candidate without ever being able to edit the roster by hand, and the roster
+ * rank change on a pass is made by the finalize route on the panel's behalf.
+ */
+export const INTERVIEW_PERMISSIONS = {
+  view: ["interviews.view"],
+  create: ["interviews.create"],
+  score: ["interviews.score"],
+  finalize: ["interviews.finalize"],
+  manage: ["interviews.manage"],
+} as const satisfies Record<string, readonly string[]>;
+
+/** Any permission that opens the Promotion & Interview section, for the sidebar check. */
+export const INTERVIEW_SECTION_PERMISSIONS: string[] = [
+  ...new Set(Object.values(INTERVIEW_PERMISSIONS).flat()),
 ];
 
 export function canSeeRosterPages(permissions: string[]): boolean {

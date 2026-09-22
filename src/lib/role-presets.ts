@@ -52,6 +52,10 @@ export const ROLE_PRESETS: RolePreset[] = [
       "sop.edit",
       "trainees.view",
       "promotions.view",
+      // Assistant HR sits on promotion panels and reads the examinations, but
+      // does not open sessions or settle results.
+      "interviews.view",
+      "interviews.score",
     ],
     aliases: ["HR Assistant"],
   },
@@ -70,6 +74,12 @@ export const ROLE_PRESETS: RolePreset[] = [
       "sop.edit",
       "trainees.view",
       "promotions.view",
+      // HR runs promotion examinations end to end: open a session, sit on the
+      // panel and settle the result. The thresholds stay with interviews.manage.
+      "interviews.view",
+      "interviews.create",
+      "interviews.score",
+      "interviews.finalize",
     ],
   },
   {
@@ -91,6 +101,9 @@ export const ROLE_PRESETS: RolePreset[] = [
       "departments.members",
       // FTP staff run the trainees' training, so they see who is still one.
       "trainees.view",
+      // And they sit on promotion panels for the people they trained.
+      "interviews.view",
+      "interviews.score",
     ],
   },
 ];

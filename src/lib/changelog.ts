@@ -28,6 +28,28 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: "2026-09-23",
+    title: "Promotion & Interview examinations",
+    changes: [
+      { type: "feature", text: "Promotions & Interviews: a full promotion examination system — create an interview session for an employee, sit a panel, score them and promote on a pass" },
+      { type: "feature", text: "Creating an interview pulls the employee straight off the roster with their current rank, joining date, time in current rank and total EMS tenure worked out for you" },
+      { type: "feature", text: "Promotion eligibility is checked before a session opens, and says exactly which requirement is not met rather than just \"not eligible\"" },
+      { type: "feature", text: "Every session gets its own ID (EMS-PROMO-2026-0042) and can be joined by several interviewers at once, each with their own scores and notes that nobody else can overwrite" },
+      { type: "feature", text: "Four scored categories — SOP Knowledge, Medical Knowledge, Situation Knowledge and Overall Performance — each 0-100 with the interviewer's own notes, plus a promotion recommendation" },
+      { type: "feature", text: "Panel roles: Lead Interviewer, Interviewer, Observer and Management Reviewer. An Observer reads and writes notes but never scores or finalizes" },
+      { type: "feature", text: "Individual and panel scores are worked out automatically, with the category averages shown against the minimum each one has to clear" },
+      { type: "feature", text: "General Notes: several interviewers can record strengths, weaknesses and concerns side by side instead of overwriting one shared box" },
+      { type: "feature", text: "Finalizing a pass promotes the employee on the roster, resets their time-in-rank counter, writes a permanent Promotion History entry and posts the promotion announcement to Discord — all in one step" },
+      { type: "feature", text: "A failed interview leaves the rank untouched, keeps the whole record, and can start a cooldown before the employee may be re-interviewed" },
+      { type: "feature", text: "Re-interviews are always new sessions with their own ID, panel, scores and result — an earlier attempt is never overwritten, and every attempt is listed on the session" },
+      { type: "feature", text: "Promotion Settings for EMS management: passing score, per-category minimums, time in rank, EMS tenure, training and department requirements, cooldown length and the announcement channel and wording" },
+      { type: "improvement", text: "Promotion History now shows the panel score and the session behind a promotion, expandable to the category averages and the panel who sat it, with filters for rank, date, interviewer, score and whether it came from an examination" },
+      { type: "improvement", text: "Every score change, panel change and finalization is written to the Audit Log, including a score revised after submission" },
+      { type: "security", text: "Two people pressing Finalize at the same moment can no longer promote twice: the first one through wins and the second is told the result is already recorded" },
+      { type: "security", text: "New permissions: interviews.view, interviews.score, interviews.create, interviews.finalize and interviews.manage, granted to existing roles automatically — HR runs examinations end to end, Assistant HR, Training Admin and FTP sit on panels, and the thresholds stay with Super Admin and Roster Admin" },
+    ],
+  },
+  {
     date: "2026-09-22",
     title: "Trainees and Promotion History",
     changes: [
