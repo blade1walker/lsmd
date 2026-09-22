@@ -54,6 +54,7 @@ try {
   // exit immediately with "unknown or unexpected option".
   execSync("npx prisma db push", { stdio: "inherit" });
   console.log("[deploy-schema] Schema is up to date.");
+  grantNewPermissions();
   backfillPromotionHistory();
 } catch {
   // `db push` without --accept-data-loss refuses destructive changes rather
@@ -71,6 +72,19 @@ try {
       "[deploy-schema] against it yourself.\n" +
       "[deploy-schema] ==================================================\n"
   );
+}
+
+/**
+ * Adds permissions introduced in a release to the roles already in the
+ * database — once per grant, additively (see scripts/grant-permissions.ts).
+ * Never fails the deploy; re-run by hand with `npm run db:grant-permissions`.
+ */
+function grantNewPermissions() {
+  try {
+    execSync("npx tsx scripts/grant-permissions.ts", { stdio: "inherit" });
+  } catch {
+    console.warn("[deploy-schema] Permission grant failed — run `npm run db:grant-permissions` by hand.");
+  }
 }
 
 /**

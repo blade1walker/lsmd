@@ -37,6 +37,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       { type: "feature", text: "Pick an employee in Promotion History to see their whole career on one timeline; filter by promotions or demotions" },
       { type: "improvement", text: "Promotions made before Promotion History existed are carried into it" },
       { type: "security", text: "New permissions: trainees.view and promotions.view, granted to the HR roles; FTP staff get trainees.view" },
+      { type: "improvement", text: "Existing roles receive the new permissions automatically: Super Admin, Roster Admin and the HR roles get both, Training Admin and FTP get Trainees — anything changed on the Roles page is left as it is" },
     ],
   },
   {

@@ -47,20 +47,21 @@ async function main() {
             "clock.view", "notifications", "templates", "radio.edit",
             "onboarding.view", "onboarding.approve",
             "roles.manage", "audit.view",
+            "trainees.view", "promotions.view",
           ],
         },
         {
           name: "Training Admin",
           permissions: [
             "training.view", "training.manage", "training.signoff.manage",
-            "roster.view",
+            "roster.view", "trainees.view",
           ],
         },
         {
           name: "Roster Admin",
           permissions: [
             "roster.view", "roster.add", "roster.edit", "roster.promote",
-            "roster.promote.cadet",
+            "roster.promote.cadet", "trainees.view", "promotions.view",
           ],
         },
         {
