@@ -23,6 +23,7 @@ import {
   evaluateThresholds,
   formatDuration,
   isScoringRole,
+  isWaivable,
   scoreColor,
   type CategoryKey,
   type InterviewDetail,
@@ -179,7 +180,7 @@ export default function InterviewSessionPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <EmployeeCard interview={interview} />
+          <EmployeeCard interview={interview} canWaive={can("interviews.manage")} onChanged={setInterview} />
           <PanelCard
             interview={interview}
             settings={settings}
@@ -257,7 +258,15 @@ function Card({
  * Employee
  * ------------------------------------------------------------------ */
 
-function EmployeeCard({ interview }: { interview: InterviewDetail }) {
+function EmployeeCard({
+  interview,
+  canWaive,
+  onChanged,
+}: {
+  interview: InterviewDetail;
+  canWaive: boolean;
+  onChanged: (interview: InterviewDetail) => void;
+}) {
   const candidate = interview.candidate;
   // Live figures while the session is open; the snapshot taken at creation once
   // it is finalized, so a closed record does not keep counting upward.
@@ -283,25 +292,169 @@ function EmployeeCard({ interview }: { interview: InterviewDetail }) {
         )}
       </dl>
 
-      {interview.eligibility && (
-        <div className="mt-5 border-t border-[#1e1e1e] pt-4">
-          <div className="mb-3 flex flex-wrap items-center gap-2">
-            <EligibilityBadge eligible={interview.eligibility.eligible} />
-            <span className="text-xs text-gray-600">as checked when the session was created</span>
-          </div>
-          <ul className="grid grid-cols-1 gap-1 text-sm sm:grid-cols-2">
-            {interview.eligibility.checks.map((check) => (
-              <li key={check.label} className="flex items-start gap-2">
-                <span className={check.ok ? "text-emerald-400" : "text-red-400"}>{check.ok ? "✓" : "✕"}</span>
-                <span className="text-gray-400">
-                  <span className="text-gray-300">{check.label}</span> — {check.detail}
-                </span>
-              </li>
-            ))}
-          </ul>
+      <EligibilityPanel interview={interview} canWaive={canWaive} onChanged={onChanged} />
+    </Card>
+  );
+}
+
+/**
+ * Promotion eligibility as it stands now, falling back to the verdict recorded
+ * at creation once the session is finalized.
+ *
+ * Re-checked live rather than shown only as the creation-time snapshot: a
+ * candidate who was two days short when the session was opened has usually met
+ * the requirement by the time the panel sits, and a stale "Not Yet Eligible" is
+ * worse than none. The original verdict stays available underneath, because it
+ * is what the decision to open the session was made on.
+ *
+ * A requirement can also be waived for this candidate in particular, which
+ * changes nothing department-wide — the thresholds stay where the settings put
+ * them, and the exception is recorded on the session with who made it and why.
+ */
+function EligibilityPanel({
+  interview,
+  canWaive,
+  onChanged,
+}: {
+  interview: InterviewDetail;
+  canWaive: boolean;
+  onChanged: (interview: InterviewDetail) => void;
+}) {
+  const [busy, setBusy] = useState<string | null>(null);
+  const [waiving, setWaiving] = useState<string | null>(null);
+  const [reason, setReason] = useState("");
+  const [showOriginal, setShowOriginal] = useState(false);
+
+  const live = interview.liveEligibility;
+  const verdict = live ?? interview.eligibility;
+  if (!verdict) return null;
+
+  async function send(body: Record<string, unknown>, label: string) {
+    setBusy(label);
+    try {
+      onChanged(
+        await fetchJson<InterviewDetail>(`/api/interviews/${interview.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        })
+      );
+      setWaiving(null);
+      setReason("");
+    } catch (err) {
+      toast.error(errorMessage(err));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <div className="mt-5 border-t border-[#1e1e1e] pt-4">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <EligibilityBadge eligible={verdict.eligible} />
+        <span className="text-xs text-gray-600">
+          {live
+            ? "checked against today's roster and the current requirements"
+            : "as checked when the session was created"}
+        </span>
+      </div>
+
+      <ul className="grid grid-cols-1 gap-1.5 text-sm sm:grid-cols-2">
+        {verdict.checks.map((check) => (
+          <li key={check.label}>
+            <div className="flex items-start gap-2">
+              <span className={check.waiver ? "text-amber-400" : check.ok ? "text-emerald-400" : "text-red-400"}>
+                {check.waiver ? "!" : check.ok ? "✓" : "✕"}
+              </span>
+              <span className="flex-1 text-gray-400">
+                <span className="text-gray-300">{check.label}</span> — {check.detail}
+                {check.waiver && (
+                  <span className="block text-xs text-amber-400">
+                    Waived by {check.waiver.waivedBy}
+                    {check.waiver.reason ? ` — ${check.waiver.reason}` : ""}
+                  </span>
+                )}
+              </span>
+              {canWaive &&
+                live &&
+                (check.waiver ? (
+                  <button
+                    type="button"
+                    disabled={busy === check.label}
+                    onClick={() => send({ unwaive: check.label }, check.label)}
+                    className="shrink-0 text-xs text-gray-500 hover:text-white disabled:opacity-50"
+                  >
+                    Restore
+                  </button>
+                ) : !check.ok && isWaivable(check.label) ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setWaiving(waiving === check.label ? null : check.label);
+                      setReason("");
+                    }}
+                    className="shrink-0 text-xs text-amber-400 hover:text-amber-300"
+                  >
+                    Waive
+                  </button>
+                ) : null)}
+            </div>
+
+            {waiving === check.label && (
+              <div className="ml-5 mt-1.5 rounded-md border border-[#1e1e28] bg-[#0a0a0f] p-2">
+                <Input
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="Why is this requirement being set aside?"
+                  className="h-8 text-xs"
+                />
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <span className="text-[11px] text-gray-600">Applies to this interview only.</span>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => setWaiving(null)}>
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      disabled={busy === check.label}
+                      onClick={() => send({ waive: { label: check.label, reason } }, check.label)}
+                    >
+                      Waive
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
+
+      {live && interview.eligibility && (
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={() => setShowOriginal(!showOriginal)}
+            className="text-xs text-gray-600 hover:text-gray-400"
+          >
+            {showOriginal ? "Hide" : "Show"} the check made when the session was created
+          </button>
+          {showOriginal && (
+            <ul className="mt-2 grid grid-cols-1 gap-1 text-xs sm:grid-cols-2">
+              {interview.eligibility.checks.map((check) => (
+                <li key={check.label} className="flex items-start gap-2">
+                  <span className={check.ok ? "text-emerald-400/70" : "text-red-400/70"}>
+                    {check.ok ? "✓" : "✕"}
+                  </span>
+                  <span className="text-gray-600">
+                    {check.label} — {check.detail}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
-    </Card>
+    </div>
   );
 }
 
@@ -1075,6 +1228,10 @@ function FinalizeDialog({
     blockers.push("Required training and certifications have not been verified.");
   }
 
+  // A warning, not a blocker: eligibility is advisory, and a Lead may still
+  // record a Failed or Review Required result for someone who never qualified.
+  const outstanding = interview.liveEligibility?.reasons ?? [];
+
   async function finalize() {
     setBusy(true);
     try {
@@ -1158,6 +1315,20 @@ function FinalizeDialog({
             <p className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-400">
               Their rank is left unchanged and a new interview cannot be created for {settings.cooldownDays} days.
             </p>
+          )}
+
+          {result === "Passed" && outstanding.length > 0 && (
+            <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-400">
+              <p className="mb-1 font-semibold">This candidate still does not meet every promotion requirement:</p>
+              <ul className="space-y-0.5">
+                {outstanding.map((r) => (
+                  <li key={r}>• {r}</li>
+                ))}
+              </ul>
+              <p className="mt-1 text-amber-400/70">
+                Waive a requirement on the employee panel if the exception is intended.
+              </p>
+            </div>
           )}
 
           {blockers.length > 0 && (

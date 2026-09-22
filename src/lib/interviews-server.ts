@@ -13,9 +13,11 @@ import {
   individualScore,
   isScoringRole,
   panelScores,
+  parseWaivers,
   type CandidateSnapshot,
   type CategoryKey,
   type EligibilityVerdict,
+  type EligibilityWaiver,
   type InterviewDetail,
   type InterviewSummary,
   type PanelistRecord,
@@ -158,12 +160,22 @@ function parseJsonObject<T>(value: unknown, fallback: T): T {
 export function toDetail(
   interview: InterviewWithPanel,
   candidate: CandidateSnapshot | null,
-  attempts: InterviewDetail["attempts"]
+  attempts: InterviewDetail["attempts"],
+  /** The current thresholds, for re-running the eligibility rules as they stand today. */
+  settings?: PromotionSettingsValues
 ): InterviewDetail {
   const panel = interview.panel.map(toPanelistRecord);
   const summary = toSummary(interview);
   const stored = parseJsonObject<Partial<Record<CategoryKey, number>> | null>(interview.categoryScores, null);
   const eligibility = parseJsonObject<EligibilityVerdict | null>(interview.eligibility, null);
+  const waivers = parseWaivers(interview.eligibilityWaivers);
+
+  // Only worth re-running while the session is open: once finalized, what
+  // matters is what was true when the panel decided, not today.
+  const liveEligibility =
+    candidate && settings && interview.status === "Ongoing"
+      ? evaluateEligibility(candidate, interview.targetRank, settings, waivers)
+      : null;
 
   return {
     ...summary,
@@ -172,6 +184,8 @@ export function toDetail(
     rankSince: interview.rankSince?.toISOString() ?? null,
     categoryScores: stored && Object.keys(stored).length ? stored : null,
     eligibility: eligibility && Array.isArray(eligibility.checks) ? eligibility : null,
+    liveEligibility,
+    eligibilityWaivers: waivers,
     eligibilityOverride: interview.eligibilityOverride,
     trainingVerified: interview.trainingVerified,
     trainingVerifiedBy: interview.trainingVerifiedBy,
@@ -227,18 +241,30 @@ type CandidateRow = Prisma.MemberGetPayload<{ select: typeof CANDIDATE_SELECT }>
  * A member with no joining date still has a start: the day their roster row
  * was created, the same fallback the Trainee section uses.
  */
-export async function candidateSnapshot(memberId: string, now = new Date()): Promise<CandidateSnapshot | null> {
+export async function candidateSnapshot(
+  memberId: string,
+  now = new Date(),
+  /**
+   * A session to leave out of the "already has an open interview" and cooldown
+   * lookups. Passed when re-checking a candidate for the session they are
+   * already sitting — otherwise every open interview would report itself as
+   * the thing blocking it.
+   */
+  excludeInterviewId?: string
+): Promise<CandidateSnapshot | null> {
   const member = await prisma.member.findUnique({ where: { id: memberId }, select: CANDIDATE_SELECT });
   if (!member) return null;
 
+  const exclude = excludeInterviewId ? { id: { not: excludeInterviewId } } : {};
+
   const [cooldown, open] = await Promise.all([
     prisma.promotionInterview.findFirst({
-      where: { memberId, cooldownUntil: { gt: now } },
+      where: { memberId, cooldownUntil: { gt: now }, ...exclude },
       orderBy: { cooldownUntil: "desc" },
       select: { cooldownUntil: true },
     }),
     prisma.promotionInterview.findFirst({
-      where: { memberId, status: "Ongoing" },
+      where: { memberId, status: "Ongoing", ...exclude },
       orderBy: { createdAt: "desc" },
       select: { sessionId: true },
     }),
@@ -284,6 +310,7 @@ export { CANDIDATE_SELECT };
  * the routes keep one import for the module's server side.
  */
 export { evaluateEligibility };
+export type { EligibilityWaiver };
 
 /* ------------------------------------------------------------------ *
  * Reading a session back
@@ -324,11 +351,12 @@ export async function readInterviewDetail(id: string): Promise<InterviewDetail |
   });
   if (!interview) return null;
 
-  const [candidate, attempts] = await Promise.all([
-    interview.memberId ? candidateSnapshot(interview.memberId) : Promise.resolve(null),
+  const [candidate, attempts, settings] = await Promise.all([
+    interview.memberId ? candidateSnapshot(interview.memberId, new Date(), interview.id) : Promise.resolve(null),
     attemptsFor(interview.memberId, interview.id),
+    getPromotionSettings(),
   ]);
-  return toDetail(interview, candidate, attempts);
+  return toDetail(interview, candidate, attempts, settings);
 }
 
 /* ------------------------------------------------------------------ *

@@ -995,6 +995,12 @@ model PromotionInterview {
   eligibility Json     @default("{}")
   /// Set when the session was created despite failing eligibility.
   eligibilityOverride Boolean @default(false)
+  /// Requirements waived for this candidate in particular, on top of whatever
+  /// the department-wide thresholds say:
+  /// [{ "label": string, "reason": string|null, "waivedBy": string, "waivedAt": string }].
+  /// A waiver applies only to this session — it never changes the settings, and
+  /// it is kept on the record so the exception is visible afterwards.
+  eligibilityWaivers Json @default("[]")
   trainingVerified   Boolean   @default(false)
   trainingVerifiedBy String?
   trainingVerifiedAt DateTime?

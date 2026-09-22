@@ -31,6 +31,9 @@ export const CHANGELOG: ChangelogEntry[] = [
     date: "2026-09-23",
     title: "Promotion & Interview examinations",
     changes: [
+      { type: "improvement", text: "Promotion eligibility on an open interview is now re-checked live against today's roster and the current requirements, so a candidate who was a couple of days short when the session was opened is no longer still shown as failing once they have met it — the check made at creation is still there to open underneath" },
+      { type: "feature", text: "Any single requirement can be waived for one candidate on one interview, with a reason, without changing the requirements for everyone else; the waiver is shown on the session and kept on the record with who made it" },
+      { type: "improvement", text: "Finalizing as Passed warns when the candidate still does not meet every requirement, so an exception is made deliberately rather than by accident" },
       { type: "feature", text: "Promotions & Interviews: a full promotion examination system — create an interview session for an employee, sit a panel, score them and promote on a pass" },
       { type: "feature", text: "Creating an interview pulls the employee straight off the roster with their current rank, joining date, time in current rank and total EMS tenure worked out for you" },
       { type: "feature", text: "Promotion eligibility is checked before a session opens, and says exactly which requirement is not met rather than just \"not eligible\"" },

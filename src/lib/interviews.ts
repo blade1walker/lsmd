@@ -236,12 +236,41 @@ export interface InterviewNoteRecord {
   createdAt: string;
 }
 
+/**
+ * A requirement set aside for one candidate. Department-wide thresholds live in
+ * the settings; this is the exception made for a particular person in a
+ * particular session, recorded with who made it and why.
+ */
+export interface EligibilityWaiver {
+  /** Matches the `label` of the check it waives. */
+  label: string;
+  reason: string | null;
+  waivedBy: string;
+  waivedAt: string;
+}
+
+export interface EligibilityCheck {
+  label: string;
+  /** True when the rule is met, or has been waived for this session. */
+  ok: boolean;
+  detail: string;
+  /** Set when `ok` is true only because the requirement was waived. */
+  waiver?: EligibilityWaiver;
+}
+
 export interface EligibilityVerdict {
   eligible: boolean;
   /** One line per failed rule, ready to show. Empty when eligible. */
   reasons: string[];
   /** Every rule that was checked, so the UI can show what passed as well as what failed. */
-  checks: { label: string; ok: boolean; detail: string }[];
+  checks: EligibilityCheck[];
+}
+
+/** Requirements that can never be waived — waiving one would let the system contradict itself. */
+export const UNWAIVABLE_CHECKS: string[] = ["Target rank", "Open interview"];
+
+export function isWaivable(label: string): boolean {
+  return !UNWAIVABLE_CHECKS.includes(label);
 }
 
 export interface CandidateSnapshot {
@@ -298,7 +327,15 @@ export interface InterviewDetail extends InterviewSummary {
   joinedEmsAt: string | null;
   rankSince: string | null;
   categoryScores: Partial<Record<CategoryKey, number>> | null;
+  /** The verdict as it stood when the session was created, kept as the record. */
   eligibility: EligibilityVerdict | null;
+  /**
+   * The same rules re-run now, against today's roster figures, the current
+   * settings and any waivers — so a candidate who has since met a requirement
+   * is not still shown as failing it when the panel sits.
+   */
+  liveEligibility: EligibilityVerdict | null;
+  eligibilityWaivers: EligibilityWaiver[];
   eligibilityOverride: boolean;
   trainingVerified: boolean;
   trainingVerifiedBy: string | null;
@@ -624,9 +661,12 @@ export function scoreColor(score: number | null, passingScore: number): string {
 export function evaluateEligibility(
   candidate: CandidateSnapshot,
   targetRank: string,
-  settings: PromotionSettingsValues
+  settings: PromotionSettingsValues,
+  /** Requirements waived for this session in particular. */
+  waivers: EligibilityWaiver[] = []
 ): EligibilityVerdict {
-  const checks: EligibilityVerdict["checks"] = [];
+  const raw: EligibilityCheck[] = [];
+  const checks = raw;
 
   const targetWeight = getRankWeight(targetRank);
   const currentWeight = getRankWeight(candidate.rank);
@@ -691,6 +731,33 @@ export function evaluateEligibility(
     });
   }
 
-  const reasons = checks.filter((c) => !c.ok).map((c) => `${c.label}: ${c.detail}`);
-  return { eligible: reasons.length === 0, reasons, checks };
+  // A waiver turns a failed rule into a met one, annotated so the exception
+  // reads as an exception rather than quietly disappearing. A waiver on a rule
+  // the candidate already meets is inert.
+  const applied = raw.map((check) => {
+    if (check.ok || !isWaivable(check.label)) return check;
+    const waiver = waivers.find((w) => w.label === check.label);
+    return waiver ? { ...check, ok: true, waiver } : check;
+  });
+
+  const reasons = applied.filter((c) => !c.ok).map((c) => `${c.label}: ${c.detail}`);
+  return { eligible: reasons.length === 0, reasons, checks: applied };
+}
+
+/** Parses the waivers stored on an interview, ignoring anything malformed. */
+export function parseWaivers(value: unknown): EligibilityWaiver[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry) => {
+    if (!entry || typeof entry !== "object") return [];
+    const { label, reason, waivedBy, waivedAt } = entry as Record<string, unknown>;
+    if (typeof label !== "string" || typeof waivedBy !== "string") return [];
+    return [
+      {
+        label,
+        reason: typeof reason === "string" ? reason : null,
+        waivedBy,
+        waivedAt: typeof waivedAt === "string" ? waivedAt : new Date(0).toISOString(),
+      },
+    ];
+  });
 }

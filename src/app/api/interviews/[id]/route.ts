@@ -4,14 +4,12 @@ import { requireAuth, isDenied, actorLabel, hasPermission } from "@/lib/api-auth
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { INTERVIEW_SECTION_PERMISSIONS } from "@/lib/constants";
+import { parseWaivers, isWaivable, type EligibilityWaiver } from "@/lib/interviews";
 import {
   INTERVIEW_INCLUDE,
-  attemptsFor,
-  candidateSnapshot,
   mayFinalize,
   mayViewInterview,
   readInterviewDetail,
-  toDetail,
 } from "@/lib/interviews-server";
 
 /** One session in full: the candidate, the panel, every evaluation, the notes and the attempt history. */
@@ -34,12 +32,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       );
     }
 
-    const [candidate, attempts] = await Promise.all([
-      interview.memberId ? candidateSnapshot(interview.memberId) : Promise.resolve(null),
-      attemptsFor(interview.memberId, interview.id),
-    ]);
-
-    return NextResponse.json(toDetail(interview, candidate, attempts));
+    return NextResponse.json(await readInterviewDetail(id));
   } catch (error) {
     return apiError("Failed to load the interview", error);
   }
@@ -101,6 +94,52 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       // examination result, and the scores stay frozen either way.
       data.improvementNotes = body.improvementNotes.trim().slice(0, 4000) || null;
       changed.push("improvement notes");
+    }
+
+    // Waiving a requirement for this candidate in particular. The
+    // department-wide thresholds in the settings are untouched — this is the
+    // exception, recorded on the session with who made it and why, so a later
+    // review sees the rule was set aside rather than met.
+    const waive = body.waive as { label?: unknown; reason?: unknown } | undefined;
+    const unwaive = typeof body.unwaive === "string" ? body.unwaive : null;
+
+    if (waive || unwaive) {
+      if (!isManager) {
+        return NextResponse.json(
+          { error: "Forbidden", detail: "Requires the \"interviews.manage\" permission to waive a requirement." },
+          { status: 403 }
+        );
+      }
+      if (interview.status !== "Ongoing") {
+        return NextResponse.json({ error: "This interview is no longer open" }, { status: 409 });
+      }
+
+      const current = parseWaivers(interview.eligibilityWaivers);
+
+      if (waive) {
+        const label = typeof waive.label === "string" ? waive.label.trim() : "";
+        if (!label) return NextResponse.json({ error: "Which requirement should be waived?" }, { status: 400 });
+        if (!isWaivable(label)) {
+          return NextResponse.json(
+            {
+              error: `"${label}" cannot be waived`,
+              detail: "Promoting to a rank that is not above the current one, or running two interviews at once, are not exceptions the system can make.",
+            },
+            { status: 400 }
+          );
+        }
+        const entry: EligibilityWaiver = {
+          label,
+          reason: typeof waive.reason === "string" && waive.reason.trim() ? waive.reason.trim().slice(0, 500) : null,
+          waivedBy: actor,
+          waivedAt: new Date().toISOString(),
+        };
+        data.eligibilityWaivers = [...current.filter((w) => w.label !== label), entry];
+        changed.push(`waived "${label}"`);
+      } else if (unwaive) {
+        data.eligibilityWaivers = current.filter((w) => w.label !== unwaive);
+        changed.push(`restored "${unwaive}"`);
+      }
     }
 
     if (body.cancel === true) {
