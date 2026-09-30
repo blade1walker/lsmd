@@ -30,6 +30,7 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     date: "2026-10-01",
     changes: [
+      { type: "fix", text: "Nexus EMS Bot: fixed \"No space left on device\" on small hosting servers. Node.js is now downloaded straight from nodejs.org (checked against its official checksum) keeping only what the bot runs on, and the upload zip ships the bot ready-built with its dependencies, so nothing is installed on the host — about 150 MB in total instead of over 300 MB. Space left behind by the earlier attempt is cleaned up automatically" },
       { type: "fix", text: "Nexus EMS Bot now runs on Python hosting servers: the panel's Python start-up installs Node.js through requirements.txt and app.py (or bot.py / main.py) starts the bot, so it no longer needs a Node.js server to run" },
       { type: "fix", text: "Nexus EMS Bot: fixed the bot failing to start. It no longer crashes when Discord's Server Members Intent is switched off — it starts without it and only join-link roles wait until it is turned on — and it no longer refuses to start when the website link or server ID is missing; only the bot token is required now, and the bot lists every other problem at startup with how to fix it" },
       { type: "improvement", text: "Nexus EMS Bot is ready to host: `npm install` then `npm start` is all it needs, `npm run package` makes a small upload zip without the Windows-only files that stopped it installing on Linux hosts, and a wrong token now says exactly how to replace it" },

@@ -11,8 +11,8 @@ This folder is self-contained. Deploy it on its own; the website does not need i
 You need [Node.js](https://nodejs.org) 18.17 or newer (20 LTS recommended).
 
 ```bash
-npm install     # installs everything and builds the bot
-npm start       # starts it
+npm install     # installs dependencies
+npm start       # builds on first run, then starts the bot
 ```
 
 The only required setting is `DISCORD_TOKEN` in `.env` (copy `.env.example`). Everything else is optional:
@@ -21,11 +21,11 @@ The only required setting is `DISCORD_TOKEN` in `.env` (copy `.env.example`). Ev
 
 On startup the bot prints a short checklist: whether the token is valid, Server Members Intent, command registration, and the website connection. It prints every problem it finds, with how to fix it.
 
-To upload to a host, run `npm run package`. It creates `nexus-ems-bot.zip` **without** `node_modules`, which the host installs itself; a copy built on Windows breaks on a Linux host. It also leaves out `.env`, because it holds your token. Use `npm run package -- --with-env` to include `.env` for a panel where you upload files instead of setting variables.
+To upload to a host, run `npm run package`. It creates `nexus-ems-bot.zip` (about 5 MB), which is complete: the bot is already built and its dependencies are included. They're pure JavaScript, so a zip made on Windows runs on Linux. The host needs only Node.js, with no `npm install` and no build. The zip leaves out `.env`, because it holds your token. Use `npm run package -- --with-env` to include it, for a panel where you upload files instead of setting variables.
 
 | Script | Does |
 | --- | --- |
-| `npm install` | Installs dependencies and builds the bot |
+| `npm install` | Installs dependencies, including the TypeScript compiler |
 | `npm start` | Starts the bot. Rebuilds first if the source changed |
 | `npm run build` | Compiles `src/` into `dist/` |
 | `npm run register` | Re-registers the slash commands without starting the bot |
@@ -155,8 +155,8 @@ Any host that keeps a Node 18.17+ process running works (20 LTS recommended). Th
   1. On your PC, run `npm run package -- --with-env` in this folder.
   2. In the panel's **File Manager**, delete the old bot's files (`app.py`, `bot.py`, `commands/`, `services/`, `requirements.txt`, and so on). Then upload `nexus-ems-bot.zip` and unzip it into `/home/container`.
   3. Check the **Startup** tab: the app file should be `app.py` (`bot.py` and `main.py` also work), and the requirements file `requirements.txt`.
-  4. Press **Start**. `requirements.txt` installs Node.js as a Python package, and `app.py` installs the bot's dependencies on first start, which takes about a minute, then runs the bot.
-- **Node.js server on a panel (Pterodactyl and similar):** upload and unzip `nexus-ems-bot.zip` (from `npm run package`), choose a Node.js 20 egg, and set the main file to `index.js`. Most panels run `npm install` and then `node index.js` on their own. `index.js` builds the bot if needed. Enter the variables in the panel, or upload `.env`. **Do not upload a `node_modules` folder from your PC.**
+  4. Press **Start**. On the first start, `app.py` downloads Node.js from nodejs.org (31 MB), checks its official checksum, and keeps only the `node` program (125 MB) in `.node/`. Then it runs the bot. Later starts go straight to the bot. In total, allow about **150 MB** of disk. If there isn't enough, the console says how much is free and how much is needed. `requirements.txt` installs nothing.
+- **Node.js server on a panel (Pterodactyl and similar):** upload and unzip `nexus-ems-bot.zip` (from `npm run package`), choose a Node.js 20 egg, and set the main file to `index.js`. The zip already includes everything, so the panel's `npm install` step has nothing left to do. `index.js` starts the bot. Enter the variables in the panel, or upload `.env`. **Do not upload a `node_modules` folder from your PC.**
 - **Railway / Render:** create a service from this repository with the root directory set to `bot`. On Render, make it a **Background Worker**. Build command: `npm install`. Start command: `npm start`. Add the variables.
 - **Docker:** `docker build -t nexus-ems-bot . && docker run -d --restart unless-stopped --env-file .env nexus-ems-bot`
 - **VPS:** `npm install`, then keep it running with `pm2 start index.js --name nexus-ems-bot`.
@@ -173,7 +173,7 @@ To push only this folder to a repository of its own, copy the `bot` folder out a
 | "The website could not be reached" | Check `WEBSITE_URL` |
 | Commands do not appear | The bot was invited without `applications.commands` (the startup log says so), or `DISCORD_GUILD_ID` is wrong. Re-invite with the link above, then restart the bot or run `npm run register` |
 | "Dependencies are not installed" | Run `npm install` in the bot's folder |
-| `npm install` fails with an esbuild or platform error | A `node_modules` folder from another computer was uploaded. Delete it on the host and run `npm install` again |
+| `No space left on device` | An older setup installed Node.js through pip. Upload the current zip and press Start: `app.py` removes that copy and pip's cache, then needs about 150 MB in total |
 | "The bot is not connected to the website yet" | Set `WEBSITE_URL` and `NEXUS_BOT_API_KEY` in the bot, set the same key on the website, and redeploy the website |
 | A user cannot see a command | Grant it in Server Settings → Integrations → Nexus EMS Bot |
 | "The bot is missing … in #channel" | Give the bot that permission in the channel's settings |

@@ -1,3 +1,2 @@
-# Python hosting servers only: installs Node.js as a Python package so app.py
-# can run the bot. Node.js servers ignore this file (use npm install / npm start).
-nodejs-wheel-binaries==22.20.0
+# Nothing to install: app.py downloads Node.js itself (python hosting servers),
+# and the bot and its dependencies ship ready-built in nexus-ems-bot.zip.

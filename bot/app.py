@@ -4,30 +4,38 @@ Nexus EMS Bot - launcher for Python hosting servers.
 The bot is written for Node.js, but many hosting panels (Pterodactyl and the
 like) give you a *Python* server whose start command is fixed to
 "pip install -r requirements.txt" and then "python app.py". This file makes
-that work:
+that work while using as little disk as possible:
 
-  1. requirements.txt installs `nodejs-wheel-binaries`, which ships a
-     complete Node.js (with npm) as a normal Python package.
-  2. This script finds that Node.js, installs the bot's own dependencies with
-     npm the first time (or whenever package-lock.json changes), and then
-     starts the bot with `node index.js`.
+  * Node.js is downloaded once from nodejs.org (about 31 MB), checked against
+    the official SHA-256 checksum, and only the `node` program is kept
+    (about 125 MB) in the .node folder. Nothing goes through pip or /tmp.
+  * The upload zip already contains the built bot and its JavaScript
+    dependencies (node_modules), so nothing is installed on the host.
 
-Nothing to configure here - settings live in .env (see .env.example).
-On a Node.js server, ignore this file and run `npm install` then `npm start`.
+Settings live in .env (see .env.example). On a Node.js server, ignore this
+file and run `npm install` then `npm start`.
 """
 
 from __future__ import annotations
 
 import glob
+import hashlib
 import os
+import platform
 import shutil
 import signal
-import stat
 import subprocess
 import sys
+import tarfile
+import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+NODE_DIR = os.path.join(HERE, ".node")
+NODE_BIN = os.path.join(NODE_DIR, "bin", "node")
+NODE_LINE = "latest-v22.x"
 MIN_NODE_MAJOR = 18
+# The node program is ~125 MB; leave room to spare while it is written.
+NEEDED_MB = 140
 
 
 def say(message: str) -> None:
@@ -42,14 +50,8 @@ def fail(lines: list[str]) -> None:
     sys.exit(1)
 
 
-def add_local_site_packages() -> None:
-    # Panels install requirements with `pip install --prefix .local`; make
-    # sure that folder is importable even when user site-packages is off.
-    candidates = glob.glob(os.path.join(HERE, ".local", "lib", "python*", "site-packages"))  # Linux
-    candidates += glob.glob(os.path.join(HERE, ".local", "Lib", "site-packages"))  # Windows
-    for path in candidates:
-        if path not in sys.path:
-            sys.path.insert(0, path)
+def mb(n: float) -> str:
+    return f"{n / 1024 / 1024:.0f} MB"
 
 
 def node_version(node: str) -> int | None:
@@ -60,87 +62,154 @@ def node_version(node: str) -> int | None:
         return None
 
 
-def find_node() -> tuple[str, str]:
-    """Returns (node executable, npm-cli.js)."""
-    add_local_site_packages()
+def reclaim_space() -> None:
+    """Removes what an earlier setup (Node.js through pip) left behind."""
+    freed = 0
+    targets = glob.glob(os.path.join(HERE, ".local", "lib", "python*", "site-packages", "nodejs_wheel*"))
+    targets += glob.glob(os.path.join(HERE, ".local", "Lib", "site-packages", "nodejs_wheel*"))
+    targets += [os.path.join(HERE, ".cache", "pip"), os.path.join(HERE, ".node.download")]
+    for path in targets:
+        if not os.path.exists(path):
+            continue
+        for root, _dirs, files in os.walk(path):
+            for f in files:
+                try:
+                    freed += os.path.getsize(os.path.join(root, f))
+                except OSError:
+                    pass
+        if os.path.isdir(path):
+            shutil.rmtree(path, ignore_errors=True)
+        else:
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+    if freed > 1024 * 1024:
+        say(f"freed {mb(freed)} left over from the earlier setup")
+
+
+class HashingReader:
+    """Hashes a download while tarfile streams through it."""
+
+    def __init__(self, raw):
+        self.raw = raw
+        self.sha = hashlib.sha256()
+
+    def read(self, size=-1):
+        chunk = self.raw.read(size)
+        self.sha.update(chunk)
+        return chunk
+
+
+def linux_arch() -> str:
+    machine = platform.machine().lower()
+    if machine in ("x86_64", "amd64"):
+        return "x64"
+    if machine in ("aarch64", "arm64"):
+        return "arm64"
+    fail([f"Nexus EMS Bot cannot start: this server's CPU ({machine}) has no Node.js download."])
+    return ""
+
+
+def download_node() -> None:
+    free = shutil.disk_usage(HERE).free
+    if free < NEEDED_MB * 1024 * 1024:
+        fail(
+            [
+                f"Nexus EMS Bot cannot start: not enough disk space ({mb(free)} free, {NEEDED_MB} MB needed for Node.js).",
+                "",
+                "Free some space in the panel's File Manager - old bot files, logs, a .cache folder -",
+                "or raise the server's disk limit, then press Start again.",
+            ]
+        )
+
     try:
-        import nodejs_wheel  # type: ignore
+        import lzma  # noqa: F401  (xz support; present in standard Python builds)
 
-        root = os.path.dirname(nodejs_wheel.__file__)
-        node = os.path.join(root, "node.exe") if os.name == "nt" else os.path.join(root, "bin", "node")
-        npm_cli = os.path.join(root, "lib", "node_modules", "npm", "bin", "npm-cli.js")
-        if os.path.exists(node):
-            # Some uploads lose the executable bit; put it back.
-            mode = os.stat(node).st_mode
-            if not mode & stat.S_IXUSR:
-                os.chmod(node, mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
-            if os.path.exists(npm_cli):
-                return node, npm_cli
+        ext, mode = "tar.xz", "r|xz"
     except ImportError:
-        pass
+        ext, mode = "tar.gz", "r|gz"
 
-    # No Python-packaged Node.js - fall back to one installed on the machine.
+    base = f"https://nodejs.org/dist/{NODE_LINE}"
+    arch = linux_arch()
+    say("downloading Node.js from nodejs.org (one time, about 31 MB)...")
+    with urllib.request.urlopen(f"{base}/SHASUMS256.txt", timeout=60) as res:
+        sums = res.read().decode()
+    entry = next((l.split() for l in sums.splitlines() if l.endswith(f"-linux-{arch}.{ext}")), None)
+    if not entry:
+        fail([f"Could not find a Node.js {NODE_LINE} download for linux-{arch}."])
+    expected, name = entry[0], entry[1]
+
+    partial = os.path.join(HERE, ".node.download")
+    os.makedirs(os.path.dirname(NODE_BIN), exist_ok=True)
+    found = False
+    with urllib.request.urlopen(f"{base}/{name}", timeout=120) as res:
+        reader = HashingReader(res)
+        with tarfile.open(fileobj=reader, mode=mode) as archive:
+            for member in archive:
+                if member.isfile() and member.name.endswith("/bin/node"):
+                    src = archive.extractfile(member)
+                    with open(partial, "wb") as out:
+                        shutil.copyfileobj(src, out, 1024 * 1024)
+                    found = True
+        # Read to the end so the checksum covers the whole file.
+        while reader.read(1024 * 1024):
+            pass
+
+    if reader.sha.hexdigest() != expected:
+        if os.path.exists(partial):
+            os.remove(partial)
+        fail(["The Node.js download did not match its official checksum - press Start to try again."])
+    if not found:
+        fail(["The Node.js download did not contain the node program - press Start to try again."])
+
+    os.chmod(partial, 0o755)
+    os.replace(partial, NODE_BIN)
+    say(f"Node.js installed ({name})")
+
+
+def find_node() -> str:
+    if os.path.exists(NODE_BIN) and (node_version(NODE_BIN) or 0) >= MIN_NODE_MAJOR:
+        return NODE_BIN
     system_node = shutil.which("node")
     if system_node and (node_version(system_node) or 0) >= MIN_NODE_MAJOR:
-        npm_cli = os.path.join(os.path.dirname(os.path.realpath(system_node)), "..", "lib", "node_modules", "npm", "bin", "npm-cli.js")
-        if os.path.exists(npm_cli):
-            return system_node, os.path.normpath(npm_cli)
-
-    fail(
-        [
-            "Nexus EMS Bot cannot start: Node.js was not found.",
-            "",
-            "This server runs Python, so the bot brings Node.js in through pip.",
-            "Make sure requirements.txt (next to app.py) contains:",
-            "    nodejs-wheel-binaries==22.20.0",
-            "and that the panel's startup installs it (Startup tab -> Requirements file: requirements.txt).",
-            "Or install it by hand from the console:  pip install --prefix .local nodejs-wheel-binaries==22.20.0",
-        ]
-    )
-    raise SystemExit(1)  # unreachable; keeps type checkers happy
-
-
-def needs_install() -> bool:
-    marker = os.path.join(HERE, "node_modules", ".package-lock.json")
-    lock = os.path.join(HERE, "package-lock.json")
-    if not os.path.exists(os.path.join(HERE, "node_modules", "discord.js")) or not os.path.exists(marker):
-        return True
-    return os.path.exists(lock) and os.path.getmtime(lock) > os.path.getmtime(marker)
+        return system_node
+    if os.name == "nt":
+        fail(["Install Node.js 18 or newer from https://nodejs.org, then run: npm install && npm start"])
+    download_node()
+    if (node_version(NODE_BIN) or 0) < MIN_NODE_MAJOR:
+        shutil.rmtree(NODE_DIR, ignore_errors=True)
+        fail(["The downloaded Node.js would not run on this server - press Start to try again."])
+    return NODE_BIN
 
 
 def main() -> None:
     os.chdir(HERE)
-    node, npm_cli = find_node()
-    version = node_version(node)
-    say(f"using Node.js v{version} ({node})")
+    reclaim_space()
 
-    # npm's scripts (the build step) call `node` by name, so it must be on PATH.
+    if not os.path.exists(os.path.join(HERE, "node_modules", "discord.js")):
+        fail(
+            [
+                "Nexus EMS Bot cannot start: the node_modules folder is missing.",
+                "",
+                "Upload the complete nexus-ems-bot.zip (made with `npm run package` on your PC) and unzip it",
+                "here - it includes node_modules. Do not upload a node_modules folder copied from elsewhere.",
+            ]
+        )
+    if not os.path.exists(os.path.join(HERE, "dist", "index.js")):
+        fail(["Nexus EMS Bot cannot start: the dist folder is missing. Upload the complete nexus-ems-bot.zip."])
+
+    node = find_node()
+    say(f"using Node.js v{node_version(node)}")
+
     env = dict(os.environ)
     env["PATH"] = os.path.dirname(node) + os.pathsep + env.get("PATH", "")
-    env.setdefault("NPM_CONFIG_UPDATE_NOTIFIER", "false")
-    env.setdefault("NPM_CONFIG_FUND", "false")
-    env.setdefault("NPM_CONFIG_AUDIT", "false")
-
-    if needs_install():
-        say("installing the bot's dependencies (first start takes a minute)...")
-        # A node_modules copied from another computer (e.g. Windows) breaks on
-        # Linux; start clean if discord.js is missing from it.
-        if os.path.isdir(os.path.join(HERE, "node_modules")) and not os.path.exists(os.path.join(HERE, "node_modules", "discord.js")):
-            shutil.rmtree(os.path.join(HERE, "node_modules"), ignore_errors=True)
-        result = subprocess.run([node, npm_cli, "install", "--no-audit", "--no-fund"], cwd=HERE, env=env)
-        if result.returncode != 0:
-            fail(
-                [
-                    "npm install failed - see the errors above.",
-                    "If they mention another platform (win32, esbuild), delete the node_modules folder and restart.",
-                ]
-            )
 
     say("starting Nexus EMS Bot")
     child = subprocess.Popen([node, os.path.join(HERE, "index.js")], cwd=HERE, env=env)
 
-    # The panel's Stop button sends SIGINT/SIGTERM to this process; pass it on
-    # so the bot disconnects cleanly instead of being killed mid-request.
+    # The panel's Stop button signals this process; pass it on so the bot
+    # disconnects cleanly instead of being killed mid-request.
     def forward(signum, _frame):
         if child.poll() is None:
             child.send_signal(signum)

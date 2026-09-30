@@ -23,9 +23,19 @@ function newestSource(dir) {
 
 const stale = !existsSync(entry) || (existsSync(join(here, "src")) && newestSource(join(here, "src")) > statSync(entry).mtimeMs);
 
-if (stale) {
-  if (!existsSync(join(here, "node_modules", "typescript"))) {
-    console.error("\n  Dependencies are not installed. Run `npm install` in this folder first, then `npm start`.\n");
+const canBuild = existsSync(join(here, "node_modules", "typescript"));
+
+if (!existsSync(join(here, "node_modules", "discord.js"))) {
+  console.error("\n  Dependencies are not installed. Run `npm install` in this folder first, then `npm start`.\n");
+  process.exit(1);
+}
+
+if (stale && !canBuild && existsSync(entry)) {
+  // A host install without the compiler — the upload zip ships the bot pre-built.
+  console.warn("[start] src/ looks newer than dist/, but TypeScript is not installed here — running the built copy.");
+} else if (stale) {
+  if (!canBuild) {
+    console.error("\n  The bot has not been built. Run `npm install` (it includes the compiler), then `npm start`.\n");
     process.exit(1);
   }
   console.log("Building Nexus EMS Bot…");

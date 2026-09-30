@@ -5,3 +5,5 @@ dist/
 nexus-ems-bot.zip
 __pycache__/
 .local/
+.node/
+.node.download
