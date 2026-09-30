@@ -6,7 +6,8 @@ import { registerCommands } from "./register.js";
 import { startScheduler } from "./scheduler.js";
 import { startJoinLink } from "./joinlink.js";
 import { api } from "./api.js";
-import { respondError } from "./ui.js";
+import { EPHEMERAL, failure, respondError } from "./ui.js";
+import { canUse, startPermissions } from "./permissions.js";
 
 /**
  * Nexus EMS Bot.
@@ -85,6 +86,7 @@ function createClient(withMembers: boolean) {
     ready.user.setActivity({ name: config.brandName, type: ActivityType.Watching });
     await checkWebsite(ready);
     if (!config.websiteProblem) startScheduler(ready);
+    if (!config.websiteProblem) startPermissions(ready);
     await startJoinLink(ready);
     console.log("[ready] Nexus EMS Bot is running.");
   });
@@ -98,12 +100,22 @@ function createClient(withMembers: boolean) {
     try {
       if (interaction.isChatInputCommand()) {
         const command = commandMap.get(interaction.commandName);
-        if (command) await command.execute(interaction);
+        if (!command) return;
+        if (!canUse(interaction, interaction.commandName)) {
+          await interaction.reply({ embeds: [noAccess(interaction.commandName)], ...EPHEMERAL });
+          return;
+        }
+        await command.execute(interaction);
         return;
       }
 
       if (interaction.isAutocomplete()) {
         const command = commandMap.get(interaction.commandName);
+        // Suggestions show real data (names, applications), so they are gated too.
+        if (!canUse(interaction, interaction.commandName)) {
+          await interaction.respond([]);
+          return;
+        }
         if (command?.autocomplete) await command.autocomplete(interaction);
         return;
       }
@@ -112,6 +124,11 @@ function createClient(withMembers: boolean) {
         const { command: name, action, payload } = parseCustomId(interaction.customId);
         const command = commandMap.get(name);
         if (!command) return;
+        // Checked again here: a button stays clickable after access is taken away.
+        if (!canUse(interaction, name)) {
+          await interaction.reply({ embeds: [noAccess(name)], ...EPHEMERAL });
+          return;
+        }
         if (interaction.isModalSubmit()) await command.modal?.(interaction, action, payload);
         else if (interaction.isButton()) await command.button?.(interaction, action, payload);
         else await command.select?.(interaction, action, payload);
@@ -125,6 +142,13 @@ function createClient(withMembers: boolean) {
   client.on(Events.Error, (err) => console.error("[discord]", err));
   client.on(Events.ShardError, (err) => console.error("[gateway]", err.message));
   return client;
+}
+
+function noAccess(command: string) {
+  return failure(
+    "You don't have access to this command",
+    `Ask a server administrator to run \`/permissions grant\` for \`/${command}\`, or to add it on the website under Admin → Bot Permissions.`
+  );
 }
 
 /** One line saying whether the website link works, so a bad URL or key shows at startup. */

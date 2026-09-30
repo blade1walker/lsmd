@@ -78,7 +78,6 @@ const data = new SlashCommandBuilder()
   .setName(NAME)
   .setDescription("Post and schedule official announcements")
   .setContexts(InteractionContextType.Guild)
-  .setDefaultMemberPermissions(0n)
   .addSubcommand((s) => withPostOptions(s.setName("now").setDescription("Post an announcement right away")))
   .addSubcommand((s) =>
     // Discord rejects a required option after an optional one, so `when`

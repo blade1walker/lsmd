@@ -24,7 +24,6 @@ export const banner: Command = {
     .setName("banner")
     .setDescription("The spotlight banner on the website's home page and roster")
     .setContexts(InteractionContextType.Guild)
-    .setDefaultMemberPermissions(0n)
     .addSubcommand((s) => s.setName("show").setDescription("What the banner says now"))
     .addSubcommand((s) =>
       s
@@ -82,7 +81,6 @@ export const dm: Command = {
     .setName("dm")
     .setDescription("Message a member as the bot — kept in the website's conversation log")
     .setContexts(InteractionContextType.Guild)
-    .setDefaultMemberPermissions(0n)
     .addUserOption((o) => o.setName("user").setDescription("Who to message").setRequired(true))
     .addStringOption((o) => o.setName("message").setDescription("What to say").setRequired(true).setMaxLength(1900)),
 
@@ -162,6 +160,7 @@ const HELP: [string, string][] = [
   ["/joinlink", "An invite link that gives new members the EMS Recruit and EMS roles"],
   ["/banner", "The website's spotlight banner"],
   ["/dm", "Message a member as the bot"],
+  ["/permissions", "Give roles or people access to commands — or to all of them"],
   ["/duty", "Clock yourself on and off duty"],
   ["/ems", "Overview, help and status"],
 ];
@@ -186,7 +185,7 @@ export const ems: Command = {
               .setTitle("🚑  Nexus EMS Bot")
               .setDescription(
                 `Runs the ${config.websiteUrl ? `[${config.brandName} website](${config.websiteUrl})` : `${config.brandName} website`} from Discord.\n\n` +
-                  "**Who can use what** is set by server admins in **Server Settings → Integrations → Nexus EMS Bot**, per command, by role, member or channel."
+                  "**Who can use what:** server administrators can use everything; `/ems` and `/duty` are open to all. Everyone else needs a grant — `/permissions grant` (or Admin → Bot Permissions on the website). `/permissions check` shows what you can use."
               )
               .addFields(HELP.map(([name, value]) => ({ name, value }))),
           ],

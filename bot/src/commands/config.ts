@@ -63,7 +63,6 @@ const data = new SlashCommandBuilder()
   .setName("config")
   .setDescription("Configure the website's Discord notifications")
   .setContexts(InteractionContextType.Guild)
-  .setDefaultMemberPermissions(0n)
   .addSubcommand((s) => s.setName("view").setDescription("Every notification toggle and channel at a glance"))
   .addSubcommand((s) =>
     s

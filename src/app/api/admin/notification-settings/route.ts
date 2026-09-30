@@ -115,6 +115,13 @@ export async function PATCH(req: NextRequest) {
       where: { id: "singleton" },
     });
 
+    // botSettings is shared: the panel saves the token and invites, the bot
+    // saves its join link. Merge instead of replacing, so a panel save made
+    // from a page loaded earlier cannot wipe what the bot stored since.
+    if (data.botSettings && typeof data.botSettings === "object" && settings?.botSettings && typeof settings.botSettings === "object") {
+      data.botSettings = { ...(settings.botSettings as Record<string, unknown>), ...(data.botSettings as Record<string, unknown>) };
+    }
+
     if (!settings) {
       settings = await prisma.notificationSettings.create({
         data: { id: "singleton", ...data },

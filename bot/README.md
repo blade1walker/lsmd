@@ -36,32 +36,49 @@ To upload to a host, run `npm run package`. It creates `nexus-ems-bot.zip` (abou
 
 ## Commands
 
-| Command | What it does | Default access |
+| Command | What it does | Who can use it |
 | --- | --- | --- |
-| `/announce now · schedule · list · view · edit · cancel · history` | Official announcement embeds, posted now or at a set time, optionally repeating daily or weekly | Admins only |
-| `/recruit pending · view · approve · decline` | Recruitment applications | Admins only |
-| `/onboarding pending · view · approve · decline` | Onboarding requests; approving assigns a starting rank | Admins only |
-| `/loa pending · view · approve · decline` | Leave of Absence requests | Admins only |
-| `/dept-app pending · view · approve · decline` | Department join applications | Admins only |
-| `/member info · rank · callsign · status · find` | Roster lookup, promotions and demotions, call signs, Active/Reserve/LOA | Admins only |
-| `/config view · toggle · message · webhook · invite · test` | The website's notification settings: which events DM or post, the message text, channel webhooks, and a test send | Admins only |
-| `/joinlink view · create · use · roles · reset-roles · enabled` | An invite link that gives everyone who joins through it the **EMS Recruit** and **EMS** roles | Admins only |
-| `/banner show · set · hide` | The spotlight banner on the website's home page and roster | Admins only |
-| `/dm` | Message a member as the bot; the message is kept in the website's conversation log | Admins only |
+| `/announce now · schedule · list · view · edit · cancel · history` | Official announcement embeds, posted now or at a set time, optionally repeating daily or weekly | Admins + anyone granted |
+| `/recruit pending · view · approve · decline` | Recruitment applications | Admins + anyone granted |
+| `/onboarding pending · view · approve · decline` | Onboarding requests; approving assigns a starting rank | Admins + anyone granted |
+| `/loa pending · view · approve · decline` | Leave of Absence requests | Admins + anyone granted |
+| `/dept-app pending · view · approve · decline` | Department join applications | Admins + anyone granted |
+| `/member info · rank · callsign · status · find` | Roster lookup, promotions and demotions, call signs, Active/Reserve/LOA | Admins + anyone granted |
+| `/config view · toggle · message · webhook · invite · test` | The website's notification settings: which events DM or post, the message text, channel webhooks, and a test send | Admins + anyone granted |
+| `/joinlink view · create · use · roles · reset-roles · enabled` | An invite link that gives everyone who joins through it the **EMS Recruit** and **EMS** roles | Admins + anyone granted |
+| `/permissions view · grant · revoke · check · clear` | Who can use which command. Give a role or person one command, or all of them | Admins + anyone granted |
+| `/banner show · set · hide` | The spotlight banner on the website's home page and roster | Admins + anyone granted |
+| `/dm` | Message a member as the bot; the message is kept in the website's conversation log | Admins + anyone granted |
 | `/duty on · off · status` | Clock yourself on or off duty | Everyone |
 | `/ems overview · help · ping` | Pending reviews, roster strength, upcoming announcements, and status | Everyone |
 
 `view` on a review queue shows **Approve** and **Decline** buttons. Onboarding shows a rank picker instead, because approving it assigns a rank.
 
-### Who can use what: Server Settings → Integrations
+### Who can use what: `/permissions`
 
-The bot runs **no permission checks of its own**. Access is set entirely in Discord:
+| Who | Can use |
+| --- | --- |
+| Server administrators and the owner | Every command. No grant needed, so nobody can be locked out |
+| Everyone | `/ems` and `/duty` |
+| Anyone else | Only the commands granted to one of their roles, or to them personally |
 
-1. Open **Server Settings → Integrations → Nexus EMS Bot**.
-2. Pick a command, for example `/loa`.
-3. Under **Roles & Members**, add who may use it, for example the HR role. Under **Channels**, optionally limit where it can be used.
+Give access in Discord. The role and person pickers are Discord's own:
 
-Each area is its own top-level command, so HR can be given `/loa` and `/recruit` without `/config`. Staff commands start out usable by server administrators only, until you grant them. `/duty` and `/ems` start out usable by everyone. You can change any of these in the same place.
+| Command | Does |
+| --- | --- |
+| `/permissions grant to:@HR command:/loa` | HR can review LOA requests |
+| `/permissions grant to:@High Command command:All commands` | High Command can use everything except `/permissions` |
+| `/permissions grant to:@Someone command:/permissions` | That person can give out access too. Administrators only |
+| `/permissions revoke to:@HR command:/loa` | Takes it back |
+| `/permissions clear to:@HR` | Removes everything from that role |
+| `/permissions view` | Everyone who has access, and to what |
+| `/permissions check user:@Someone` | Exactly which commands that person can use |
+
+The same list can be managed on the website under **Admin → Bot Permissions**, which needs the website permission `bot.permissions.view` or `bot.permissions.manage`. Grants are stored on the website, so they survive restarts, and changes made on the website reach the bot within a minute.
+
+"All commands" deliberately leaves out `/permissions`, because handing out access is a separate decision. Someone without access who tries a command gets a private "you don't have access" reply. Access is checked again on every button and form, so taking it away takes effect immediately.
+
+Discord's own Server Settings → Integrations → Nexus EMS Bot still works on top of this, for example to hide commands from a channel. You don't need it.
 
 ### Join link: roles for new members
 
@@ -171,7 +188,7 @@ To push only this folder to a repository of its own, copy the `bot` folder out a
 | "Dependencies are not installed" | Run `npm install` in the bot's folder |
 | `No space left on device` | An older setup installed Node.js through pip. Upload the current zip and press Start: `app.py` removes that copy and pip's cache, then needs about 150 MB in total |
 | "The bot is not connected to the website yet" | Set `WEBSITE_URL` in the bot's `.env` to the website's address, then restart |
-| A user cannot see a command | Grant it in Server Settings → Integrations → Nexus EMS Bot |
+| "You don't have access to this command" | An administrator runs `/permissions grant` for that person's role, or adds it under Admin → Bot Permissions |
 | "The bot is missing … in #channel" | Give the bot that permission in the channel's settings |
 | New members do not get the roles | Run `/joinlink view` and fix what it lists |
 | Log says "Server Members Intent is off" | Turn it on in the Developer Portal → Bot, then restart the bot |

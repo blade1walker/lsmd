@@ -1119,3 +1119,25 @@ model Announcement {
   @@index([status, scheduledFor])
   @@index([createdAt])
 }
+
+/// Who may use a Nexus EMS Bot command in Discord. A grant is to a Discord
+/// role or a single user, for one command or for "*" (every command except
+/// /permissions, which must be granted on its own). Server administrators
+/// always have access and need no grant.
+model BotCommandGrant {
+  id          String   @id @default(cuid())
+  guildId     String
+  /// "role" | "user"
+  targetType  String
+  targetId    String
+  /// The role or user's name when granted, for showing in lists.
+  targetName  String
+  /// A command name, or "*" for all commands.
+  command     String
+  grantedByDiscordId String
+  grantedByName      String
+  createdAt   DateTime @default(now())
+
+  @@unique([guildId, targetType, targetId, command])
+  @@index([guildId])
+}

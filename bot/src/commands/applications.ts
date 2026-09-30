@@ -197,7 +197,6 @@ function build(q: Queue): Command {
     .setName(q.name)
     .setDescription(q.description)
     .setContexts(InteractionContextType.Guild)
-    .setDefaultMemberPermissions(0n)
     .addSubcommand((s) => s.setName("pending").setDescription(`Everything waiting for review`))
     .addSubcommand((s) =>
       s

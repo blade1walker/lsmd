@@ -8,7 +8,6 @@ const data = new SlashCommandBuilder()
   .setName("joinlink")
   .setDescription("An invite link that gives new members the EMS Recruit and EMS roles")
   .setContexts(InteractionContextType.Guild)
-  .setDefaultMemberPermissions(0n)
   .addSubcommand((s) => s.setName("view").setDescription("The link, its roles, and anything stopping it from working"))
   .addSubcommand((s) =>
     s

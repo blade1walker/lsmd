@@ -30,6 +30,8 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     date: "2026-10-01",
     changes: [
+      { type: "feature", text: "Bot Permissions: choose which Discord roles and people can use each Nexus EMS Bot command — or all of them — with /permissions in Discord (grant, revoke, clear, view, and check what someone can use) or on the new Admin → Bot Permissions page. Server administrators always have access, /ems and /duty stay open to everyone, and anyone else without access gets a private \"no access\" reply" },
+      { type: "fix", text: "Saving Notification settings no longer risks wiping the bot's join-link setting — bot settings are now merged rather than replaced" },
       { type: "security", text: "Nexus EMS Bot never follows a redirect from the website address, so its credentials cannot be passed on to another site; a WEBSITE_URL that redirects (or is a protected Vercel preview address) now gets a message naming the address to use instead" },
       { type: "fix", text: "Nexus EMS Bot: its slash commands failed to register because /announce schedule listed a required option after optional ones; fixed, and the bot now checks every command before registering and names any that would be refused" },
       { type: "improvement", text: "Nexus EMS Bot connects to the website without any extra key: the website checks with Discord that the bot's token belongs to its own Discord application. NEXUS_BOT_API_KEY still works as an optional alternative, and when the website refuses the bot it now says exactly why" },

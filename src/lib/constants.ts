@@ -133,6 +133,9 @@ export const ALL_PERMISSIONS = [
   // Discord announcements the Nexus EMS bot posts, now or on a schedule.
   "announcements.view",
   "announcements.manage",
+  // Who may use which Nexus EMS Bot command in Discord.
+  "bot.permissions.view",
+  "bot.permissions.manage",
 ] as const;
 
 /**
@@ -306,3 +309,16 @@ export const ANNOUNCEMENT_PERMISSIONS = {
   view: ["announcements.view", "announcements.manage"],
   manage: ["announcements.manage"],
 } as const satisfies Record<string, readonly string[]>;
+
+/**
+ * Nexus EMS Bot command access. `view` lists who can use which bot command;
+ * `manage` grants and revokes it. In Discord the same grants are managed with
+ * the bot's /permissions command, which server administrators can always use.
+ */
+export const BOT_PERMISSION_PERMISSIONS = {
+  view: ["bot.permissions.view", "bot.permissions.manage"],
+  manage: ["bot.permissions.manage"],
+} as const satisfies Record<string, readonly string[]>;
+
+/** Any permission that opens the Bot Permissions page, for the sidebar check. */
+export const BOT_PERMISSION_SECTION_PERMISSIONS: string[] = [...BOT_PERMISSION_PERMISSIONS.view];

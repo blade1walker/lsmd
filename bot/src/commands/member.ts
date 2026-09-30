@@ -13,7 +13,6 @@ const data = new SlashCommandBuilder()
   .setName("member")
   .setDescription("Look up and manage roster members")
   .setContexts(InteractionContextType.Guild)
-  .setDefaultMemberPermissions(0n)
   .addSubcommand((s) => s.setName("info").setDescription("A member's roster record").addStringOption(memberOption))
   .addSubcommand((s) =>
     s

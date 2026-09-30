@@ -34,6 +34,7 @@ import {
   Ambulance,
   TrendingUp,
   ClipboardCheck,
+  ShieldCheck,
 } from "lucide-react";
 import {
   DEPARTMENT_SECTION_PERMISSIONS,
@@ -43,6 +44,7 @@ import {
   MEDICAL_ADMIN_PERMISSIONS,
   CALL_SECTION_PERMISSIONS,
   INTERVIEW_SECTION_PERMISSIONS,
+  BOT_PERMISSION_SECTION_PERMISSIONS,
 } from "@/lib/constants";
 
 // `permission` mirrors the check on the matching API route, so a section is
@@ -81,6 +83,7 @@ const navItems: {
   { href: "/admin/notification-settings", label: "Notify Settings", icon: Settings, permission: "notifications" },
   { href: "/admin/notifications", label: "Notifications", icon: Bell, permission: "notifications" },
   { href: "/admin/messaging", label: "Bot Messaging", icon: MessageSquare, permission: "notifications" },
+  { href: "/admin/bot-permissions", label: "Bot Permissions", icon: ShieldCheck, permission: BOT_PERMISSION_SECTION_PERMISSIONS },
   { href: "/admin/audit", label: "Audit Log", icon: ScrollText, permission: "audit.view" },
   { href: "/admin/changelog", label: "Changelog", icon: History, permission: "changelog.view" },
   { href: "/admin/export", label: "Export", icon: Download, permission: EXPORT_SECTION_PERMISSIONS },
