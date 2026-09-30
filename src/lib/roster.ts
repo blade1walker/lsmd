@@ -217,3 +217,41 @@ export async function getRosterPageData(): Promise<RosterPageData> {
     viewerDuty,
   };
 }
+
+export interface HomeSummary {
+  viewer: RosterViewer;
+  banner: RosterPageData["banner"];
+  stats: { personnel: number; onDuty: number; departments: number };
+}
+
+/**
+ * What the landing page shows: headline counts, the banner and who is looking.
+ * Counts only, never rows — the page is public, and these are the same numbers
+ * the roster already shows to anyone. Null when the database is unreachable,
+ * so the landing page can still render its links.
+ */
+export async function getHomeSummary(): Promise<HomeSummary | null> {
+  try {
+    const [viewer, personnel, departments, onDuty, banner] = await Promise.all([
+      resolveViewer(),
+      prisma.member.count({ where: { sectionId: { not: null } } }),
+      prisma.departmentTemplate.count(),
+      prisma.clockEntry.groupBy({ by: ["memberId"], where: { clockOutAt: null } }),
+      prisma.rosterBanner.findUnique({ where: { id: "singleton" } }).catch(() => null),
+    ]);
+
+    const bannerText = banner && [banner.label, banner.highlight, banner.message].some((v) => v.trim());
+
+    return {
+      viewer,
+      banner:
+        banner?.active && bannerText
+          ? { label: banner.label.trim(), highlight: banner.highlight.trim(), message: banner.message.trim() }
+          : null,
+      stats: { personnel, onDuty: onDuty.length, departments },
+    };
+  } catch (error) {
+    console.error("Home summary failed to load:", error);
+    return null;
+  }
+}

@@ -22,9 +22,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LSMS Roster - Nexus Universe",
+  title: { default: "Los Santos EMS — Nexus Universe", template: "%s — Los Santos EMS" },
   description:
-    "Official Personnel Roster of the Los Santos Emergency Medical Services - Nexus Universe RP",
+    "Los Santos Emergency Medical Services on Nexus Universe RP — applications, roster, SOP and training.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

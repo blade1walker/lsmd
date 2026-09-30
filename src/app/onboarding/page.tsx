@@ -44,7 +44,7 @@ export default function OnboardingPage() {
           </p>
           <Link href="/">
             <Button variant="outline" className="border-[#1e1e1e] text-gray-400">
-              Back to Roster
+              Back to Home
             </Button>
           </Link>
         </div>
@@ -57,7 +57,7 @@ export default function OnboardingPage() {
       <header className="border-b border-[#1e1e1e]">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
           <Link href="/" className="text-sm text-gray-400 hover:text-white">
-            ← Back to Roster
+            ← Back to Home
           </Link>
           <span className="font-[family-name:var(--font-oswald)] text-white font-semibold text-sm">
             EMS

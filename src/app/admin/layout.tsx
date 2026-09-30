@@ -139,7 +139,7 @@ export default function AdminLayout({
             no admin sections assigned. Ask an administrator if you need access.
           </p>
           <Link href="/" className="inline-block mt-4 text-sm text-[#dc2626] hover:underline">
-            Back to Roster
+            Back to Website
           </Link>
         </div>
       </div>
@@ -151,7 +151,7 @@ export default function AdminLayout({
       <div className="p-4 border-b border-[#1e1e28]">
         <Link href="/" className="flex items-center gap-2 text-gray-400 hover:text-white text-sm">
           <ChevronLeft className="w-4 h-4" />
-          Back to Roster
+          Back to Website
         </Link>
       </div>
 

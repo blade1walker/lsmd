@@ -1,70 +1,67 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { StarOfLife } from "./roster/StarOfLife";
+
+const NAV = [
+  { href: "/", label: "Home" },
+  { href: "/roster", label: "Roster" },
+  { href: "/sop", label: "SOP" },
+  { href: "/radio-codes", label: "Radio Codes" },
+  { href: "/training", label: "Training" },
+] as const;
 
 export function DiscordBar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
+  const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
   return (
     <header className="sticky top-0 z-50 bg-[#0a0a0a]/95 backdrop-blur border-b border-[#1e1e1e]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center">
-              <span className="font-[family-name:var(--font-oswald)] text-white font-bold text-lg">
-                N
-              </span>
+          <Link href="/" className="flex items-center gap-3">
+            <StarOfLife className="h-9 w-9" />
+            <div className="leading-tight">
+              <div className="font-[family-name:var(--font-oswald)] text-white font-semibold text-base uppercase tracking-[0.12em]">
+                Los Santos EMS
+              </div>
+              <div className="text-gray-500 text-[10px] font-semibold uppercase tracking-[0.3em] hidden sm:block">
+                Nexus Universe
+              </div>
             </div>
-            <div>
-              <span className="font-[family-name:var(--font-oswald)] text-white font-semibold text-lg tracking-wide">
-                NEXUS
-              </span>
-              <span className="text-gray-500 text-sm ml-2 hidden sm:inline">
-                Universe
-              </span>
-            </div>
-          </div>
+          </Link>
 
           <nav className="hidden md:flex items-center gap-1">
-            <a
-              href="/"
-              className="px-4 py-2 text-sm font-medium text-white bg-white/10 rounded-lg transition-colors"
-            >
-              Roster
-            </a>
-            <a
-              href="/sop"
-              className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-            >
-              SOP
-            </a>
-            <a
-              href="/radio-codes"
-              className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-            >
-              Radio Codes
-            </a>
-            <a
-              href="/training"
-              className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-            >
-              Training
-            </a>
+            {NAV.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  isActive(item.href) ? "text-white bg-white/10" : "text-gray-400 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                {item.label}
+              </Link>
+            ))}
           </nav>
 
           <div className="hidden md:flex items-center gap-3">
-            <a
+            <Link
               href="/admin/login"
               className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
             >
               EMS Staff Login
-            </a>
+            </Link>
           </div>
 
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
             className="md:hidden p-2 text-gray-400 hover:text-white"
           >
             {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -80,21 +77,23 @@ export function DiscordBar() {
               className="md:hidden pb-4 border-t border-[#1e1e1e] mt-2 pt-4"
             >
               <div className="flex flex-col gap-2">
-                <a href="/" className="px-4 py-2 text-sm font-medium text-white bg-white/10 rounded-lg">
-                  Roster
-                </a>
-                <a href="/sop" className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 rounded-lg">
-                  SOP
-                </a>
-                <a href="/radio-codes" className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 rounded-lg">
-                  Radio Codes
-                </a>
-                <a href="/training" className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 rounded-lg">
-                  Training
-                </a>
-                <a href="/admin/login" className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg text-center mt-2">
+                {NAV.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`px-4 py-2 text-sm font-medium rounded-lg ${
+                      isActive(item.href) ? "text-white bg-white/10" : "text-gray-400 hover:text-white hover:bg-white/5"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+                <Link
+                  href="/admin/login"
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg text-center mt-2"
+                >
                   EMS Staff Login
-                </a>
+                </Link>
               </div>
             </motion.div>
           )}

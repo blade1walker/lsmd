@@ -54,7 +54,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       <header className="border-b border-[#1e1e1e]">
         <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
           <Link href="/" className="text-sm text-gray-400 hover:text-white">
-            ← Back to Roster
+            ← Back to Home
           </Link>
           <span className="font-[family-name:var(--font-oswald)] text-white font-semibold text-sm">
             EMS
@@ -191,7 +191,7 @@ export default function DepartmentsPage() {
               Apply to another
             </Button>
             <Link href="/">
-              <Button className="bg-[#dc2626] text-black hover:bg-[#b91c1c]">Back to Roster</Button>
+              <Button className="bg-[#dc2626] text-black hover:bg-[#b91c1c]">Back to Home</Button>
             </Link>
           </div>
         </div>

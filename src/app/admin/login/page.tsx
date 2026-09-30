@@ -75,7 +75,7 @@ export default function AdminLoginPage() {
 
         <div className="mt-6 text-center">
           <a href="/" className="text-sm text-gray-500 hover:text-white transition-colors">
-            Back to Roster
+            Back to Website
           </a>
         </div>
       </motion.div>

@@ -30,6 +30,9 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     date: "2026-09-30",
     changes: [
+      { type: "feature", text: "A new home page: the site now opens on a proper landing page with every application (Join EMS, department applications, Leave of Absence), the member services and the reference resources, each marked with who it is for, plus how joining works and live personnel and on-duty counts" },
+      { type: "improvement", text: "The personnel roster has moved to its own page at /roster, linked from the home page, the top bar and the footer — signing in or out from the roster returns you to it" },
+      { type: "improvement", text: "The top bar on the SOP, radio codes and training pages now highlights the page you are on, instead of always showing Roster as selected" },
       { type: "fix", text: "A bot token pasted with a \"Bot \" prefix or surrounding quotes is now cleaned up before use, instead of Discord rejecting every DM with 401 Unauthorized" },
       { type: "improvement", text: "When Discord rejects the bot token, the delivery log and messaging panel now say so plainly and explain how to replace it — including that a token saved in Notification settings overrides the one in the environment" },
     ],

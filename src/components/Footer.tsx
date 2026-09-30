@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 export function Footer() {
   return (
     <footer className="border-t border-[#1e1e1e] bg-[#0a0a0a] mt-auto">
@@ -20,8 +22,8 @@ export function Footer() {
               </div>
             </div>
             <p className="text-gray-500 text-sm max-w-sm">
-              Official Personnel Roster of the Emergency Medical Services.
-              Part of the Nexus Universe GTA V Roleplay community.
+              Los Santos Emergency Medical Services — applications, roster, procedures
+              and training. Part of the Nexus Universe GTA V Roleplay community.
             </p>
           </div>
 
@@ -31,24 +33,39 @@ export function Footer() {
             </h3>
             <ul className="space-y-2">
               <li>
-                <a href="/" className="text-gray-500 hover:text-white text-sm transition-colors">
+                <Link href="/" className="text-gray-500 hover:text-white text-sm transition-colors">
+                  Home
+                </Link>
+              </li>
+              <li>
+                <Link href="/#applications" className="text-gray-500 hover:text-white text-sm transition-colors">
+                  Applications
+                </Link>
+              </li>
+              <li>
+                <Link href="/roster" className="text-gray-500 hover:text-white text-sm transition-colors">
                   Roster
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/sop" className="text-gray-500 hover:text-white text-sm transition-colors">
+                <Link href="/sop" className="text-gray-500 hover:text-white text-sm transition-colors">
                   SOP
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/radio-codes" className="text-gray-500 hover:text-white text-sm transition-colors">
+                <Link href="/radio-codes" className="text-gray-500 hover:text-white text-sm transition-colors">
                   Radio Codes
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/training" className="text-gray-500 hover:text-white text-sm transition-colors">
+                <Link href="/training" className="text-gray-500 hover:text-white text-sm transition-colors">
                   Training
-                </a>
+                </Link>
+              </li>
+              <li>
+                <Link href="/uniform" className="text-gray-500 hover:text-white text-sm transition-colors">
+                  Uniform Guide
+                </Link>
               </li>
             </ul>
           </div>
@@ -80,7 +97,7 @@ export function Footer() {
             &copy; {new Date().getFullYear()} Nexus Universe. All rights reserved.
           </div>
           <div className="text-gray-600 text-xs">
-            This is a fictional roleplay community. Not affiliated with actual law enforcement.
+            This is a fictional roleplay community. Not affiliated with any real emergency service.
           </div>
         </div>
       </div>

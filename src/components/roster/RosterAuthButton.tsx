@@ -14,7 +14,7 @@ export function RosterAuthButton({ viewer }: { viewer: RosterViewer }) {
     return (
       <button
         type="button"
-        onClick={() => signIn("discord", { callbackUrl: "/" })}
+        onClick={() => signIn("discord", { callbackUrl: "/roster" })}
         className="fixed right-4 top-4 z-40 inline-flex items-center gap-2 rounded-lg bg-[#5865F2] px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-black/40 transition-colors hover:bg-[#4752C4]"
       >
         <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -31,7 +31,7 @@ export function RosterAuthButton({ viewer }: { viewer: RosterViewer }) {
       <UserNotificationBell />
       <button
         type="button"
-        onClick={() => signOut({ callbackUrl: "/" })}
+        onClick={() => signOut({ callbackUrl: "/roster" })}
         title="Sign out"
         className="rounded-md p-2 text-gray-500 transition-colors hover:bg-white/10 hover:text-white"
       >

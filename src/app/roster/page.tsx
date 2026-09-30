@@ -1,0 +1,53 @@
+import { PublicPageClient } from "@/components/PublicPageClient";
+import { getRosterPageData } from "@/lib/roster";
+import { parseRosterFilters } from "@/lib/roster-shared";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "Personnel Roster" };
+
+export const dynamic = "force-dynamic";
+
+function DatabaseError() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-[#0a0a0a] text-white p-8">
+      <h1 className="font-[family-name:var(--font-oswald)] text-3xl font-bold text-red-500 mb-4">
+        Database Connection Failed
+      </h1>
+      <p className="text-gray-400 text-center max-w-md mb-6">
+        The application cannot connect to the database. Please make sure
+        <code className="bg-white/10 px-2 py-1 rounded mx-1">DATABASE_URL</code>
+        is set in your Vercel environment variables.
+      </p>
+      <div className="bg-white/5 border border-white/10 rounded-lg p-4 text-sm text-gray-500 max-w-lg w-full">
+        <p className="font-semibold text-gray-300 mb-2">Steps to fix:</p>
+        <ol className="list-decimal list-inside space-y-1">
+          <li>Go to vercel.com → Your project → Settings → Environment Variables</li>
+          <li>
+            Add <code className="bg-white/10 px-1 rounded">DATABASE_URL</code> with your PostgreSQL connection string
+          </li>
+          <li>Redeploy the project</li>
+        </ol>
+      </div>
+    </div>
+  );
+}
+
+export default async function RosterPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  // Filters live in the link, so a filtered view ("every FTI on evenings") can
+  // be copied and sent, and survives a reload.
+  const initialFilters = parseRosterFilters(await searchParams);
+
+  let data;
+  try {
+    data = await getRosterPageData();
+  } catch (error) {
+    console.error("Roster failed to load:", error);
+    return <DatabaseError />;
+  }
+
+  return <PublicPageClient data={data} initialFilters={initialFilters} />;
+}

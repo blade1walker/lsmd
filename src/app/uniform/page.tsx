@@ -6,7 +6,7 @@ export default function UniformPage() {
       <header className="border-b border-[#1e1e1e]">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
           <Link href="/" className="text-sm text-gray-400 hover:text-white">
-            ← Back to Roster
+            ← Back to Home
           </Link>
           <span className="font-[family-name:var(--font-oswald)] text-white font-semibold text-sm">
 EMS
