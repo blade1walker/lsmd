@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "./auth";
 import { resolveAccess, hasPermission, type Access } from "./access";
+import { resolveBotAccess } from "./bot-auth";
 
 export type AuthResult = { access: Access } | { error: NextResponse };
 
@@ -19,6 +20,11 @@ export function isDenied(result: AuthResult): result is { error: NextResponse } 
  * a revoked role or a roster removal takes effect on the next request.
  */
 export async function requireAuth(permission?: string | readonly string[]): Promise<AuthResult> {
+  // The Discord bot. Its commands are permissioned in Discord's Integrations
+  // settings, so it passes every check here — see bot-auth.ts.
+  const bot = await resolveBotAccess();
+  if (bot) return { access: bot };
+
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.discordId) {

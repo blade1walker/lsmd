@@ -130,6 +130,9 @@ export const ALL_PERMISSIONS = [
   "interviews.score",
   "interviews.finalize",
   "interviews.manage",
+  // Discord announcements the Nexus EMS bot posts, now or on a schedule.
+  "announcements.view",
+  "announcements.manage",
 ] as const;
 
 /**
@@ -292,3 +295,14 @@ export function canSeeTrainingPages(permissions: string[]): boolean {
     permissions.includes("training.signoff.manage")
   );
 }
+
+/**
+ * Discord announcements. `view` reads the schedule and history; `manage`
+ * posts, schedules, edits and cancels. In Discord itself, who may run the
+ * bot's /announce command is set in Server Settings → Integrations — these
+ * cover the same data reached from the site's API.
+ */
+export const ANNOUNCEMENT_PERMISSIONS = {
+  view: ["announcements.view", "announcements.manage"],
+  manage: ["announcements.manage"],
+} as const satisfies Record<string, readonly string[]>;

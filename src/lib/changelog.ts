@@ -30,6 +30,9 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     date: "2026-09-30",
     changes: [
+      { type: "feature", text: "Nexus EMS Bot: the site can now be run from Discord — review recruitment, onboarding, LOA and department applications, change ranks, call signs and roster status, edit notification settings and message text, set the home page banner, DM members, and clock on and off duty with slash commands. Every change is made through the site, so it sends the same DMs and posts and is credited in the audit log as \"(via Discord)\"" },
+      { type: "feature", text: "Official announcements from the bot: post a branded announcement now, or schedule it for later with an optional daily or weekly repeat, then list, preview, edit or cancel it. Schedules are kept on the site, so they survive the bot restarting, and every post keeps a history with a link to the message" },
+      { type: "security", text: "Who may use each bot command is set in Discord under Server Settings → Integrations → Nexus EMS Bot. Staff commands start out limited to server administrators until access is granted there, and the bot's access to the site is switched off unless NEXUS_BOT_API_KEY is set" },
       { type: "feature", text: "A new home page: the site now opens on a proper landing page with every application (Join EMS, department applications, Leave of Absence), the member services and the reference resources, each marked with who it is for, plus how joining works and live personnel and on-duty counts" },
       { type: "improvement", text: "The personnel roster has moved to its own page at /roster, linked from the home page, the top bar and the footer — signing in or out from the roster returns you to it" },
       { type: "improvement", text: "The top bar on the SOP, radio codes and training pages now highlights the page you are on, instead of always showing Roster as selected" },

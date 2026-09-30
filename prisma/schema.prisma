@@ -1081,3 +1081,41 @@ model InterviewNote {
 
   @@index([interviewId])
 }
+
+// ─── Discord Announcements ──────────────────────────────────────────────────
+
+/// An announcement the Nexus EMS bot posts to a Discord channel, now or at a
+/// set time. Kept here rather than on the bot's host so a schedule survives
+/// the bot restarting or moving host, and so every post has a history.
+model Announcement {
+  id           String    @id @default(cuid())
+  title        String
+  message      String
+  /// Discord channel snowflake the post goes to.
+  channelId    String
+  /// "none" | "everyone" | "here" | "role:<roleId>"
+  mention      String    @default("none")
+  /// Embed accent, as a 0xRRGGBB integer.
+  color        Int       @default(14427686)
+  imageUrl     String?
+  /// Optional line under the message, e.g. the issuing office.
+  footer       String?
+  scheduledFor DateTime
+  /// "none" | "daily" | "weekly" — a repeating post re-arms itself once sent.
+  repeat       String    @default("none")
+  /// "Scheduled" | "Sending" | "Sent" | "Failed" | "Cancelled"
+  status       String    @default("Scheduled")
+  /// Set when the bot claims the post, so a restart mid-send can re-claim a stale one.
+  claimedAt    DateTime?
+  sentAt       DateTime?
+  messageUrl   String?
+  error        String?
+  createdByDiscordId String
+  createdByName      String
+  cancelledByName    String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([status, scheduledFor])
+  @@index([createdAt])
+}
