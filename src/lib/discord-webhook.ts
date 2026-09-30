@@ -169,10 +169,31 @@ export async function resolveWebhookSource(
   return { url: borrowed, kind: borrowed ? fallback! : null };
 }
 
+/**
+ * The token as Discord wants it after "Bot ". Pasted tokens often arrive with
+ * that prefix already on, or wrapped in the quotes from a .env line — both go
+ * out as a malformed Authorization header and Discord answers 401.
+ */
+function normalizeBotToken(raw: string): string {
+  return raw
+    .trim()
+    .replace(/^["']|["']$/g, "")
+    .replace(/^Bot\s+/i, "")
+    .trim();
+}
+
 export async function resolveBotToken(settings?: NotificationSettings): Promise<string> {
   const s = settings ?? (await getNotificationSettings());
-  return (s.botSettings?.token || process.env.DISCORD_BOT_TOKEN || "").trim();
+  return normalizeBotToken(s.botSettings?.token || process.env.DISCORD_BOT_TOKEN || "");
 }
+
+/**
+ * What a 401 from the bot API means. The token on the settings page wins over
+ * DISCORD_BOT_TOKEN, so a revoked one saved there keeps failing even after the
+ * env var is updated — worth saying, since that is the non-obvious half.
+ */
+export const BOT_TOKEN_REJECTED =
+  "Discord rejected the bot token (401) — reset it in the Developer Portal → Bot, then paste the new one into Notification settings → Bot. A token saved there overrides DISCORD_BOT_TOKEN";
 
 /** Why a send did not happen, when it did not happen for a reason that is not an error. */
 export type SkipReason = "no-url" | "no-token" | "no-target";
@@ -440,7 +461,9 @@ export async function sendDiscordDM(
         error:
           channelRes.status === 403
             ? "Cannot DM this user — they share no server with the bot, or have DMs disabled"
-            : (await channelRes.text().catch(() => "")).slice(0, 300),
+            : channelRes.status === 401
+              ? BOT_TOKEN_REJECTED
+              : (await channelRes.text().catch(() => "")).slice(0, 300),
       };
     } else {
       const dmChannel = await channelRes.json();

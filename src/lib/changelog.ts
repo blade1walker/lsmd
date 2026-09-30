@@ -28,6 +28,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: "2026-09-30",
+    changes: [
+      { type: "fix", text: "A bot token pasted with a \"Bot \" prefix or surrounding quotes is now cleaned up before use, instead of Discord rejecting every DM with 401 Unauthorized" },
+      { type: "improvement", text: "When Discord rejects the bot token, the delivery log and messaging panel now say so plainly and explain how to replace it — including that a token saved in Notification settings overrides the one in the environment" },
+    ],
+  },
+  {
     date: "2026-09-23",
     title: "Promotion & Interview examinations",
     changes: [

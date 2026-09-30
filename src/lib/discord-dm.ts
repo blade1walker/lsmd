@@ -1,5 +1,5 @@
 import { prisma } from "./prisma";
-import { resolveBotToken } from "./discord-webhook";
+import { resolveBotToken, BOT_TOKEN_REJECTED } from "./discord-webhook";
 import { recordDirectMessage, upsertThread } from "./dm-threads";
 
 /**
@@ -87,7 +87,9 @@ export async function resolveDmChannel(
         error:
           res.status === 403
             ? "Cannot open a DM with this user — they share no server with the bot, or have DMs disabled"
-            : `Discord returned ${res.status} opening the DM channel`,
+            : res.status === 401
+              ? BOT_TOKEN_REJECTED
+              : `Discord returned ${res.status} opening the DM channel`,
       };
     }
 
@@ -123,6 +125,7 @@ export async function syncThread(discordId: string): Promise<SyncResult> {
     );
 
     if (!res.ok) {
+      if (res.status === 401) return { ok: false, error: BOT_TOKEN_REJECTED };
       return { ok: false, error: `Discord returned ${res.status} reading the conversation` };
     }
 

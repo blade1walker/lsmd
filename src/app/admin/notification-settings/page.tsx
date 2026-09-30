@@ -899,7 +899,8 @@ export default function AdminNotificationSettingsPage() {
                   className="mt-1 bg-[#0a0a0a] border-[#1e1e1e] text-white"
                 />
                 <p className="text-gray-600 text-[11px] mt-1">
-                  Used for every DM. Falls back to <code className="bg-white/5 px-1 rounded">DISCORD_BOT_TOKEN</code>.
+                  Used for every DM. Overrides <code className="bg-white/5 px-1 rounded">DISCORD_BOT_TOKEN</code> when filled in — clear it
+                  to use the env var instead. Paste the token alone, without a &quot;Bot &quot; prefix.
                 </p>
               </div>
               <div>
