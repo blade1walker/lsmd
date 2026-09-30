@@ -7,13 +7,11 @@ import {
   Building2,
   CalendarOff,
   ClipboardCheck,
-  GraduationCap,
   MessageSquare,
   Radio,
   Shirt,
   Stethoscope,
   UserPlus,
-  Users,
 } from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { SiteHeader } from "@/components/home/SiteHeader";
@@ -76,33 +74,6 @@ const APPLICATIONS: Destination[] = [
     icon: CalendarOff,
     audience: "EMS members",
     cta: "Request leave",
-  },
-];
-
-const MEMBER_SERVICES: Destination[] = [
-  {
-    href: "/roster",
-    title: "Personnel Roster",
-    description: "Every member by section and rank, with who is on duty right now.",
-    icon: Users,
-    audience: "Public",
-    cta: "View roster",
-  },
-  {
-    href: "/cadet",
-    title: "Trainee Portal",
-    description: "Your field-training record, trainer remarks and progress toward your next rank.",
-    icon: ClipboardCheck,
-    audience: "Trainees · Discord sign-in",
-    cta: "Open portal",
-  },
-  {
-    href: "/training",
-    title: "Training Portal",
-    description: "Course material and training resources for serving medics.",
-    icon: GraduationCap,
-    audience: "EMS members · Discord sign-in",
-    cta: "Start training",
   },
 ];
 
@@ -239,24 +210,10 @@ export default async function Home() {
         </section>
 
         <Section
-          id="members"
-          eyebrow="For members"
-          title="Member services"
-          intro="Sign in with the Discord account linked to your roster entry to open the member-only tools."
-        >
-          <div className="grid gap-5 md:grid-cols-3">
-            {MEMBER_SERVICES.map((item) => (
-              <DestinationCard key={item.href} item={item} />
-            ))}
-          </div>
-        </Section>
-
-        <Section
           id="resources"
           eyebrow="Reference"
           title="Resources"
           intro="The procedures, codes and standards every medic works to."
-          className="pt-0 md:pt-0"
         >
           <div className="grid gap-5 md:grid-cols-3">
             {RESOURCES.map((item) => (

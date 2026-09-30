@@ -159,6 +159,7 @@ const HELP: [string, string][] = [
   ["/recruit · /onboarding · /loa · /dept-app", "Review queues — pending, view, approve, decline"],
   ["/member", "Roster lookup, rank changes, call signs and status"],
   ["/config", "Notification toggles, message text, webhooks and tests"],
+  ["/joinlink", "An invite link that gives new members the EMS Recruit and EMS roles"],
   ["/banner", "The website's spotlight banner"],
   ["/dm", "Message a member as the bot"],
   ["/duty", "Clock yourself on and off duty"],

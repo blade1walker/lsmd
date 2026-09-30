@@ -10,7 +10,6 @@ import type { RosterViewer } from "@/lib/roster-shared";
 
 const NAV = [
   { href: "#applications", label: "Applications" },
-  { href: "#members", label: "Members" },
   { href: "#resources", label: "Resources" },
   { href: "/roster", label: "Roster" },
 ] as const;

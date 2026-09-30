@@ -28,6 +28,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: "2026-10-01",
+    changes: [
+      { type: "feature", text: "Nexus EMS Bot: a join link — everyone who joins the Discord server through the bot's invite link is given the EMS Recruit and EMS roles automatically. Set it up with /joinlink create (or /joinlink use for an invite already shared), choose other roles with /joinlink roles, and /joinlink view checks everything the bot needs and says how to fix what is missing" },
+      { type: "improvement", text: "The home page no longer has the Member Services section; the roster and training remain in the top bar and footer" },
+    ],
+  },
+  {
     date: "2026-09-30",
     changes: [
       { type: "feature", text: "Nexus EMS Bot: the site can now be run from Discord — review recruitment, onboarding, LOA and department applications, change ranks, call signs and roster status, edit notification settings and message text, set the home page banner, DM members, and clock on and off duty with slash commands. Every change is made through the site, so it sends the same DMs and posts and is credited in the audit log as \"(via Discord)\"" },

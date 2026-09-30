@@ -19,6 +19,7 @@ This folder is self-contained. Deploy it on its own; the website does not need i
 | `/dept-app pending · view · approve · decline` | Department join applications | Admins only |
 | `/member info · rank · callsign · status · find` | Roster lookup, promotions and demotions, call signs, Active/Reserve/LOA | Admins only |
 | `/config view · toggle · message · webhook · invite · test` | The website's notification settings: which events DM or post, the message text, channel webhooks, and a test send | Admins only |
+| `/joinlink view · create · use · roles · reset-roles · enabled` | An invite link that gives everyone who joins through it the **EMS Recruit** and **EMS** roles | Admins only |
 | `/banner show · set · hide` | The spotlight banner on the website's home page and roster | Admins only |
 | `/dm` | Message a member as the bot; the message is kept in the website's conversation log | Admins only |
 | `/duty on · off · status` | Clock yourself on or off duty | Everyone |
@@ -35,6 +36,23 @@ The bot runs **no permission checks of its own**. Access is set entirely in Disc
 3. Under **Roles & Members**, add who may use it, for example the HR role. Under **Channels**, optionally limit where it can be used.
 
 Each area is its own top-level command, so HR can be given `/loa` and `/recruit` without `/config`. Staff commands start out usable by server administrators only, until you grant them. `/duty` and `/ems` start out usable by everyone. You can change any of these in the same place.
+
+### Join link: roles for new members
+
+Anyone who joins the server through the bot's join link automatically gets the **EMS Recruit** and **EMS** roles.
+
+1. Run `/joinlink create channel:#welcome` to make a permanent link, or `/joinlink use link:<an invite you already share>` to use an existing one.
+2. By default the bot gives the roles named exactly `EMS Recruit` and `EMS`. To pick different roles, use `/joinlink roles`.
+3. Run `/joinlink view` to check it. It lists anything that would stop the roles being given, and how to fix each one.
+
+Requirements, all of which `/joinlink view` checks:
+- **Server Members Intent** must be on (Developer Portal → Bot → Privileged Gateway Intents). Without it Discord never tells the bot that someone joined. If it's off, the bot still starts and every other command works.
+- The bot needs **Manage Server**, because only members with it can see invite use counts, and **Manage Roles**.
+- The bot's own role must sit **above** EMS Recruit and EMS in Server Settings → Roles.
+
+Members still on the server's rules screen get the roles as soon as they accept the rules. The setting is stored on the website, so it survives restarts.
+
+Discord doesn't tell bots which invite a member used, so the bot compares invite use counts. If two people join within the same moment through different links, the roles go to whichever join the bot processes first. In practice this is rare.
 
 ### Scheduling times
 
@@ -62,16 +80,16 @@ Redeploy the website. The deploy also creates the `Announcement` table.
 
 Use the same application as the website's DM bot (Developer Portal → Applications). Rename it **Nexus EMS Bot** under General Information and Bot if you have not already.
 
-- **Bot → Privileged Gateway Intents:** leave all three off. The bot needs none of them.
+- **Bot → Privileged Gateway Intents:** turn on **Server Members Intent**. Only the join link needs it. Leave Presence and Message Content off.
 - **Bot → Reset Token:** copy the token into `DISCORD_TOKEN`. Resetting it breaks the website's DMs until you also paste the new token into the website: Admin → Notification settings → Bot, or `DISCORD_BOT_TOKEN`.
 
 Invite the bot with both scopes. `applications.commands` is what creates the slash commands:
 
 ```
-https://discord.com/oauth2/authorize?client_id=1540114135444889701&scope=bot+applications.commands&permissions=216064
+https://discord.com/oauth2/authorize?client_id=1540114135444889701&scope=bot+applications.commands&permissions=268651553
 ```
 
-This grants View Channels, Send Messages, Embed Links, Read Message History, and Mention @everyone/@here/All Roles. Mention permission is only needed for announcements that ping.
+This grants View Channels, Send Messages, Embed Links, Read Message History, Mention @everyone/@here/All Roles (for announcements that ping), and, for the join link, Create Invite, Manage Server and Manage Roles. After inviting, drag the bot's role above EMS Recruit and EMS in Server Settings → Roles.
 
 ### 3. Stop the old Python bot
 
@@ -128,4 +146,6 @@ To push only this folder to a repository of its own, copy the `bot` folder out a
 | Commands do not appear | The bot was invited without `applications.commands`, or `DISCORD_GUILD_ID` is wrong. Re-invite with the link above, then restart the bot or run `npm run register` |
 | A user cannot see a command | Grant it in Server Settings → Integrations → Nexus EMS Bot |
 | "The bot is missing … in #channel" | Give the bot that permission in the channel's settings |
+| New members do not get the roles | Run `/joinlink view` and fix what it lists |
+| Log says "Server Members Intent is not enabled" | Turn it on in the Developer Portal → Bot, then restart the bot |
 | Login fails with 401 | The token is wrong or was reset. Reset it in the Developer Portal and update `DISCORD_TOKEN` |
