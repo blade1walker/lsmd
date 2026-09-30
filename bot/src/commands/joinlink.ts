@@ -101,7 +101,7 @@ export const joinlink: Command = {
           unique: true,
           reason: `EMS join link, created by ${interaction.user.tag}`,
         });
-        await saveJoinLink(actor, { code: invite.code, channelId: target.id, enabled: true });
+        await saveJoinLink(actor, { guildId: guild.id, code: invite.code, channelId: target.id, enabled: true });
         await refreshSnapshot(guild);
         await staffLog(interaction.client, actor, "Created the EMS join link", invite.url);
         await interaction.editReply({
@@ -123,7 +123,7 @@ export const joinlink: Command = {
           await interaction.editReply({ embeds: [failure("Invite not found", `\`${code}\` is not an invite to this server.`)] });
           return;
         }
-        await saveJoinLink(actor, { code: invite.code, channelId: invite.channelId, enabled: true });
+        await saveJoinLink(actor, { guildId: guild.id, code: invite.code, channelId: invite.channelId, enabled: true });
         await refreshSnapshot(guild);
         await staffLog(interaction.client, actor, "Set the EMS join link", invite.url);
         const note = invite.maxAge || invite.maxUses ? "\n\n⚠️ This invite expires or has a use limit — once it runs out, joins are no longer counted." : "";

@@ -28,6 +28,8 @@ export async function api<T = unknown>(
   path: string,
   body?: unknown
 ): Promise<T> {
+  if (config.websiteProblem) throw new ApiError(`The bot is not connected to the website yet. ${config.websiteProblem}`, 0);
+
   let res: Response;
   try {
     res = await fetch(`${config.websiteUrl}${path}`, {
@@ -62,6 +64,11 @@ export async function api<T = unknown>(
     if (res.status === 401) {
       message =
         "The website did not accept the bot's key. Set NEXUS_BOT_API_KEY to the same value on the website and the bot, then redeploy the website.";
+    } else if (res.status === 404 && data === null) {
+      message = `Nothing answered at ${config.websiteUrl}${path.split("?")[0]} — check WEBSITE_URL, and that the website has been redeployed with the bot's API.`;
+    } else if (data === null && /<html/i.test(text)) {
+      // Vercel Deployment Protection (or a login wall) answers with an HTML page.
+      message = `The website answered ${res.status} with a web page instead of the API — if Vercel Deployment Protection is on, use the production domain in WEBSITE_URL.`;
     }
     throw new ApiError(message, res.status);
   }

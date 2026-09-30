@@ -30,6 +30,8 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     date: "2026-10-01",
     changes: [
+      { type: "fix", text: "Nexus EMS Bot: fixed the bot failing to start. It no longer crashes when Discord's Server Members Intent is switched off — it starts without it and only join-link roles wait until it is turned on — and it no longer refuses to start when the website link or server ID is missing; only the bot token is required now, and the bot lists every other problem at startup with how to fix it" },
+      { type: "improvement", text: "Nexus EMS Bot is ready to host: `npm install` then `npm start` is all it needs, `npm run package` makes a small upload zip without the Windows-only files that stopped it installing on Linux hosts, and a wrong token now says exactly how to replace it" },
       { type: "feature", text: "Nexus EMS Bot: a join link — everyone who joins the Discord server through the bot's invite link is given the EMS Recruit and EMS roles automatically. Set it up with /joinlink create (or /joinlink use for an invite already shared), choose other roles with /joinlink roles, and /joinlink view checks everything the bot needs and says how to fix what is missing" },
       { type: "improvement", text: "The home page no longer has the Member Services section; the roster and training remain in the top bar and footer" },
     ],

@@ -66,7 +66,7 @@ export const banner: Command = {
               { name: "Message", value: clip(b.message) },
               { name: "Last changed by", value: clip(b.updatedBy) }
             )
-            .setURL(config.websiteUrl),
+            .setURL(config.websiteUrl || null),
         ],
       });
     } catch (err) {
@@ -185,7 +185,7 @@ export const ems: Command = {
             embed()
               .setTitle("🚑  Nexus EMS Bot")
               .setDescription(
-                `Runs the [${config.brandName} website](${config.websiteUrl}) from Discord.\n\n` +
+                `Runs the ${config.websiteUrl ? `[${config.brandName} website](${config.websiteUrl})` : `${config.brandName} website`} from Discord.\n\n` +
                   "**Who can use what** is set by server admins in **Server Settings → Integrations → Nexus EMS Bot**, per command, by role, member or channel."
               )
               .addFields(HELP.map(([name, value]) => ({ name, value }))),
@@ -227,7 +227,7 @@ export const ems: Command = {
       ]);
       const e = embed()
         .setTitle(`📋  ${config.brandName} · Overview`)
-        .setURL(config.websiteUrl)
+        .setURL(config.websiteUrl || null)
         .addFields({
           name: "Waiting for review",
           value: queues

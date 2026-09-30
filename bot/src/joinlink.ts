@@ -24,6 +24,8 @@ import { staffLog } from "./log.js";
  */
 
 export interface JoinLinkSettings {
+  /** The server the link belongs to. Older settings without it use DISCORD_GUILD_ID. */
+  guildId?: string;
   code: string;
   channelId: string | null;
   /** Empty means "look the default roles up by name". */
@@ -48,6 +50,10 @@ function actorFor(client: Client): Actor {
 
 export function getJoinLink() {
   return settings;
+}
+
+function linkGuildId() {
+  return settings?.guildId ?? config.guildId;
 }
 
 export async function loadJoinLink(client: Client) {
@@ -145,8 +151,8 @@ async function giveRoles(member: GuildMember, roles: Role[]) {
 }
 
 async function onJoin(member: GuildMember) {
-  if (member.guild.id !== config.guildId || member.user.bot) return;
-  if (!settings?.enabled || !settings.code) return;
+  if (member.user.bot || !settings?.enabled || !settings.code) return;
+  if (member.guild.id !== linkGuildId()) return;
 
   const before = uses.get(settings.code) ?? 0;
   let after: number;
@@ -200,13 +206,14 @@ export async function startJoinLink(client: Client<true>) {
     console.warn("[joinlink] could not load the setting from the website:", err instanceof Error ? err.message : err);
   }
 
-  const guild = client.guilds.cache.get(config.guildId);
+  const id = linkGuildId();
+  const guild = id ? client.guilds.cache.get(id) : undefined;
   if (guild) {
     await snapshot(guild).catch(() => console.warn("[joinlink] cannot read invites yet — the bot needs Manage Server"));
   }
 
   client.on("inviteCreate", (invite) => {
-    if (invite.guild?.id === config.guildId) uses.set(invite.code, invite.uses ?? 0);
+    uses.set(invite.code, invite.uses ?? 0);
   });
   client.on("inviteDelete", (invite) => {
     uses.delete(invite.code);

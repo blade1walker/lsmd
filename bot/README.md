@@ -6,6 +6,32 @@ The bot does its work through the website's own API. Approving an application in
 
 This folder is self-contained. Deploy it on its own; the website does not need it in order to build.
 
+## Quick start
+
+You need [Node.js](https://nodejs.org) 18.17 or newer (20 LTS recommended).
+
+```bash
+npm install     # installs everything and builds the bot
+npm start       # starts it
+```
+
+The only required setting is `DISCORD_TOKEN` in `.env` (copy `.env.example`). Everything else is optional:
+- **Without `DISCORD_GUILD_ID`**, the bot registers its commands in every server it's in.
+- **Without `WEBSITE_URL` and `NEXUS_BOT_API_KEY`**, the bot still starts, and commands that need the website say what to set.
+
+On startup the bot prints a short checklist: whether the token is valid, Server Members Intent, command registration, and the website connection. It prints every problem it finds, with how to fix it.
+
+To upload to a host, run `npm run package`. It creates `nexus-ems-bot.zip` **without** `node_modules`, which the host installs itself; a copy built on Windows breaks on a Linux host. It also leaves out `.env`, because it holds your token. Use `npm run package -- --with-env` to include `.env` for a panel where you upload files instead of setting variables.
+
+| Script | Does |
+| --- | --- |
+| `npm install` | Installs dependencies and builds the bot |
+| `npm start` | Starts the bot. Rebuilds first if the source changed |
+| `npm run build` | Compiles `src/` into `dist/` |
+| `npm run register` | Re-registers the slash commands without starting the bot |
+| `npm run package` | Makes the upload zip |
+| `npm run typecheck` | Checks the code without building |
+
 ---
 
 ## Commands
@@ -103,10 +129,10 @@ cp .env.example .env     # then fill it in
 
 | Variable | Required | Meaning |
 | --- | --- | --- |
-| `DISCORD_TOKEN` | yes | Bot token |
-| `DISCORD_GUILD_ID` | yes | Your server's ID. Commands register here and appear instantly |
-| `WEBSITE_URL` | yes | e.g. `https://your-site.vercel.app`, with no trailing slash |
-| `NEXUS_BOT_API_KEY` | yes | The same value as on the website |
+| `DISCORD_TOKEN` | **yes** | Bot token |
+| `DISCORD_GUILD_ID` | no | Register commands in just this server. When empty, commands register in every server the bot is in |
+| `WEBSITE_URL` | for website commands | e.g. `https://your-site.vercel.app` |
+| `NEXUS_BOT_API_KEY` | for website commands | The same value as on the website, at least 32 characters |
 | `TIMEZONE` | no | IANA timezone for typed times (default `Asia/Kolkata`) |
 | `BOT_BRAND_NAME` | no | Name in embed footers (default `Los Santos EMS`) |
 | `BOT_LOGO_URL` | no | Logo shown on announcements |
@@ -116,22 +142,19 @@ cp .env.example .env     # then fill it in
 
 ```bash
 npm install
-npm run build
 npm start
 ```
-
-For development, `npm run dev` restarts on every change.
 
 ---
 
 ## Hosting
 
-Any host that keeps a Node 20+ process running works. The bot only makes outgoing connections, so it needs no port and no domain.
+Any host that keeps a Node 18.17+ process running works (20 LTS recommended). The bot only makes outgoing connections, so it needs no port and no domain.
 
-- **Bot hosting panel (Pterodactyl and similar):** upload this folder, choose a Node.js 20 egg, set the startup to `npm install && npm run build && npm start`, and enter the variables in the panel.
-- **Railway / Render:** create a service from this repository with the root directory set to `bot`. On Render, make it a **Background Worker**. Build command: `npm install && npm run build`. Start command: `npm start`. Add the variables.
+- **Bot hosting panel (Pterodactyl and similar):** upload and unzip `nexus-ems-bot.zip` (from `npm run package`), choose a Node.js 20 egg, and set the main file to `index.js`. Most panels run `npm install` and then `node index.js` on their own. `index.js` builds the bot if needed. Enter the variables in the panel, or upload `.env`. **Do not upload a `node_modules` folder from your PC.**
+- **Railway / Render:** create a service from this repository with the root directory set to `bot`. On Render, make it a **Background Worker**. Build command: `npm install`. Start command: `npm start`. Add the variables.
 - **Docker:** `docker build -t nexus-ems-bot . && docker run -d --restart unless-stopped --env-file .env nexus-ems-bot`
-- **VPS:** `npm install && npm run build`, then keep it running with `pm2 start dist/index.js --name nexus-ems-bot`.
+- **VPS:** `npm install`, then keep it running with `pm2 start index.js --name nexus-ems-bot`.
 
 To push only this folder to a repository of its own, copy the `bot` folder out and `git init` it. Nothing in it depends on the rest of this repo.
 
@@ -143,9 +166,12 @@ To push only this folder to a repository of its own, copy the `bot` folder out a
 | --- | --- |
 | "The website did not accept the bot's key" | `NEXUS_BOT_API_KEY` differs between the website and the bot, is shorter than 32 characters, or the website was not redeployed after setting it |
 | "The website could not be reached" | Check `WEBSITE_URL` |
-| Commands do not appear | The bot was invited without `applications.commands`, or `DISCORD_GUILD_ID` is wrong. Re-invite with the link above, then restart the bot or run `npm run register` |
+| Commands do not appear | The bot was invited without `applications.commands` (the startup log says so), or `DISCORD_GUILD_ID` is wrong. Re-invite with the link above, then restart the bot or run `npm run register` |
+| "Dependencies are not installed" | Run `npm install` in the bot's folder |
+| `npm install` fails with an esbuild or platform error | A `node_modules` folder from another computer was uploaded. Delete it on the host and run `npm install` again |
+| "The bot is not connected to the website yet" | Set `WEBSITE_URL` and `NEXUS_BOT_API_KEY` in the bot, set the same key on the website, and redeploy the website |
 | A user cannot see a command | Grant it in Server Settings → Integrations → Nexus EMS Bot |
 | "The bot is missing … in #channel" | Give the bot that permission in the channel's settings |
 | New members do not get the roles | Run `/joinlink view` and fix what it lists |
-| Log says "Server Members Intent is not enabled" | Turn it on in the Developer Portal → Bot, then restart the bot |
+| Log says "Server Members Intent is off" | Turn it on in the Developer Portal → Bot, then restart the bot |
 | Login fails with 401 | The token is wrong or was reset. Reset it in the Developer Portal and update `DISCORD_TOKEN` |
