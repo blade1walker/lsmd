@@ -14,7 +14,7 @@ const withEnv = process.argv.includes("--with-env");
 
 execFileSync(process.execPath, [join(root, "node_modules", "typescript", "bin", "tsc"), "-p", root], { stdio: "inherit" });
 
-const files = ["index.js", "package.json", "package-lock.json", "tsconfig.json", "src", "dist", "scripts", "README.md", ".env.example", "Dockerfile", ".dockerignore", ".gitignore"];
+const files = ["index.js", "app.py", "bot.py", "main.py", "requirements.txt", "package.json", "package-lock.json", "tsconfig.json", "src", "dist", "scripts", "README.md", ".env.example", "Dockerfile", ".dockerignore", ".gitignore"];
 if (withEnv) {
   if (!existsSync(join(root, ".env"))) {
     console.error("--with-env was given, but there is no .env file.");

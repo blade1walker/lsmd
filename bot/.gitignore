@@ -3,3 +3,5 @@ dist/
 .env
 *.log
 nexus-ems-bot.zip
+__pycache__/
+.local/

@@ -151,7 +151,12 @@ npm start
 
 Any host that keeps a Node 18.17+ process running works (20 LTS recommended). The bot only makes outgoing connections, so it needs no port and no domain.
 
-- **Bot hosting panel (Pterodactyl and similar):** upload and unzip `nexus-ems-bot.zip` (from `npm run package`), choose a Node.js 20 egg, and set the main file to `index.js`. Most panels run `npm install` and then `node index.js` on their own. `index.js` builds the bot if needed. Enter the variables in the panel, or upload `.env`. **Do not upload a `node_modules` folder from your PC.**
+- **Python server on a panel** (the console shows `Python 3.x` and a start line beginning `if [[ -d .git ]]`): this works as-is.
+  1. On your PC, run `npm run package -- --with-env` in this folder.
+  2. In the panel's **File Manager**, delete the old bot's files (`app.py`, `bot.py`, `commands/`, `services/`, `requirements.txt`, and so on). Then upload `nexus-ems-bot.zip` and unzip it into `/home/container`.
+  3. Check the **Startup** tab: the app file should be `app.py` (`bot.py` and `main.py` also work), and the requirements file `requirements.txt`.
+  4. Press **Start**. `requirements.txt` installs Node.js as a Python package, and `app.py` installs the bot's dependencies on first start, which takes about a minute, then runs the bot.
+- **Node.js server on a panel (Pterodactyl and similar):** upload and unzip `nexus-ems-bot.zip` (from `npm run package`), choose a Node.js 20 egg, and set the main file to `index.js`. Most panels run `npm install` and then `node index.js` on their own. `index.js` builds the bot if needed. Enter the variables in the panel, or upload `.env`. **Do not upload a `node_modules` folder from your PC.**
 - **Railway / Render:** create a service from this repository with the root directory set to `bot`. On Render, make it a **Background Worker**. Build command: `npm install`. Start command: `npm start`. Add the variables.
 - **Docker:** `docker build -t nexus-ems-bot . && docker run -d --restart unless-stopped --env-file .env nexus-ems-bot`
 - **VPS:** `npm install`, then keep it running with `pm2 start index.js --name nexus-ems-bot`.
