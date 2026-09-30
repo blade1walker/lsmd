@@ -17,7 +17,7 @@ npm start       # builds on first run, then starts the bot
 
 The only required setting is `DISCORD_TOKEN` in `.env` (copy `.env.example`). Everything else is optional:
 - **Without `DISCORD_GUILD_ID`**, the bot registers its commands in every server it's in.
-- **Without `WEBSITE_URL` and `NEXUS_BOT_API_KEY`**, the bot still starts, and commands that need the website say what to set.
+- **Without `WEBSITE_URL`**, the bot still starts, and commands that need the website say what to set. No key is needed: the bot authenticates to the website with its own token.
 
 On startup the bot prints a short checklist: whether the token is valid, Server Members Intent, command registration, and the website connection. It prints every problem it finds, with how to fix it.
 
@@ -92,15 +92,11 @@ Schedules are stored in the website's database, not on the bot's host. A restart
 
 ### 1. The website
 
-In the website's host (Vercel → Settings → Environment Variables), add:
+Nothing to set up. The bot proves who it is with its own Discord token. The website asks Discord which application the token belongs to, and trusts it when it's the same application the website's "Login with Discord" uses (`DISCORD_CLIENT_ID`). Both already use the same application.
 
-| Variable | Value |
-| --- | --- |
-| `NEXUS_BOT_API_KEY` | A long random secret, at least 32 characters. Generate one with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
+Optionally, you can set `NEXUS_BOT_API_KEY` to the same random value (at least 32 characters) on both the website and the bot, as a second way in.
 
-Redeploy the website. The deploy also creates the `Announcement` table.
-
-> This key is a master key for the website's API. Keep it only in the website's and the bot's environment variables, never in chat or in git. To revoke it, change it in both places.
+> The website must be deployed with the bot's API (any deploy from 2026-10-01 on). If the bot says the website did not accept it, the startup log gives the exact reason.
 
 ### 2. The Discord application
 
@@ -132,7 +128,7 @@ cp .env.example .env     # then fill it in
 | `DISCORD_TOKEN` | **yes** | Bot token |
 | `DISCORD_GUILD_ID` | no | Register commands in just this server. When empty, commands register in every server the bot is in |
 | `WEBSITE_URL` | for website commands | e.g. `https://your-site.vercel.app` |
-| `NEXUS_BOT_API_KEY` | for website commands | The same value as on the website, at least 32 characters |
+| `NEXUS_BOT_API_KEY` | no | Optional second way to authenticate; must match the website's value |
 | `TIMEZONE` | no | IANA timezone for typed times (default `Asia/Kolkata`) |
 | `BOT_BRAND_NAME` | no | Name in embed footers (default `Los Santos EMS`) |
 | `BOT_LOGO_URL` | no | Logo shown on announcements |
@@ -169,12 +165,12 @@ To push only this folder to a repository of its own, copy the `bot` folder out a
 
 | Symptom | Fix |
 | --- | --- |
-| "The website did not accept the bot's key" | `NEXUS_BOT_API_KEY` differs between the website and the bot, is shorter than 32 characters, or the website was not redeployed after setting it |
+| "The website did not accept the bot: …" | The message says why. The usual cause is a bot token from a different Discord application than the website's `DISCORD_CLIENT_ID`, or a website that hasn't been redeployed since the bot was added |
 | "The website could not be reached" | Check `WEBSITE_URL` |
 | Commands do not appear | The bot was invited without `applications.commands` (the startup log says so), or `DISCORD_GUILD_ID` is wrong. Re-invite with the link above, then restart the bot or run `npm run register` |
 | "Dependencies are not installed" | Run `npm install` in the bot's folder |
 | `No space left on device` | An older setup installed Node.js through pip. Upload the current zip and press Start: `app.py` removes that copy and pip's cache, then needs about 150 MB in total |
-| "The bot is not connected to the website yet" | Set `WEBSITE_URL` and `NEXUS_BOT_API_KEY` in the bot, set the same key on the website, and redeploy the website |
+| "The bot is not connected to the website yet" | Set `WEBSITE_URL` in the bot's `.env` to the website's address, then restart |
 | A user cannot see a command | Grant it in Server Settings → Integrations → Nexus EMS Bot |
 | "The bot is missing … in #channel" | Give the bot that permission in the channel's settings |
 | New members do not get the roles | Run `/joinlink view` and fix what it lists |

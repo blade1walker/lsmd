@@ -23,7 +23,12 @@ export async function requireAuth(permission?: string | readonly string[]): Prom
   // The Discord bot. Its commands are permissioned in Discord's Integrations
   // settings, so it passes every check here — see bot-auth.ts.
   const bot = await resolveBotAccess();
-  if (bot) return { access: bot };
+  if (bot && "access" in bot) return { access: bot.access };
+  if (bot) {
+    // A bot request that failed to prove itself says why, so the bot's log
+    // names the fix instead of a bare 401.
+    return { error: NextResponse.json({ error: "Unauthorized", detail: bot.denied, bot: true }, { status: 401 }) };
+  }
 
   const session = await getServerSession(authOptions);
 

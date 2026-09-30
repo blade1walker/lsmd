@@ -36,7 +36,10 @@ export async function api<T = unknown>(
       method,
       headers: {
         "Content-Type": "application/json",
-        "x-nexus-bot-key": config.apiKey,
+        // Identifies the bot: the website checks with Discord that this token
+        // belongs to its own application. The key is an optional alternative.
+        "x-nexus-bot-token": config.token,
+        ...(config.apiKey ? { "x-nexus-bot-key": config.apiKey } : {}),
         "x-nexus-actor-id": actor.id,
         "x-nexus-actor-name": encodeURIComponent(actor.name.slice(0, 80)),
       },
@@ -57,13 +60,16 @@ export async function api<T = unknown>(
   }
 
   if (!res.ok) {
-    const payload = (data ?? {}) as { error?: string; detail?: string; hint?: string };
+    const payload = (data ?? {}) as { error?: string; detail?: string; hint?: string; bot?: boolean };
     let message = payload.error || `The website answered ${res.status}.`;
     if (payload.detail) message += ` — ${payload.detail}`;
     if (payload.hint) message += ` (${payload.hint})`;
-    if (res.status === 401) {
+    if (res.status === 401 && payload.bot && payload.detail) {
+      message = `The website did not accept the bot: ${payload.detail}`;
+    } else if (res.status === 401) {
+      // An older website that does not know the bot's token check yet.
       message =
-        "The website did not accept the bot's key. Set NEXUS_BOT_API_KEY to the same value on the website and the bot, then redeploy the website.";
+        "The website did not accept the bot. Redeploy the website with the latest code (it checks the bot's token itself), or set NEXUS_BOT_API_KEY to the same value on the website and the bot.";
     } else if (res.status === 404 && data === null) {
       message = `Nothing answered at ${config.websiteUrl}${path.split("?")[0]} — check WEBSITE_URL, and that the website has been redeployed with the bot's API.`;
     } else if (data === null && /<html/i.test(text)) {

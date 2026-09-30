@@ -81,6 +81,8 @@ const data = new SlashCommandBuilder()
   .setDefaultMemberPermissions(0n)
   .addSubcommand((s) => withPostOptions(s.setName("now").setDescription("Post an announcement right away")))
   .addSubcommand((s) =>
+    // Discord rejects a required option after an optional one, so `when`
+    // goes first and `repeat` after the shared options.
     withPostOptions(
       s
         .setName("schedule")
@@ -91,15 +93,14 @@ const data = new SlashCommandBuilder()
             .setDescription(`e.g. "in 2h", "18:30", "tomorrow 9am", "2026-10-05 18:30" (${config.timezone})`)
             .setRequired(true)
         )
-        .addStringOption((o) =>
-          o
-            .setName("repeat")
-            .setDescription("Post it again on a cadence")
-            .addChoices(
-              { name: "Once", value: "none" },
-              { name: "Every day", value: "daily" },
-              { name: "Every week", value: "weekly" }
-            )
+    ).addStringOption((o) =>
+      o
+        .setName("repeat")
+        .setDescription("Post it again on a cadence")
+        .addChoices(
+          { name: "Once", value: "none" },
+          { name: "Every day", value: "daily" },
+          { name: "Every week", value: "weekly" }
         )
     )
   )

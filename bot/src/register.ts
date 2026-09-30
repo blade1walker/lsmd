@@ -16,9 +16,36 @@ import { commands } from "./commands/index.js";
  * application registered its own; left in place they would show up beside
  * these as duplicates that no longer respond.
  */
+/**
+ * Discord refuses the whole batch when any command lists a required option
+ * after an optional one. Check first, name the culprit, and register the rest.
+ */
+function orderProblems(json: { name: string; options?: unknown[] }) {
+  const problems: string[] = [];
+  const walk = (path: string, options: { type: number; name: string; required?: boolean; options?: unknown[] }[] = []) => {
+    let optionalSeen = false;
+    for (const o of options) {
+      if (o.type === 1 || o.type === 2) {
+        walk(`${path} ${o.name}`, o.options as never);
+        continue;
+      }
+      if (o.required && optionalSeen) problems.push(`${path}: required option "${o.name}" comes after an optional one`);
+      if (!o.required) optionalSeen = true;
+    }
+  };
+  walk(`/${json.name}`, json.options as never);
+  return problems;
+}
+
 export async function registerCommands(applicationId: string, guildIds: string[]) {
   const rest = new REST().setToken(config.token);
-  const body = commands.map((c) => c.data.toJSON());
+  const body = commands
+    .map((c) => c.data.toJSON())
+    .filter((json) => {
+      const problems = orderProblems(json);
+      for (const p of problems) console.error(`[register] skipped ${p}`);
+      return problems.length === 0;
+    });
 
   for (const guildId of guildIds) {
     try {

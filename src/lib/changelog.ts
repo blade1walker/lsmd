@@ -30,6 +30,8 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     date: "2026-10-01",
     changes: [
+      { type: "fix", text: "Nexus EMS Bot: its slash commands failed to register because /announce schedule listed a required option after optional ones; fixed, and the bot now checks every command before registering and names any that would be refused" },
+      { type: "improvement", text: "Nexus EMS Bot connects to the website without any extra key: the website checks with Discord that the bot's token belongs to its own Discord application. NEXUS_BOT_API_KEY still works as an optional alternative, and when the website refuses the bot it now says exactly why" },
       { type: "fix", text: "Nexus EMS Bot: fixed \"No space left on device\" on small hosting servers. Node.js is now downloaded straight from nodejs.org (checked against its official checksum) keeping only what the bot runs on, and the upload zip ships the bot ready-built with its dependencies, so nothing is installed on the host — about 150 MB in total instead of over 300 MB. Space left behind by the earlier attempt is cleaned up automatically" },
       { type: "fix", text: "Nexus EMS Bot now runs on Python hosting servers: the panel's Python start-up installs Node.js through requirements.txt and app.py (or bot.py / main.py) starts the bot, so it no longer needs a Node.js server to run" },
       { type: "fix", text: "Nexus EMS Bot: fixed the bot failing to start. It no longer crashes when Discord's Server Members Intent is switched off — it starts without it and only join-link roles wait until it is turned on — and it no longer refuses to start when the website link or server ID is missing; only the bot token is required now, and the bot lists every other problem at startup with how to fix it" },

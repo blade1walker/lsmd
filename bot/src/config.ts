@@ -46,12 +46,17 @@ let websiteUrl = read("WEBSITE_URL").replace(/\/+$/, "");
 if (websiteUrl && !/^https?:\/\//.test(websiteUrl)) websiteUrl = `https://${websiteUrl}`;
 const apiKey = read("NEXUS_BOT_API_KEY");
 
+// The bot proves itself to the website with its own Discord token (the site
+// checks it belongs to the same application), so only the URL is needed.
+// NEXUS_BOT_API_KEY is an optional extra way in.
 let websiteProblem: string | null = null;
-if (!websiteUrl || !apiKey) {
-  websiteProblem = `Set ${[!websiteUrl && "WEBSITE_URL", !apiKey && "NEXUS_BOT_API_KEY"].filter(Boolean).join(" and ")} to connect the bot to the website.`;
-} else if (apiKey.length < 32) {
-  websiteProblem = "NEXUS_BOT_API_KEY is shorter than 32 characters — the website ignores a key that short. Generate a longer one.";
+if (!websiteUrl) {
+  websiteProblem = "Set WEBSITE_URL (e.g. https://your-site.vercel.app) to connect the bot to the website.";
+} else if (!/^https:\/\//.test(websiteUrl) && !/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(websiteUrl)) {
+  // The bot's token travels with every request, so only over HTTPS.
+  websiteProblem = "WEBSITE_URL must start with https:// — the bot's credentials are sent with every request.";
 }
+if (apiKey && apiKey.length < 32) warnings.push("NEXUS_BOT_API_KEY is shorter than 32 characters and will be ignored by the website; the bot's token is used instead.");
 if (websiteProblem) warnings.push(`${websiteProblem} Until then, commands that use the website are unavailable.`);
 
 let timezone = read("TIMEZONE") || "Asia/Kolkata";
