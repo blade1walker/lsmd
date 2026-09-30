@@ -30,6 +30,7 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     date: "2026-10-01",
     changes: [
+      { type: "security", text: "Nexus EMS Bot never follows a redirect from the website address, so its credentials cannot be passed on to another site; a WEBSITE_URL that redirects (or is a protected Vercel preview address) now gets a message naming the address to use instead" },
       { type: "fix", text: "Nexus EMS Bot: its slash commands failed to register because /announce schedule listed a required option after optional ones; fixed, and the bot now checks every command before registering and names any that would be refused" },
       { type: "improvement", text: "Nexus EMS Bot connects to the website without any extra key: the website checks with Discord that the bot's token belongs to its own Discord application. NEXUS_BOT_API_KEY still works as an optional alternative, and when the website refuses the bot it now says exactly why" },
       { type: "fix", text: "Nexus EMS Bot: fixed \"No space left on device\" on small hosting servers. Node.js is now downloaded straight from nodejs.org (checked against its official checksum) keeping only what the bot runs on, and the upload zip ships the bot ready-built with its dependencies, so nothing is installed on the host — about 150 MB in total instead of over 300 MB. Space left behind by the earlier attempt is cleaned up automatically" },

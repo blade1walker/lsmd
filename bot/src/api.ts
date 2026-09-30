@@ -45,10 +45,30 @@ export async function api<T = unknown>(
       },
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: AbortSignal.timeout(TIMEOUT_MS),
+      // Never follow a redirect: fetch would forward the bot's token to
+      // wherever it points (Vercel's login page, another domain).
+      redirect: "manual",
     });
   } catch (err) {
     const reason = err instanceof Error && err.name === "TimeoutError" ? "timed out" : "could not be reached";
     throw new ApiError(`The website ${reason}. Check WEBSITE_URL and that the site is up.`, 0);
+  }
+
+  if (res.status >= 300 && res.status < 400) {
+    const location = res.headers.get("location") ?? "";
+    let target = location;
+    try {
+      target = new URL(location, config.websiteUrl).origin;
+    } catch {
+      // keep the raw value
+    }
+    if (/vercel\.com\/(sso|login)/.test(location)) {
+      throw new ApiError(
+        `WEBSITE_URL (${config.websiteUrl}) is a protected Vercel deployment address that asks for a Vercel login. Set WEBSITE_URL to the site's public address — the one visitors open.`,
+        res.status
+      );
+    }
+    throw new ApiError(`WEBSITE_URL (${config.websiteUrl}) redirects to ${target}. Set WEBSITE_URL=${target} and restart the bot.`, res.status);
   }
 
   const text = await res.text();
