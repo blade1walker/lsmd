@@ -1,5 +1,6 @@
 import { PermissionFlagsBits, type Client, type Interaction } from "discord.js";
 import { api, type Actor } from "./api.js";
+import { config } from "./config.js";
 
 /**
  * Who may use which command.
@@ -55,8 +56,16 @@ export function grantsFor(guildId: string) {
   return grants.filter((g) => g.guildId === guildId);
 }
 
-export function permissionsStatus() {
-  return { loaded, lastError };
+/**
+ * Why grants are not in effect, or null when they are. Shown in Discord so a
+ * broken website link is visible there, not only in the host's log.
+ */
+export function grantsProblem(): string | null {
+  if (loaded && !lastError) return null;
+  const reason = lastError ?? (config.websiteProblem || "the bot has not reached the website yet");
+  return loaded
+    ? `The last refresh from the website failed, so recent changes may not apply yet: ${reason}`
+    : `The bot could not load the grants from the website, so only server administrators can use staff commands: ${reason}`;
 }
 
 export function startPermissions(client: Client<true>) {

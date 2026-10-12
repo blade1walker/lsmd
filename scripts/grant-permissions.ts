@@ -54,6 +54,15 @@ const GRANTS: { id: string; roles: Record<string, string[]> }[] = [
       FTP: ["interviews.view", "interviews.score"],
     },
   },
+  {
+    id: "2026-10-13-bot-permissions",
+    roles: {
+      // The Bot Permissions page shipped with no role holding it, so only
+      // super admins could open it or give anyone access to bot commands.
+      "Super Admin": ["bot.permissions.view", "bot.permissions.manage"],
+      "Roster Admin": ["bot.permissions.view", "bot.permissions.manage"],
+    },
+  },
 ];
 
 const prisma = (() => {

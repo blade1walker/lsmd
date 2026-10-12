@@ -7,7 +7,7 @@ import { startScheduler } from "./scheduler.js";
 import { startJoinLink } from "./joinlink.js";
 import { api } from "./api.js";
 import { EPHEMERAL, failure, respondError } from "./ui.js";
-import { canUse, startPermissions } from "./permissions.js";
+import { canUse, grantsProblem, startPermissions } from "./permissions.js";
 
 /**
  * Nexus EMS Bot.
@@ -145,9 +145,11 @@ function createClient(withMembers: boolean) {
 }
 
 function noAccess(command: string) {
+  const problem = grantsProblem();
   return failure(
     "You don't have access to this command",
-    `Ask a server administrator to run \`/permissions grant\` for \`/${command}\`, or to add it on the website under Admin → Bot Permissions.`
+    `Ask a server administrator to run \`/permissions grant\` for \`/${command}\`, or to add it on the website under Admin → Bot Permissions.` +
+      (problem ? `\n\n⚠️ ${problem}` : "")
   );
 }
 

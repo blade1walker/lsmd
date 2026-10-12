@@ -1,7 +1,7 @@
 import { GuildMember, InteractionContextType, Role, SlashCommandBuilder, User } from "discord.js";
 import { api } from "../api.js";
 import type { Command } from "../command.js";
-import { ALL, PUBLIC_COMMANDS, commandsFor, grantsFor, isServerAdmin, refreshGrants, type Grant } from "../permissions.js";
+import { ALL, PUBLIC_COMMANDS, commandsFor, grantsFor, grantsProblem, isServerAdmin, refreshGrants, type Grant } from "../permissions.js";
 import { COLORS, EPHEMERAL, actorOf, clip, embed, failure, respondError, success } from "../ui.js";
 import { staffLog } from "../log.js";
 
@@ -93,6 +93,8 @@ function overview(guildId: string) {
         "**Everything else:** needs a grant — `/permissions grant`.\n" +
         "Also editable on the website: Admin → Bot Permissions."
     );
+  const problem = grantsProblem();
+  if (problem) e.addFields({ name: "⚠️  Not in effect", value: clip(problem, 1024) });
   if (list.length === 0) {
     e.addFields({ name: "Grants", value: "None yet — only administrators can use the staff commands." });
     return e;
@@ -143,14 +145,13 @@ export const permissions: Command = {
         const admin = member.permissions.has("Administrator") || interaction.guild?.ownerId === member.id;
         const all = [...PUBLIC_COMMANDS, ...GRANTABLE.map((c) => c.name)];
         const allowed = commandsFor(guildId, member.id, [...member.roles.cache.keys()], admin, all);
-        await interaction.editReply({
-          embeds: [
-            embed(COLORS.info)
-              .setTitle(`🔎  ${member.displayName}`)
-              .setDescription(admin ? "Server administrator — can use every command." : "Can use:")
-              .addFields({ name: `${allowed.length} of ${all.length} commands`, value: allowed.map((c) => `\`/${c}\``).join(" ") || "None" }),
-          ],
-        });
+        const problem = grantsProblem();
+        const result = embed(COLORS.info)
+          .setTitle(`🔎  ${member.displayName}`)
+          .setDescription(admin ? "Server administrator — can use every command." : "Can use:")
+          .addFields({ name: `${allowed.length} of ${all.length} commands`, value: allowed.map((c) => `\`/${c}\``).join(" ") || "None" });
+        if (problem) result.addFields({ name: "⚠️  Not in effect", value: clip(problem, 1024) });
+        await interaction.editReply({ embeds: [result] });
         return;
       }
 

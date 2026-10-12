@@ -31,6 +31,8 @@ export const CHANGELOG: ChangelogEntry[] = [
     date: "2026-10-13",
     changes: [
       { type: "fix", text: "Nexus EMS Bot: roles and people given access with /permissions or on Admin → Bot Permissions can now see and use those commands. Discord was still showing the staff commands to administrators only, a setting left over from earlier versions of the bot; the bot now clears it every time it starts" },
+      { type: "fix", text: "Bot Permissions: Super Admin and Roster Admin can now open Admin → Bot Permissions and give access. The page had shipped with no role allowed to use it, so only super admins could see it" },
+      { type: "improvement", text: "Nexus EMS Bot: when it cannot load the access list from the website, /permissions view, /permissions check and the \"no access\" reply now say so and give the reason, instead of quietly letting only administrators through" },
     ],
   },
   {
