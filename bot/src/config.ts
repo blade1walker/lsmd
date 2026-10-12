@@ -1,4 +1,6 @@
 import "dotenv/config";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 
 /**
  * Settings, read once from the environment (or a .env file beside package.json).
@@ -20,15 +22,23 @@ function cleanToken(raw: string) {
 
 const token = cleanToken(read("DISCORD_TOKEN"));
 if (!token) {
+  // The upload zip leaves .env out (it holds the token), so clearing the
+  // folder before unzipping an update deletes it. Say which case this is.
+  const envPath = join(process.cwd(), ".env");
+  const where = existsSync(envPath)
+    ? `  ${envPath} exists, but DISCORD_TOKEN in it is empty.`
+    : `  There is no .env file in ${process.cwd()} — it is not in the upload zip, so an update that replaced the folder removed it.`;
   console.error(
     [
       "",
       "  Nexus EMS Bot cannot start: DISCORD_TOKEN is not set.",
+      where,
       "",
       "  1. Copy .env.example to .env (in the same folder as package.json).",
       "  2. Paste your bot token after DISCORD_TOKEN=",
       "     (Developer Portal → your application → Bot → Reset Token).",
       "  On a hosting panel, set DISCORD_TOKEN in the panel's environment/startup variables instead.",
+      "  Updating later: unzip over the old files without deleting .env.",
       "",
     ].join("\n")
   );
