@@ -4,7 +4,7 @@ import { requireAuth, isDenied, actorLabel, hasPermission } from "@/lib/api-auth
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { INTERVIEW_SECTION_PERMISSIONS } from "@/lib/constants";
-import { parseWaivers, isWaivable, type EligibilityWaiver } from "@/lib/interviews";
+import { awaitingReview, parseSchedule, parseWaivers, isWaivable, type EligibilityWaiver } from "@/lib/interviews";
 import {
   INTERVIEW_INCLUDE,
   mayFinalize,
@@ -39,8 +39,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 }
 
 /**
- * The parts of a session that change outside an evaluation: the required
- * training check, improvement notes for a failed candidate, and cancelling.
+ * The parts of a session that change outside an evaluation: when and where it
+ * sits, the required training check, improvement notes for a failed candidate,
+ * requirement waivers, and cancelling.
  *
  * Scores are never reachable from here — those go through the evaluation
  * route, which only ever writes the caller's own row.
@@ -65,6 +66,29 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const canSettle = mayFinalize(auth.access, interview) || isManager;
     const data: Record<string, unknown> = {};
     const changed: string[] = [];
+
+    // Scheduling belongs to whoever runs the session: the people who open
+    // sessions, the Lead, and management. Only while the panel has yet to decide.
+    if ("scheduledAt" in body || "location" in body) {
+      if (!(canSettle || hasPermission(auth.access, "interviews.create"))) {
+        return NextResponse.json(
+          { error: "Forbidden", detail: "Only the Lead Interviewer, EMS management or someone who opens sessions can schedule one." },
+          { status: 403 }
+        );
+      }
+      if (interview.status !== "Ongoing") {
+        return NextResponse.json({ error: "This interview is no longer open" }, { status: 409 });
+      }
+      const schedule = parseSchedule(body);
+      if ("error" in schedule) return NextResponse.json({ error: schedule.error }, { status: 400 });
+      Object.assign(data, schedule.data);
+      if (schedule.data.scheduledAt !== undefined) {
+        changed.push(
+          schedule.data.scheduledAt ? `scheduled for ${schedule.data.scheduledAt.toISOString()}` : "schedule cleared"
+        );
+      }
+      if (schedule.data.location !== undefined) changed.push(`location ${schedule.data.location ?? "cleared"}`);
+    }
 
     if (typeof body.trainingVerified === "boolean") {
       if (!canSettle) {
@@ -110,7 +134,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           { status: 403 }
         );
       }
-      if (interview.status !== "Ongoing") {
+      // A held result is still a decision to be made, so an exception can
+      // still be granted while management reviews it.
+      if (interview.status !== "Ongoing" && !awaitingReview(interview)) {
         return NextResponse.json({ error: "This interview is no longer open" }, { status: 409 });
       }
 

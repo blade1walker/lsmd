@@ -6,6 +6,7 @@ import {
   CATEGORY_KEYS,
   DEFAULT_PROMOTION_SETTINGS,
   MAX_PANEL,
+  awaitingReview,
   SESSION_PREFIX,
   daysBetween,
   evaluateEligibility,
@@ -57,6 +58,8 @@ export async function getPromotionSettings(): Promise<PromotionSettingsValues> {
       requireActive: row.requireActive,
       cooldownDays: row.cooldownDays,
       requireTrainingCheck: row.requireTrainingCheck,
+      divergenceThreshold: row.divergenceThreshold,
+      readinessWindowDays: row.readinessWindowDays,
       announceWebhook: row.announceWebhook,
       announcementWebhookUrl: row.announcementWebhookUrl,
       announcementTemplate: row.announcementTemplate,
@@ -150,6 +153,8 @@ export function toSummary(interview: InterviewWithPanel): InterviewSummary {
     // read differently later.
     liveScore: interview.finalScore ?? live.finalScore,
     panelNames: panel.map((p) => p.name),
+    scheduledAt: interview.scheduledAt?.toISOString() ?? null,
+    location: interview.location,
   };
 }
 
@@ -170,10 +175,11 @@ export function toDetail(
   const eligibility = parseJsonObject<EligibilityVerdict | null>(interview.eligibility, null);
   const waivers = parseWaivers(interview.eligibilityWaivers);
 
-  // Only worth re-running while the session is open: once finalized, what
-  // matters is what was true when the panel decided, not today.
+  // Only worth re-running while a decision is still to be made — the panel
+  // sitting, or management reviewing a held result. Once settled, what matters
+  // is what was true when it was decided, not today.
   const liveEligibility =
-    candidate && settings && interview.status === "Ongoing"
+    candidate && settings && (interview.status === "Ongoing" || awaitingReview(interview))
       ? evaluateEligibility(candidate, interview.targetRank, settings, waivers)
       : null;
 
@@ -198,6 +204,9 @@ export function toDetail(
     announcementDetail: interview.announcementDetail,
     createdByDiscordId: interview.createdByDiscordId,
     finalizedByName: interview.finalizedByName,
+    reviewedByName: interview.reviewedByName,
+    reviewedAt: interview.reviewedAt?.toISOString() ?? null,
+    reviewNote: interview.reviewNote,
     updatedAt: interview.updatedAt.toISOString(),
     panel,
     notes: interview.notes.map((n) => ({
@@ -216,6 +225,16 @@ export function toDetail(
 /* ------------------------------------------------------------------ *
  * The candidate
  * ------------------------------------------------------------------ */
+
+/**
+ * An interview that still stands between a candidate and a new one: the panel
+ * is sitting, or it finalized as Review Required and management has not
+ * settled it. Letting a second session open beside a held one would let two
+ * results race to promote the same person.
+ */
+export const OPEN_INTERVIEW = {
+  OR: [{ status: "Ongoing" }, { status: "Finalized", result: "Review Required" }],
+} satisfies Prisma.PromotionInterviewWhereInput;
 
 const CANDIDATE_SELECT = {
   id: true,
@@ -264,7 +283,7 @@ export async function candidateSnapshot(
       select: { cooldownUntil: true },
     }),
     prisma.promotionInterview.findFirst({
-      where: { memberId, status: "Ongoing", ...exclude },
+      where: { memberId, ...OPEN_INTERVIEW, ...exclude },
       orderBy: { createdAt: "desc" },
       select: { sessionId: true },
     }),
@@ -303,6 +322,58 @@ export function buildSnapshot(
 
 /** The select used by the candidate list, so the picker and the checker read the same fields. */
 export { CANDIDATE_SELECT };
+
+/**
+ * Every roster member as a candidate, in three queries rather than two per
+ * member: the roster, then every running cooldown and open interview at once.
+ * Shared by the Create Interview picker and the readiness board, so both judge
+ * a member by the same figures.
+ */
+export async function allCandidateSnapshots(now = new Date()): Promise<{
+  members: CandidateRow[];
+  candidates: CandidateSnapshot[];
+  /** Member id → the id of the interview they have open, for linking to it. */
+  openInterviewIds: Map<string, string>;
+}> {
+  const [members, cooldowns, open] = await Promise.all([
+    prisma.member.findMany({ orderBy: { name: "asc" }, select: CANDIDATE_SELECT }),
+    // Newest cooldown per member; the map below keeps the first one seen,
+    // which this ordering makes the one that expires last.
+    prisma.promotionInterview.findMany({
+      where: { cooldownUntil: { gt: now }, memberId: { not: null } },
+      orderBy: { cooldownUntil: "desc" },
+      select: { memberId: true, cooldownUntil: true },
+    }),
+    prisma.promotionInterview.findMany({
+      where: { ...OPEN_INTERVIEW, memberId: { not: null } },
+      orderBy: { createdAt: "desc" },
+      select: { memberId: true, sessionId: true, id: true },
+    }),
+  ]);
+
+  const cooldownByMember = new Map<string, Date>();
+  for (const row of cooldowns) {
+    if (row.memberId && row.cooldownUntil && !cooldownByMember.has(row.memberId)) {
+      cooldownByMember.set(row.memberId, row.cooldownUntil);
+    }
+  }
+  const openByMember = new Map<string, string>();
+  const openInterviewIds = new Map<string, string>();
+  for (const row of open) {
+    if (row.memberId && !openByMember.has(row.memberId)) {
+      openByMember.set(row.memberId, row.sessionId);
+      openInterviewIds.set(row.memberId, row.id);
+    }
+  }
+
+  return {
+    members,
+    openInterviewIds,
+    candidates: members.map((m) =>
+      buildSnapshot(m, now, cooldownByMember.get(m.id) ?? null, openByMember.get(m.id) ?? null)
+    ),
+  };
+}
 
 /**
  * The eligibility rules live in ./interviews so the Create Interview form can
@@ -414,6 +485,15 @@ export function mayFinalize(access: Access, interview: { status: string; panel: 
   if (hasPermission(access, "interviews.manage")) return true;
   const seat = seatFor(access, interview);
   return seat?.role === "Lead Interviewer" && hasPermission(access, "interviews.finalize");
+}
+
+/**
+ * Who may settle a held result or resend a failed announcement: holders of
+ * interviews.review. Deliberately not the Lead — "Review Required" is the
+ * panel handing the decision upward, so the panel cannot take it back.
+ */
+export function mayReview(access: Access): boolean {
+  return hasPermission(access, "interviews.review");
 }
 
 /** Whether the panel is at capacity, so the error is a readable 400 rather than a silent truncation. */

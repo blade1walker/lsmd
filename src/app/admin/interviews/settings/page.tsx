@@ -128,6 +128,19 @@ export default function InterviewSettingsPage() {
           A candidate passes only when the panel score clears the passing score <em>and</em> every category average
           clears its own minimum. The Lead still records the result — these decide what the panel is advised to do.
         </p>
+
+        <div className="mt-4">
+          <NumberField
+            label="Panel disagreement warning"
+            suffix="points"
+            value={values.divergenceThreshold}
+            onChange={(v) => set("divergenceThreshold", v)}
+          />
+          <p className="mt-1 text-xs text-gray-600">
+            Warns the Lead before finalizing when the highest and lowest interviewer scores are this far apart. Set to
+            0 to turn it off.
+          </p>
+        </div>
       </Section>
 
       <Section
@@ -200,6 +213,18 @@ export default function InterviewSettingsPage() {
           checked={values.requireActive}
           onChange={(v) => set("requireActive", v)}
         />
+
+        <div className="mt-4">
+          <NumberField
+            label="Readiness look-ahead"
+            suffix="days"
+            value={values.readinessWindowDays}
+            onChange={(v) => set("readinessWindowDays", v)}
+          />
+          <p className="mt-1 text-xs text-gray-600">
+            The Promotion Readiness board lists members who will meet the time requirements within this many days.
+          </p>
+        </div>
       </Section>
 
       <Section title="After a failed interview" description="How long a candidate waits before another attempt.">

@@ -130,6 +130,17 @@ export const ALL_PERMISSIONS = [
   "interviews.score",
   "interviews.finalize",
   "interviews.manage",
+  // Settling a result the panel held for review, and resending an
+  // announcement Discord refused.
+  "interviews.review",
+  // The Promotion Readiness board: who is eligible for their next rank now,
+  // and who will be shortly.
+  "interviews.readiness",
+  // Interview Analytics: pass rates, category weak spots and how each
+  // interviewer scores against the panel.
+  "interviews.analytics",
+  // Downloading an examination as a PDF report for the record.
+  "interviews.export",
   // Discord announcements the Nexus EMS bot posts, now or on a schedule.
   "announcements.view",
   "announcements.manage",
@@ -258,8 +269,10 @@ export const EXPORT_SECTION_PERMISSIONS: string[] = [
  * `view` is the Observer's read of a session; `score` lets someone join a
  * panel and submit their own evaluation; `finalize` is the Lead Interviewer's
  * authority to settle the result and trigger the promotion; `create` opens a
- * session and builds its panel; `manage` covers the thresholds, cancelling a
- * session and deleting one.
+ * session, schedules it and builds its panel; `manage` covers the thresholds,
+ * cancelling a session and deleting one; `review` settles a result the panel
+ * held as "Review Required" and resends a failed announcement; `readiness`
+ * and `analytics` open their own pages; `export` downloads a session report.
  *
  * Deliberately separate from `roster.promote`: a panel member scores a
  * candidate without ever being able to edit the roster by hand, and the roster
@@ -271,11 +284,25 @@ export const INTERVIEW_PERMISSIONS = {
   score: ["interviews.score"],
   finalize: ["interviews.finalize"],
   manage: ["interviews.manage"],
+  review: ["interviews.review"],
+  readiness: ["interviews.readiness"],
+  analytics: ["interviews.analytics"],
+  export: ["interviews.export"],
 } as const satisfies Record<string, readonly string[]>;
 
-/** Any permission that opens the Promotion & Interview section, for the sidebar check. */
+/**
+ * Any permission that opens the Promotion & Interview dashboard and its
+ * sessions, for the sidebar check. Readiness and Analytics are left out: they
+ * are pages of their own with their own sidebar entries, and holding only one
+ * of them says nothing about reading examinations.
+ */
 export const INTERVIEW_SECTION_PERMISSIONS: string[] = [
-  ...new Set(Object.values(INTERVIEW_PERMISSIONS).flat()),
+  ...INTERVIEW_PERMISSIONS.view,
+  ...INTERVIEW_PERMISSIONS.create,
+  ...INTERVIEW_PERMISSIONS.score,
+  ...INTERVIEW_PERMISSIONS.finalize,
+  ...INTERVIEW_PERMISSIONS.manage,
+  ...INTERVIEW_PERMISSIONS.review,
 ];
 
 export function canSeeRosterPages(permissions: string[]): boolean {

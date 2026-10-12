@@ -58,13 +58,14 @@ export async function PUT(req: NextRequest) {
       "minSituationScore",
       "minOverallScore",
       "minTrainingPercent",
+      "divergenceThreshold",
     ] as const) {
       const value = percent(body[key]);
       if (value === "invalid") return NextResponse.json({ error: `${key} must be between 0 and 100` }, { status: 400 });
       if (value !== null) data[key] = value;
     }
 
-    for (const key of ["minDaysInRank", "minDaysInDepartment", "cooldownDays"] as const) {
+    for (const key of ["minDaysInRank", "minDaysInDepartment", "cooldownDays", "readinessWindowDays"] as const) {
       const value = days(body[key]);
       if (value === "invalid") return NextResponse.json({ error: `${key} must be a whole number of days` }, { status: 400 });
       if (value !== null) data[key] = value;

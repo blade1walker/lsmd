@@ -1,4 +1,4 @@
-import { getRankWeight } from "./constants";
+import { RANKS, getRankWeight } from "./constants";
 
 /**
  * The Promotion & Interview module's vocabulary, scoring maths and input
@@ -146,6 +146,28 @@ export type InterviewResult = (typeof INTERVIEW_RESULTS)[number];
 /** The results a Lead may actually settle on. "Pending" is the unfinalized state, not a choice. */
 export const FINAL_RESULTS: InterviewResult[] = ["Passed", "Failed", "Review Required"];
 
+/** What management review may turn a "Review Required" result into. */
+export const REVIEW_OUTCOMES: InterviewResult[] = ["Passed", "Failed"];
+
+/**
+ * A session the panel finalized as "Review Required" and management has not
+ * settled yet. Still open in every sense that matters — the candidate cannot
+ * be given a second interview while it waits.
+ */
+export function awaitingReview(interview: { status: string; result: string }): boolean {
+  return interview.status === "Finalized" && interview.result === "Review Required";
+}
+
+/**
+ * The rank directly above this one, by weight, or null at the top. What the
+ * readiness board measures each member against.
+ */
+export function nextRank(rank: string): string | null {
+  const weight = getRankWeight(rank);
+  const above = RANKS.filter((r) => r.weight > weight).sort((a, b) => a.weight - b.weight);
+  return above[0]?.name ?? null;
+}
+
 /* ------------------------------------------------------------------ *
  * Settings
  * ------------------------------------------------------------------ */
@@ -163,6 +185,8 @@ export interface PromotionSettingsValues {
   requireActive: boolean;
   cooldownDays: number;
   requireTrainingCheck: boolean;
+  divergenceThreshold: number;
+  readinessWindowDays: number;
   announceWebhook: boolean;
   announcementWebhookUrl: string | null;
   announcementTemplate: string;
@@ -182,6 +206,8 @@ export const DEFAULT_PROMOTION_SETTINGS: PromotionSettingsValues = {
   requireActive: true,
   cooldownDays: 14,
   requireTrainingCheck: true,
+  divergenceThreshold: 20,
+  readinessWindowDays: 14,
   announceWebhook: true,
   announcementWebhookUrl: null,
   announcementTemplate:
@@ -299,6 +325,12 @@ export interface InterviewScores {
   categories: Record<CategoryKey, number | null>;
   submitted: number;
   expected: number;
+  /**
+   * Points between the highest and lowest submitted individual score, or null
+   * with fewer than two. A wide spread means the panel saw different
+   * candidates, which an average alone hides.
+   */
+  spread: number | null;
 }
 
 export interface InterviewSummary {
@@ -320,6 +352,8 @@ export interface InterviewSummary {
   /** Live panel score while Ongoing; the frozen one once Finalized. */
   liveScore: number | null;
   panelNames: string[];
+  scheduledAt: string | null;
+  location: string | null;
 }
 
 export interface InterviewDetail extends InterviewSummary {
@@ -348,6 +382,10 @@ export interface InterviewDetail extends InterviewSummary {
   announcementDetail: string | null;
   createdByDiscordId: string;
   finalizedByName: string | null;
+  /** Set once management has settled a "Review Required" result. */
+  reviewedByName: string | null;
+  reviewedAt: string | null;
+  reviewNote: string | null;
   updatedAt: string;
   panel: PanelistRecord[];
   notes: InterviewNoteRecord[];
@@ -414,12 +452,23 @@ export function panelScores(panel: PanelistRecord[]): InterviewScores {
     );
   }
 
+  const individual = submitted.map((p) => p.individualScore as number);
   return {
-    finalScore: average(submitted.map((p) => p.individualScore as number)),
+    finalScore: average(individual),
     categories,
     submitted: submitted.length,
     expected: scoring.length,
+    spread: individual.length >= 2 ? Math.max(...individual) - Math.min(...individual) : null,
   };
+}
+
+/**
+ * Whether the panel disagrees enough to say so before anyone finalizes. Two
+ * interviewers at 95 and 55 average to a comfortable pass that neither of them
+ * actually gave.
+ */
+export function panelDiverges(scores: InterviewScores, settings: PromotionSettingsValues): boolean {
+  return settings.divergenceThreshold > 0 && scores.spread !== null && scores.spread >= settings.divergenceThreshold;
 }
 
 export interface ThresholdVerdict {
@@ -580,6 +629,39 @@ export function parseEvaluationInput(body: unknown): { data: EvaluationInput } |
   };
 }
 
+export const MAX_LOCATION_LENGTH = 120;
+
+/**
+ * When and where the panel sits. An empty value clears it; a value that is
+ * present but not a date is an error rather than a silently dropped field.
+ * Only the fields actually submitted come back, so a PATCH can change one
+ * without the other.
+ */
+export function parseSchedule(
+  body: Record<string, unknown>
+): { data: { scheduledAt?: Date | null; location?: string | null } } | { error: string } {
+  const data: { scheduledAt?: Date | null; location?: string | null } = {};
+
+  if ("scheduledAt" in body) {
+    const raw = body.scheduledAt;
+    if (raw === null || raw === "") {
+      data.scheduledAt = null;
+    } else if (typeof raw === "string") {
+      const date = new Date(raw);
+      if (Number.isNaN(date.getTime())) return { error: "The interview date is not a valid date" };
+      data.scheduledAt = date;
+    } else {
+      return { error: "The interview date is not a valid date" };
+    }
+  }
+
+  if ("location" in body) {
+    data.location = text(body.location, MAX_LOCATION_LENGTH);
+  }
+
+  return { data };
+}
+
 export interface CreateInterviewInput {
   memberId: string;
   targetRank: string;
@@ -587,6 +669,8 @@ export interface CreateInterviewInput {
   panel: { discordId: string; role: string }[];
   /** Proceed despite a failed eligibility check. Needs interviews.manage. */
   overrideEligibility: boolean;
+  scheduledAt: Date | null;
+  location: string | null;
 }
 
 export function parseCreateInput(
@@ -616,8 +700,18 @@ export function parseCreateInput(
   }
   if (panel.length > MAX_PANEL) return { error: `A panel can hold at most ${MAX_PANEL} people` };
 
+  const schedule = parseSchedule(b);
+  if ("error" in schedule) return { error: schedule.error };
+
   return {
-    data: { memberId, targetRank, panel, overrideEligibility: b.overrideEligibility === true },
+    data: {
+      memberId,
+      targetRank,
+      panel,
+      overrideEligibility: b.overrideEligibility === true,
+      scheduledAt: schedule.data.scheduledAt ?? null,
+      location: schedule.data.location ?? null,
+    },
   };
 }
 
@@ -727,7 +821,7 @@ export function evaluateEligibility(
     checks.push({
       label: "Open interview",
       ok: false,
-      detail: `${candidate.openSessionId} is still ongoing`,
+      detail: `${candidate.openSessionId} is still open or awaiting management review`,
     });
   }
 
@@ -761,3 +855,133 @@ export function parseWaivers(value: unknown): EligibilityWaiver[] {
     ];
   });
 }
+
+/* ------------------------------------------------------------------ *
+ * Readiness
+ * ------------------------------------------------------------------ */
+
+/**
+ * Where a member stands against their next rank:
+ * - Eligible: every requirement met, nothing open — an interview can start today.
+ * - Upcoming: only time stands in the way (rank time, tenure or a cooldown),
+ *   so the date they qualify is known.
+ * - Blocked: something time will not fix — training, a department, roster status.
+ * - In Progress: an interview is already open or awaiting review.
+ */
+export const READINESS_STATUSES = ["Eligible", "Upcoming", "Blocked", "In Progress"] as const;
+export type ReadinessStatus = (typeof READINESS_STATUSES)[number];
+
+export interface ReadinessEntry {
+  candidate: CandidateSnapshot;
+  nextRank: string;
+  status: ReadinessStatus;
+  /** Days until the time requirements are met. 0 once they are. */
+  daysToGo: number;
+  /** The day an Upcoming member qualifies, as an ISO date. */
+  eligibleOn: string | null;
+  /** Every requirement still unmet, worded as the eligibility panel words it. */
+  outstanding: string[];
+}
+
+/** Requirements that are met simply by waiting, and so have a date attached. */
+const TIME_BOUND_CHECKS = ["Time in current rank", "Total EMS tenure", "Re-interview cooldown"];
+
+export function classifyReadiness(
+  candidate: CandidateSnapshot,
+  settings: PromotionSettingsValues,
+  now = new Date()
+): ReadinessEntry | null {
+  const target = nextRank(candidate.rank);
+  if (!target) return null;
+
+  const verdict = evaluateEligibility(candidate, target, settings);
+  const failing = verdict.checks.filter((c) => !c.ok);
+
+  const cooldownDays = candidate.cooldownUntil ? daysBetween(now, new Date(candidate.cooldownUntil)) : 0;
+  const daysToGo = Math.max(
+    0,
+    settings.minDaysInRank - candidate.daysInRank,
+    settings.minDaysInDepartment - candidate.daysInDepartment,
+    cooldownDays
+  );
+
+  let status: ReadinessStatus;
+  if (candidate.openSessionId) status = "In Progress";
+  else if (verdict.eligible) status = "Eligible";
+  else if (failing.every((c) => TIME_BOUND_CHECKS.includes(c.label))) status = "Upcoming";
+  else status = "Blocked";
+
+  return {
+    candidate,
+    nextRank: target,
+    status,
+    daysToGo,
+    eligibleOn:
+      status === "Upcoming" ? new Date(now.getTime() + daysToGo * DAY_MS).toISOString() : null,
+    outstanding: verdict.reasons,
+  };
+}
+
+/* ------------------------------------------------------------------ *
+ * Analytics
+ * ------------------------------------------------------------------ */
+
+export interface InterviewAnalytics {
+  totals: {
+    finalized: number;
+    passed: number;
+    failed: number;
+    /** Held for management review and not yet settled. */
+    reviewRequired: number;
+    cancelled: number;
+    /** Passed out of Passed + Failed. A held result is not a decision yet. */
+    passRate: number | null;
+    averageScore: number | null;
+    /** Median days from a session opening to its result. */
+    medianDaysToDecision: number | null;
+    openSessions: number;
+    oldestOpenDays: number | null;
+  };
+  byTargetRank: {
+    rank: string;
+    total: number;
+    passed: number;
+    failed: number;
+    passRate: number | null;
+    averageScore: number | null;
+  }[];
+  categories: {
+    key: CategoryKey;
+    label: string;
+    average: number | null;
+    /** Sessions whose panel average fell below this category's minimum. */
+    belowFloor: number;
+  }[];
+  monthly: { month: string; passed: number; failed: number; review: number; averageScore: number | null }[];
+  distribution: { bucket: string; count: number }[];
+  interviewers: {
+    discordId: string;
+    name: string;
+    evaluations: number;
+    averageGiven: number | null;
+    /**
+     * Mean of (their score − the panel's final score). Negative means they
+     * score harder than the panels they sit on, positive softer.
+     */
+    deviation: number | null;
+    /** How often their recommendation matched the outcome, of those that can be compared. */
+    agreement: number | null;
+    agreementSample: number;
+    lastActive: string | null;
+  }[];
+}
+
+/** Score bands for the distribution chart, lowest first. */
+export const SCORE_BUCKETS: { label: string; min: number; max: number }[] = [
+  { label: "0-49", min: 0, max: 49 },
+  { label: "50-59", min: 50, max: 59 },
+  { label: "60-69", min: 60, max: 69 },
+  { label: "70-79", min: 70, max: 79 },
+  { label: "80-89", min: 80, max: 89 },
+  { label: "90-100", min: 90, max: 100 },
+];

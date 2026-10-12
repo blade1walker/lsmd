@@ -30,6 +30,8 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     date: "2026-10-13",
     changes: [
+      { type: "feature", text: "Promotion interviews: a session can be given a date, time and place; a result the panel holds as \"Review Required\" can be settled by management with a note (new interviews.review permission); a failed promotion announcement can be resent; and any session downloads as a PDF report (interviews.export)" },
+      { type: "feature", text: "Promotion interview settings: a panel-disagreement warning when submitted scores are too far apart (Divergence threshold, 0 turns it off), and how far ahead promotion readiness looks (Readiness window). New interviews.readiness and interviews.analytics permissions are given to HR Admin, Roster Admin and Super Admin, with readiness also to Assistant HR, Training Admin and FTP; their pages follow in a later update" },
       { type: "fix", text: "Nexus EMS Bot: roles and people given access with /permissions or on Admin → Bot Permissions can now see and use those commands. Discord was still showing the staff commands to administrators only, a setting left over from earlier versions of the bot; the bot now clears it every time it starts" },
       { type: "fix", text: "Bot Permissions: Super Admin and Roster Admin can now open Admin → Bot Permissions and give access. The page had shipped with no role allowed to use it, so only super admins could see it" },
       { type: "improvement", text: "Nexus EMS Bot: when it cannot load the access list from the website, /permissions view, /permissions check and the \"no access\" reply now say so and give the reason, instead of quietly letting only administrators through" },

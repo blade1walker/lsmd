@@ -19,11 +19,14 @@ import {
   FINAL_RESULTS,
   PANEL_ROLES,
   RECOMMENDATIONS,
+  REVIEW_OUTCOMES,
+  awaitingReview,
   categoryFloor,
   evaluateThresholds,
   formatDuration,
   isScoringRole,
   isWaivable,
+  panelDiverges,
   scoreColor,
   type CategoryKey,
   type InterviewDetail,
@@ -34,11 +37,15 @@ import {
 import {
   AlertTriangle,
   ArrowLeft,
+  CalendarClock,
   CheckCircle2,
   ClipboardCheck,
+  Download,
   Gavel,
   History,
   MessageSquarePlus,
+  RefreshCw,
+  Scale,
   Send,
   ShieldCheck,
   Trash2,
@@ -113,6 +120,8 @@ export default function InterviewSessionPage() {
     isOngoing && (can("interviews.manage") || (mySeat?.role === "Lead Interviewer" && can("interviews.finalize")))
   );
   const canManagePanel = can("interviews.create") || can("interviews.manage");
+  const canSchedule = Boolean(isOngoing && (canFinalize || can("interviews.create")));
+  const isHeld = interview ? awaitingReview(interview) : false;
 
   const verdict = useMemo(
     () => (interview ? evaluateThresholds(interview.scores, settings) : null),
@@ -156,6 +165,12 @@ export default function InterviewSessionPage() {
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <StatusBadge status={interview.status} />
             <ResultBadge result={interview.result} />
+            {isHeld && (
+              <span className="inline-flex items-center gap-1 rounded border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider text-blue-400">
+                <Scale className="h-3 w-3" />
+                Awaiting management review
+              </span>
+            )}
             {interview.eligibilityOverride && (
               <span className="inline-flex items-center gap-1 rounded border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider text-amber-400">
                 <AlertTriangle className="h-3 w-3" />
@@ -165,6 +180,7 @@ export default function InterviewSessionPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {can("interviews.export") && <ReportButton interviewId={interview.id} />}
           {isOngoing && !mySeat && <JoinButton interviewId={interview.id} onJoined={setInterview} canScore={can("interviews.score")} />}
           {canFinalize && (
             <Button onClick={() => setFinalizing(true)}>
@@ -195,7 +211,20 @@ export default function InterviewSessionPage() {
         </div>
 
         <div className="space-y-6">
-          <ResultCard interview={interview} settings={settings} score={displayScore} verdict={verdict} />
+          {(isHeld || interview.reviewedAt) && (
+            <ReviewCard interview={interview} canReview={can("interviews.review")} onChanged={setInterview} />
+          )}
+          <ResultCard
+            interview={interview}
+            settings={settings}
+            score={displayScore}
+            verdict={verdict}
+            canResend={can("interviews.review")}
+            onChanged={setInterview}
+          />
+          {(interview.scheduledAt || interview.location || canSchedule) && (
+            <ScheduleCard interview={interview} canEdit={canSchedule} onChanged={setInterview} />
+          )}
           <TrainingCheckCard interview={interview} canVerify={canFinalize} onChanged={setInterview} />
           {(interview.result === "Failed" || interview.improvementNotes) && (
             <ImprovementCard interview={interview} canEdit={canFinalize || can("interviews.manage")} onChanged={setInterview} />
@@ -977,13 +1006,32 @@ function ResultCard({
   settings,
   score,
   verdict,
+  canResend,
+  onChanged,
 }: {
   interview: InterviewDetail;
   settings: PromotionSettingsValues;
   score: number | null;
   verdict: ReturnType<typeof evaluateThresholds> | null;
+  canResend: boolean;
+  onChanged: (interview: InterviewDetail) => void;
 }) {
   const categories = interview.categoryScores ?? interview.scores.categories;
+  const [resending, setResending] = useState(false);
+
+  async function resend() {
+    setResending(true);
+    try {
+      const updated = await fetchJson<InterviewDetail>(`/api/interviews/${interview.id}/announce`, { method: "POST" });
+      onChanged(updated);
+      if (updated.announcementStatus === "Sent") toast.success("Announcement posted");
+      else toast.error(updated.announcementDetail ?? "The announcement failed again");
+    } catch (err) {
+      toast.error(errorMessage(err));
+    } finally {
+      setResending(false);
+    }
+  }
 
   return (
     <Card title="Final Result" icon={Gavel}>
@@ -1016,6 +1064,14 @@ function ResultCard({
         ))}
       </div>
 
+      {interview.status === "Ongoing" && panelDiverges(interview.scores, settings) && (
+        <p className="mt-4 flex items-start gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/5 p-2.5 text-xs text-amber-400">
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          The panel disagrees: interviewer scores are {interview.scores.spread} points apart. Worth discussing before
+          finalizing.
+        </p>
+      )}
+
       {verdict && interview.status === "Ongoing" && verdict.failures.length > 0 && (
         <ul className="mt-4 space-y-1 border-t border-[#1e1e1e] pt-3 text-xs text-amber-400">
           {verdict.failures.map((f) => (
@@ -1040,6 +1096,12 @@ function ResultCard({
           )}
           {interview.announcementDetail && interview.announcementStatus !== "Sent" && (
             <p className="text-gray-500">{interview.announcementDetail}</p>
+          )}
+          {canResend && interview.rosterUpdated && interview.announcementStatus === "Failed" && (
+            <Button variant="outline" size="sm" className="w-full" disabled={resending} onClick={resend}>
+              <RefreshCw className={`mr-2 h-3.5 w-3.5 ${resending ? "animate-spin" : ""}`} />
+              {resending ? "Resending..." : "Resend announcement"}
+            </Button>
           )}
           {interview.cooldownUntil && (
             <Row label="Reattempt available" value={formatDate(interview.cooldownUntil)} tone="text-amber-400" />
@@ -1232,6 +1294,11 @@ function FinalizeDialog({
   // record a Failed or Review Required result for someone who never qualified.
   const outstanding = interview.liveEligibility?.reasons ?? [];
 
+  // Also warnings: a panelist still typing, or a panel split down the middle.
+  // Neither stops a Lead finalizing, but both should be a choice.
+  const notSubmitted = interview.panel.filter((p) => isScoringRole(p.role) && !p.submittedAt).map((p) => p.name);
+  const diverges = panelDiverges(interview.scores, settings);
+
   async function finalize() {
     setBusy(true);
     try {
@@ -1331,6 +1398,20 @@ function FinalizeDialog({
             </div>
           )}
 
+          {(notSubmitted.length > 0 || diverges) && (
+            <ul className="space-y-1 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-400">
+              {notSubmitted.length > 0 && (
+                <li>• Not yet submitted: {notSubmitted.join(", ")}. Their scores will not count.</li>
+              )}
+              {diverges && (
+                <li>
+                  • Interviewer scores are {interview.scores.spread} points apart — the average may hide a split panel.
+                  Review Required hands the decision to management.
+                </li>
+              )}
+            </ul>
+          )}
+
           {blockers.length > 0 && (
             <ul className="space-y-1 text-xs text-red-400">
               {blockers.map((b) => (
@@ -1428,5 +1509,269 @@ function DangerMenu({
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * Report, schedule and management review
+ * ------------------------------------------------------------------ */
+
+function ReportButton({ interviewId }: { interviewId: string }) {
+  const [busy, setBusy] = useState(false);
+
+  async function download() {
+    setBusy(true);
+    try {
+      // Read through the report route rather than reusing what is on screen:
+      // that route is where the export permission and the audit entry live.
+      const { interview, settings } = await fetchJson<{
+        interview: InterviewDetail;
+        settings: PromotionSettingsValues;
+      }>(`/api/interviews/${interviewId}/report`);
+      const { exportInterviewPdf } = await import("@/lib/interview-pdf");
+      await exportInterviewPdf(interview, settings);
+    } catch (err) {
+      toast.error(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Button variant="outline" size="sm" disabled={busy} onClick={download}>
+      <Download className="mr-2 h-4 w-4" />
+      {busy ? "Preparing..." : "Report"}
+    </Button>
+  );
+}
+
+/** `datetime-local` wants local wall-clock time without a zone. */
+function toLocalInput(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function ScheduleCard({
+  interview,
+  canEdit,
+  onChanged,
+}: {
+  interview: InterviewDetail;
+  canEdit: boolean;
+  onChanged: (interview: InterviewDetail) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [when, setWhen] = useState(toLocalInput(interview.scheduledAt));
+  const [where, setWhere] = useState(interview.location ?? "");
+  const [busy, setBusy] = useState(false);
+
+  async function save() {
+    setBusy(true);
+    try {
+      onChanged(
+        await fetchJson<InterviewDetail>(`/api/interviews/${interview.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          // The browser reads the input as local time; sending it as an ISO
+          // instant keeps it the same moment for every panelist's time zone.
+          body: JSON.stringify({ scheduledAt: when ? new Date(when).toISOString() : null, location: where }),
+        })
+      );
+      setEditing(false);
+      toast.success("Schedule saved");
+    } catch (err) {
+      toast.error(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card
+      title="Schedule"
+      icon={CalendarClock}
+      action={
+        canEdit &&
+        !editing && (
+          <button type="button" onClick={() => setEditing(true)} className="text-xs text-gray-500 hover:text-white">
+            Edit
+          </button>
+        )
+      }
+    >
+      {editing ? (
+        <div className="space-y-3">
+          <div>
+            <label className="mb-1 block text-[11px] uppercase tracking-wider text-gray-500">Date and time</label>
+            <Input
+              type="datetime-local"
+              value={when}
+              onChange={(e) => setWhen(e.target.value)}
+              className="h-9 text-sm"
+              style={{ colorScheme: "dark" }}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] uppercase tracking-wider text-gray-500">Location</label>
+            <Input
+              value={where}
+              onChange={(e) => setWhere(e.target.value)}
+              placeholder="e.g. Pillbox briefing room"
+              maxLength={120}
+              className="h-9 text-sm"
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setEditing(false)}>
+              Cancel
+            </Button>
+            <Button size="sm" disabled={busy} onClick={save}>
+              Save
+            </Button>
+          </div>
+        </div>
+      ) : interview.scheduledAt || interview.location ? (
+        <div className="space-y-1 text-sm">
+          <div className="text-white">{interview.scheduledAt ? formatWhen(interview.scheduledAt) : "No time set"}</div>
+          {interview.location && <div className="text-gray-400">{interview.location}</div>}
+        </div>
+      ) : (
+        <p className="text-sm text-gray-500">Not scheduled. Set a time so the panel knows when to sit.</p>
+      )}
+    </Card>
+  );
+}
+
+/**
+ * A result the panel held for management. Settling it as Passed promotes the
+ * candidate exactly as a panel pass does; Failed starts the cooldown from
+ * today. Once settled the card shows who decided and why.
+ */
+function ReviewCard({
+  interview,
+  canReview,
+  onChanged,
+}: {
+  interview: InterviewDetail;
+  canReview: boolean;
+  onChanged: (interview: InterviewDetail) => void;
+}) {
+  const [result, setResult] = useState<InterviewResult>("Passed");
+  const [note, setNote] = useState("");
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const outstanding = interview.liveEligibility?.reasons ?? [];
+
+  async function submit() {
+    setBusy(true);
+    try {
+      const updated = await fetchJson<InterviewDetail>(`/api/interviews/${interview.id}/review`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ result, note }),
+      });
+      onChanged(updated);
+      setConfirming(false);
+      toast.success(
+        result === "Passed" && updated.rosterUpdated
+          ? `${interview.memberName} promoted to ${interview.targetRank}`
+          : `Review recorded as ${result}`
+      );
+    } catch (err) {
+      toast.error(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (interview.reviewedAt) {
+    return (
+      <Card title="Management Review" icon={Scale}>
+        <p className="text-sm text-gray-300">
+          Held by the panel, settled as <ResultBadge result={interview.result} /> by{" "}
+          {interview.reviewedByName ?? "—"} on {formatDate(interview.reviewedAt)}.
+        </p>
+        {interview.reviewNote && (
+          <p className="mt-2 whitespace-pre-wrap rounded-lg border border-[#1e1e28] bg-[#0a0a0f] p-3 text-sm text-gray-400">
+            {interview.reviewNote}
+          </p>
+        )}
+      </Card>
+    );
+  }
+
+  return (
+    <Card title="Management Review" icon={Scale}>
+      <p className="text-sm text-gray-400">
+        The panel finalized this as <span className="text-blue-400">Review Required</span>, handing the decision to
+        EMS management.
+        {!canReview && " Someone with review access will settle it."}
+      </p>
+
+      {canReview && (
+        <div className="mt-4 space-y-3">
+          <div className="flex gap-2">
+            {REVIEW_OUTCOMES.map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setResult(r)}
+                className={`flex-1 rounded-md border px-3 py-1.5 text-sm ${
+                  result === r
+                    ? "border-[#dc2626] bg-[#dc2626]/10 text-[#dc2626]"
+                    : "border-[#1e1e28] text-gray-400 hover:text-gray-200"
+                }`}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
+          <Textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Why management decided this way (required)..."
+            className="min-h-[80px] text-sm"
+          />
+          {result === "Passed" && outstanding.length > 0 && (
+            <ul className="space-y-0.5 rounded-lg border border-amber-500/20 bg-amber-500/5 p-2.5 text-xs text-amber-400">
+              <li className="font-semibold">Still unmet today:</li>
+              {outstanding.map((r) => (
+                <li key={r}>• {r}</li>
+              ))}
+            </ul>
+          )}
+          <Button className="w-full" disabled={!note.trim()} onClick={() => setConfirming(true)}>
+            Settle as {result}
+          </Button>
+        </div>
+      )}
+
+      <Dialog open={confirming} onOpenChange={(open) => !open && setConfirming(false)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              Settle {interview.sessionId} as {result}?
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-gray-400">
+            {result === "Passed"
+              ? `${interview.memberName} will be promoted to ${interview.targetRank} on the roster, a Promotion History entry written and the announcement posted.`
+              : "Their rank is left unchanged and the re-interview cooldown starts today."}{" "}
+            The panel&apos;s scores stay as they are; your decision is recorded beside them.
+          </p>
+          <div className="mt-4 flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setConfirming(false)}>
+              Back
+            </Button>
+            <Button disabled={busy} onClick={submit}>
+              {busy ? "Saving..." : `Settle as ${result}`}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </Card>
   );
 }

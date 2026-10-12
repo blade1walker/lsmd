@@ -55,6 +55,20 @@ const GRANTS: { id: string; roles: Record<string, string[]> }[] = [
     },
   },
   {
+    id: "2026-09-23-interview-review-readiness-analytics",
+    roles: {
+      // Management review, the readiness board, analytics and the PDF report
+      // go to the roles that already run examinations end to end.
+      "Super Admin": ["interviews.review", "interviews.readiness", "interviews.analytics", "interviews.export"],
+      "Roster Admin": ["interviews.review", "interviews.readiness", "interviews.analytics", "interviews.export"],
+      "HR Admin": ["interviews.review", "interviews.readiness", "interviews.analytics", "interviews.export"],
+      // Panel-only roles see who is coming up for promotion, nothing more.
+      "Assistant HR": ["interviews.readiness"],
+      "Training Admin": ["interviews.readiness"],
+      FTP: ["interviews.readiness"],
+    },
+  },
+  {
     id: "2026-10-13-bot-permissions",
     roles: {
       // The Bot Permissions page shipped with no role holding it, so only

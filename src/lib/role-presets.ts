@@ -56,6 +56,7 @@ export const ROLE_PRESETS: RolePreset[] = [
       // does not open sessions or settle results.
       "interviews.view",
       "interviews.score",
+      "interviews.readiness",
     ],
     aliases: ["HR Assistant"],
   },
@@ -80,6 +81,12 @@ export const ROLE_PRESETS: RolePreset[] = [
       "interviews.create",
       "interviews.score",
       "interviews.finalize",
+      // And follows them through: settling a held result, the readiness board,
+      // the analytics and the printed report.
+      "interviews.review",
+      "interviews.readiness",
+      "interviews.analytics",
+      "interviews.export",
     ],
   },
   {
@@ -101,9 +108,11 @@ export const ROLE_PRESETS: RolePreset[] = [
       "departments.members",
       // FTP staff run the trainees' training, so they see who is still one.
       "trainees.view",
-      // And they sit on promotion panels for the people they trained.
+      // And they sit on promotion panels for the people they trained, and see
+      // which of them are coming up for promotion.
       "interviews.view",
       "interviews.score",
+      "interviews.readiness",
     ],
   },
 ];

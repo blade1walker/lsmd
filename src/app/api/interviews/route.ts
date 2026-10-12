@@ -4,7 +4,7 @@ import { requireAuth, isDenied, actorLabel, hasPermission } from "@/lib/api-auth
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { INTERVIEW_SECTION_PERMISSIONS, RANK_LIST } from "@/lib/constants";
-import { MAX_PANEL, PANEL_ROLE_KEYS, parseCreateInput } from "@/lib/interviews";
+import { MAX_PANEL, PANEL_ROLE_KEYS, SCORING_ROLES, parseCreateInput } from "@/lib/interviews";
 import {
   INTERVIEW_INCLUDE,
   candidateSnapshot,
@@ -44,6 +44,10 @@ export async function GET(req: NextRequest) {
     const interviewer = sp.get("interviewer");
     if (interviewer) conditions.push({ panel: { some: { discordId: interviewer } } });
 
+    // The interviewer's own queue: open sessions where they hold a scoring
+    // seat and have not submitted yet.
+    if (sp.get("awaiting") === "me") conditions.push(awaitingEvaluationBy(auth.access.discordId));
+
     const from = sp.get("from");
     const to = sp.get("to");
     if (from || to) {
@@ -77,7 +81,8 @@ export async function GET(req: NextRequest) {
       ? {}
       : { panel: { some: { discordId: auth.access.discordId } } };
 
-    const [interviews, total, ongoing, passed, failed, reviewRequired, promoted] = await Promise.all([
+    const now = new Date();
+    const [interviews, total, ongoing, passed, failed, reviewRequired, promoted, awaitingMe, upcoming] = await Promise.all([
       prisma.promotionInterview.findMany({
         where,
         orderBy: { createdAt: "desc" },
@@ -90,15 +95,35 @@ export async function GET(req: NextRequest) {
       prisma.promotionInterview.count({ where: { ...scope, result: "Failed" } }),
       prisma.promotionInterview.count({ where: { ...scope, result: "Review Required" } }),
       prisma.promotionInterview.count({ where: { ...scope, rosterUpdated: true } }),
+      prisma.promotionInterview.count({ where: awaitingEvaluationBy(auth.access.discordId) }),
+      // Sessions still to sit, soonest first. From two hours back, so one that
+      // started a little while ago is still listed while the panel is in it.
+      prisma.promotionInterview.findMany({
+        where: {
+          AND: [scope, { status: "Ongoing", scheduledAt: { gte: new Date(now.getTime() - 2 * 60 * 60 * 1000) } }],
+        },
+        orderBy: { scheduledAt: "asc" },
+        take: 6,
+        include: INTERVIEW_INCLUDE,
+      }),
     ]);
 
     return NextResponse.json({
       interviews: interviews.map(toSummary),
-      stats: { total, ongoing, passed, failed, pending: ongoing, reviewRequired, promoted },
+      upcoming: upcoming.map(toSummary),
+      stats: { total, ongoing, passed, failed, pending: ongoing, reviewRequired, promoted, awaitingMe },
     });
   } catch (error) {
     return apiError("Failed to load promotion interviews", error);
   }
+}
+
+/** Open sessions where this person holds a scoring seat and has yet to submit. */
+function awaitingEvaluationBy(discordId: string): Prisma.PromotionInterviewWhereInput {
+  return {
+    status: "Ongoing",
+    panel: { some: { discordId, role: { in: SCORING_ROLES }, submittedAt: null } },
+  };
 }
 
 /**
@@ -192,6 +217,8 @@ export async function POST(req: NextRequest) {
         targetRank: data.targetRank,
         joinedEmsAt: candidate.joinedEmsAt ? new Date(candidate.joinedEmsAt) : null,
         rankSince: candidate.rankSince ? new Date(candidate.rankSince) : null,
+        scheduledAt: data.scheduledAt,
+        location: data.location,
         eligibility: eligibility as unknown as Prisma.InputJsonValue,
         eligibilityOverride: !eligibility.eligible,
         createdByDiscordId: auth.access.discordId,
@@ -222,6 +249,7 @@ export async function POST(req: NextRequest) {
         from: interview.currentRank,
         to: interview.targetRank,
         panel: interview.panel.length,
+        scheduledAt: interview.scheduledAt?.toISOString() ?? null,
         eligibilityOverride: interview.eligibilityOverride,
         reasons: eligibility.reasons.join("; ") || null,
       },

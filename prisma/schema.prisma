@@ -951,6 +951,12 @@ model PromotionSettings {
   cooldownDays        Int      @default(14)
   /// Whether a Lead must tick "training verified" before finalizing.
   requireTrainingCheck Boolean @default(true)
+  /// Points between the highest and lowest submitted panel score beyond which
+  /// the session warns that the panel disagrees. Advisory; 0 turns it off.
+  divergenceThreshold Int     @default(20)
+  /// How far ahead the Promotion Readiness board looks for members who are
+  /// about to meet the time requirements.
+  readinessWindowDays Int     @default(14)
   /// Promotion announcement. Posts to the channel below, falling back to the
   /// shared promotion webhook so an existing deployment announces with nothing
   /// filled in.
@@ -1015,6 +1021,16 @@ model PromotionInterview {
   /// "Sent" | "Failed" | "Disabled" | "Not applicable", plus the reason.
   announcementStatus String?
   announcementDetail String?
+  /// When and where the panel sits. Optional — a session can be opened and
+  /// scored on the spot — but set, it drives the dashboard's upcoming list.
+  scheduledAt DateTime?
+  location    String?
+  /// Set when a "Review Required" result is settled by management review.
+  /// `result` then holds the reviewed outcome; these record who decided it.
+  reviewedByDiscordId String?
+  reviewedByName      String?
+  reviewedAt          DateTime?
+  reviewNote          String?
   createdByDiscordId String
   createdByName      String
   finalizedByDiscordId String?
@@ -1028,7 +1044,9 @@ model PromotionInterview {
 
   @@index([memberId])
   @@index([status])
+  @@index([result])
   @@index([createdAt])
+  @@index([scheduledAt])
 }
 
 /// One person on an interview panel, with their own evaluation. Scores live
