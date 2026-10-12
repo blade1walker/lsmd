@@ -28,6 +28,12 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: "2026-10-13",
+    changes: [
+      { type: "fix", text: "Nexus EMS Bot: roles and people given access with /permissions or on Admin → Bot Permissions can now see and use those commands. Discord was still showing the staff commands to administrators only, a setting left over from earlier versions of the bot; the bot now clears it every time it starts" },
+    ],
+  },
+  {
     date: "2026-10-01",
     changes: [
       { type: "feature", text: "Bot Permissions: choose which Discord roles and people can use each Nexus EMS Bot command — or all of them — with /permissions in Discord (grant, revoke, clear, view, and check what someone can use) or on the new Admin → Bot Permissions page. Server administrators always have access, /ems and /duty stay open to everyone, and anyone else without access gets a private \"no access\" reply" },

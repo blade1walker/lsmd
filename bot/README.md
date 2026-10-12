@@ -189,6 +189,7 @@ To push only this folder to a repository of its own, copy the `bot` folder out a
 | `No space left on device` | An older setup installed Node.js through pip. Upload the current zip and press Start: `app.py` removes that copy and pip's cache, then needs about 150 MB in total |
 | "The bot is not connected to the website yet" | Set `WEBSITE_URL` in the bot's `.env` to the website's address, then restart |
 | "You don't have access to this command" | An administrator runs `/permissions grant` for that person's role, or adds it under Admin → Bot Permissions |
+| Someone was granted a command but cannot see it | Restart the bot on the current version (it re-registers the commands as visible to everyone). If it is still hidden, open Server Settings → Integrations → Nexus EMS Bot and remove any override that turns the command off for `@everyone` or their role. Overrides set there are Discord's and the bot cannot change them |
 | "The bot is missing … in #channel" | Give the bot that permission in the channel's settings |
 | New members do not get the roles | Run `/joinlink view` and fix what it lists |
 | Log says "Server Members Intent is off" | Turn it on in the Developer Portal → Bot, then restart the bot |

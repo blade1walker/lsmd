@@ -7,10 +7,10 @@ import { commands } from "./commands/index.js";
  * DISCORD_GUILD_ID when it is set). Server commands appear instantly, unlike
  * global ones. Runs on every start, and by hand with `npm run register`.
  *
- * Staff commands register with no default access (only server administrators
- * see them) until someone grants them in Server Settings → Integrations →
- * Nexus EMS Bot. Re-registering keeps those grants: Discord stores them per
- * command and only resets them if a command is deleted and recreated.
+ * Every command registers visible to everyone: the bot decides who may use
+ * it (permissions.ts). default_member_permissions is sent as null on purpose —
+ * leaving it out keeps the admins-only value earlier versions stored, which
+ * hides the commands from everyone the bot has granted them to.
  *
  * Global commands are cleared, because the earlier Python bot on this same
  * application registered its own; left in place they would show up beside
@@ -40,7 +40,7 @@ function orderProblems(json: { name: string; options?: unknown[] }) {
 export async function registerCommands(applicationId: string, guildIds: string[]) {
   const rest = new REST().setToken(config.token);
   const body = commands
-    .map((c) => c.data.toJSON())
+    .map((c) => ({ ...c.data.toJSON(), default_member_permissions: null }))
     .filter((json) => {
       const problems = orderProblems(json);
       for (const p of problems) console.error(`[register] skipped ${p}`);
