@@ -10,6 +10,10 @@ const ERROR_MESSAGES: Record<string, string> = {
     "That Discord account is not linked to anyone on the roster. Ask an administrator to add your Discord ID to your roster entry.",
   AccessDenied: "That account is not permitted to sign in.",
   Configuration: "Sign-in is misconfigured. Contact an administrator.",
+  OAuthSignin: "Could not start Discord sign-in. Please try again, and contact an administrator if it keeps happening.",
+  OAuthCallback:
+    "Discord sign-in could not be completed. Please try again, and contact an administrator if it keeps happening.",
+  Callback: "Discord sign-in was cancelled or could not be completed. Please try again.",
 };
 
 function LoginError() {

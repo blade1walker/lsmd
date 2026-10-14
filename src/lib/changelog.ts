@@ -28,6 +28,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: "2026-10-15",
+    changes: [
+      { type: "fix", text: "Sign-in: the site's offline helper no longer gets in the way of signing in with Discord. It used to intercept and store every sign-in step and signed-in page; it now leaves sign-in and all site data alone, and clears what it had stored" },
+      { type: "improvement", text: "Sign-in: when Discord sign-in is cancelled or cannot be completed, the login page now says so instead of a generic \"Sign-in failed\"" },
+    ],
+  },
+  {
     date: "2026-10-13",
     changes: [
       { type: "feature", text: "Promotion interviews: a session can be given a date, time and place; a result the panel holds as \"Review Required\" can be settled by management with a note (new interviews.review permission); a failed promotion announcement can be resent; and any session downloads as a PDF report (interviews.export)" },

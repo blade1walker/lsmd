@@ -37,6 +37,11 @@ export async function GET() {
     status: "ok",
     timestamp: new Date().toISOString(),
     env: envStatus,
+    // Must be listed exactly under Discord Developer Portal -> OAuth2 ->
+    // Redirects, or Discord shows "Invalid OAuth2 redirect_uri" at sign-in.
+    discordRedirectUri: hasNextauthUrl
+      ? `${process.env.NEXTAUTH_URL!.replace(/\/+$/, "")}/api/auth/callback/discord`
+      : "unknown (NEXTAUTH_URL is not set)",
     database: dbStatus,
   });
 }
