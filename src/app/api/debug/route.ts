@@ -28,8 +28,8 @@ export async function GET() {
       const { prisma } = await import("@/lib/prisma");
       await prisma.$queryRaw`SELECT 1`;
       dbStatus = "connected";
-    } catch (e: any) {
-      dbStatus = `error: ${e.message?.slice(0, 200)}`;
+    } catch (e) {
+      dbStatus = `error: ${(e instanceof Error ? e.message : String(e)).slice(0, 200)}`;
     }
   }
 

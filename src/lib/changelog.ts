@@ -32,6 +32,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     changes: [
       { type: "fix", text: "Sign-in: the site's offline helper no longer gets in the way of signing in with Discord. It used to intercept and store every sign-in step and signed-in page; it now leaves sign-in and all site data alone, and clears what it had stored" },
       { type: "improvement", text: "Sign-in: when Discord sign-in is cancelled or cannot be completed, the login page now says so instead of a generic \"Sign-in failed\"" },
+      { type: "improvement", text: "Login page: \"Back to Website\" now opens the home page instantly instead of reloading the whole site" },
     ],
   },
   {

@@ -3,6 +3,7 @@
 import { signIn } from "next-auth/react";
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { motion } from "framer-motion";
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -78,9 +79,9 @@ export default function AdminLoginPage() {
         </div>
 
         <div className="mt-6 text-center">
-          <a href="/" className="text-sm text-gray-500 hover:text-white transition-colors">
+          <Link href="/" className="text-sm text-gray-500 hover:text-white transition-colors">
             Back to Website
-          </a>
+          </Link>
         </div>
       </motion.div>
     </div>
