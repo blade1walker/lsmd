@@ -30,6 +30,7 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     date: "2026-10-15",
     changes: [
+      { type: "fix", text: "Sign-in with Discord works again. Discord changed what it sends back after you press Authorize, and the site rejected every sign-in with \"Discord sign-in could not be completed\"" },
       { type: "fix", text: "Sign-in: works again when the site's address setting (NEXTAUTH_URL) has been filled in with a Discord link by mistake — the site now ignores a Discord or malformed address there and uses its own, instead of sending everyone to a broken Discord page" },
       { type: "fix", text: "Sign-in: the site's offline helper no longer gets in the way of signing in with Discord. It used to intercept and store every sign-in step and signed-in page; it now leaves sign-in and all site data alone, and clears what it had stored" },
       { type: "improvement", text: "Sign-in: when Discord sign-in is cancelled or cannot be completed, the login page now says so instead of a generic \"Sign-in failed\"" },

@@ -40,6 +40,11 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.DISCORD_CLIENT_SECRET!,
       // Only what is needed to identify the account. `email` is not requested.
       authorization: { params: { scope: "identify" } },
+      // Discord now returns `iss` on the sign-in redirect (RFC 9207). With no
+      // issuer configured, openid-client rejects every callback with "issuer
+      // must be configured on the issuer" (error=OAuthCallback). This is the
+      // issuer from https://discord.com/.well-known/openid-configuration.
+      issuer: "https://discord.com",
     }),
   ],
   session: {
