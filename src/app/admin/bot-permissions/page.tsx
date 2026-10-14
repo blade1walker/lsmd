@@ -132,7 +132,7 @@ export default function BotPermissionsPage() {
         </div>
         <div>
           <p className="font-semibold text-white">Open to everyone</p>
-          <p className="mt-1">{PUBLIC_BOT_COMMANDS.map((c) => `/${c}`).join(" and ")} work for every member.</p>
+          <p className="mt-1">{new Intl.ListFormat("en", { type: "conjunction" }).format(PUBLIC_BOT_COMMANDS.map((c) => `/${c}`))} work for every member.</p>
         </div>
         <div>
           <p className="font-semibold text-white">Everything else</p>

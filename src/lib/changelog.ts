@@ -39,6 +39,23 @@ export const CHANGELOG: ChangelogEntry[] = [
     ],
   },
   {
+    date: "2026-10-14",
+    title: "City Link, Duty Board and Activity",
+    changes: [
+      { type: "feature", text: "City Link: the website is now linked to the FiveM server. Set the server's address or cfx.re join code on Admin → City Link, and the home page and roster show whether the city is up, how full it is and how many EMS are in it, with a Join button. Members see who is in by name; visitors only see the count unless command chooses to show names" },
+      { type: "feature", text: "nexus-ems-sync, a FiveM resource in the website's fivem/ folder: going on or off EMS duty in game clocks you on or off the website. Leaving the city, crashing or a server restart clocks you off at the last moment the city saw you. Works with Qbox, QBCore and ESX, or standalone with its own /emsduty" },
+      { type: "feature", text: "In game: /unitstatus sets your status on the Duty Board (e.g. /unitstatus enroute Vinewood), and /emscall logs a call in the Call Log with the street you are on as the location and on-duty EMS standing nearby as responders. Dispatch scripts can do the same through the resource's LogCall and SetUnitStatus exports" },
+      { type: "feature", text: "City Link page: every player in the city with the roster member they matched (by Discord ID or Steam ID), their character, job and duty, and a duty check that flags anyone clocked on without being in the city, on duty in game but not clocked, or on an EMS job without being on the roster. Test connection checks the address, the key and the resource, and says what is wrong" },
+      { type: "feature", text: "Duty Board (Admin → Duty Board): every medic on duty with their status — Available, En Route, On Scene, Transporting, At Hospital, Busy or On Break — their unit, a note and whether they are in the city, updating every 15 seconds. Set your own status there or in game; every shift starts Available. Supervisors with duty.manage can set anyone's. Includes the week's most hours and calls" },
+      { type: "feature", text: "Activity (Admin → Activity): duty hours, time in the city and calls for every member over 7, 14 or 30 days, measured against a weekly requirement (4 hours to start, changeable). Members on LOA or Reserve are listed but not measured, new members get a grace period, and anyone in the city but never on duty is flagged. Downloads as CSV" },
+      { type: "feature", text: "Nexus EMS Bot: /city shows whether the server is up, how full it is and which EMS are in the city. Open to everyone, like /ems and /duty" },
+      { type: "fix", text: "Admin pages with wide tables, such as the Call Log, no longer push the whole page sideways on a phone — the table scrolls inside its own box" },
+      { type: "improvement", text: "The footer's FiveM Server link now works, and /connect on the website is a short link to join the city that follows whatever join code is set on City Link" },
+      { type: "security", text: "New permissions: fivem.view and fivem.manage (City Link), duty.manage (setting other medics' status) and activity.view and activity.manage (Activity). Super Admin and Roster Admin get all five; HR Admin gets Activity and can view City Link; Assistant HR and Training Admin can view Activity. The Duty Board is open to every member with roster access" },
+      { type: "security", text: "The FiveM resource has its own key (FIVEM_API_KEY) that can only report what happens in the city — it cannot reach the rest of the website. It never sends players' IP addresses, and the site refuses server addresses that point at cloud metadata or link-local addresses" },
+    ],
+  },
+  {
     date: "2026-10-13",
     changes: [
       { type: "feature", text: "Promotion interviews: a session can be given a date, time and place; a result the panel holds as \"Review Required\" can be settled by management with a note (new interviews.review permission); a failed promotion announcement can be resent; and any session downloads as a PDF report (interviews.export)" },

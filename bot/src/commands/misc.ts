@@ -150,6 +150,71 @@ export const duty: Command = {
   },
 };
 
+// ─── /city ──────────────────────────────────────────────────────────────────
+
+interface CityStatus {
+  enabled: boolean;
+  configured: boolean;
+  online: boolean;
+  name: string | null;
+  playerCount: number | null;
+  maxPlayers: number | null;
+  connectUrl: string | null;
+  ems: {
+    inCity: number;
+    onDuty: number;
+    members: { name: string; callSign: string | null; rank: string; onDuty: boolean }[] | null;
+  };
+}
+
+export const city: Command = {
+  data: new SlashCommandBuilder()
+    .setName("city")
+    .setDescription("The FiveM server — is it up, how full is it, and which EMS are in the city")
+    .setContexts(InteractionContextType.Guild),
+
+  async execute(interaction) {
+    const actor = actorOf(interaction);
+    try {
+      await interaction.deferReply(EPHEMERAL);
+      const s = await api<CityStatus>(actor, "GET", "/api/fivem/status");
+      if (!s.configured) {
+        await interaction.editReply({
+          embeds: [failure("The city is not linked", "Link the FiveM server on the website under Admin → City Link.")],
+        });
+        return;
+      }
+
+      const players = s.playerCount !== null ? `${s.playerCount}${s.maxPlayers ? ` / ${s.maxPlayers}` : ""}` : "—";
+      const members = s.ems.members ?? [];
+      const e = embed(s.online ? COLORS.success : COLORS.neutral)
+        .setTitle(`🎮  ${clip(s.name ?? "FiveM server", 200)} · ${s.online ? "Online" : "Offline"}`)
+        .setURL(s.connectUrl);
+      if (s.online) {
+        e.addFields(
+          { name: "Players", value: players, inline: true },
+          { name: "EMS in the city", value: String(s.ems.inCity), inline: true },
+          { name: "On duty", value: String(s.ems.onDuty), inline: true },
+          {
+            name: "Who is in",
+            value: clip(
+              members.length
+                ? members.map((m) => `${m.onDuty ? "🟢" : "⚪"} ${m.callSign ? `**${m.callSign}** ` : ""}${m.name}`).join("\n")
+                : "No EMS in the city right now."
+            ),
+          }
+        );
+      } else {
+        e.setDescription("The server is down, or the website cannot reach it.");
+      }
+      if (s.connectUrl) e.addFields({ name: "Join", value: s.connectUrl });
+      await interaction.editReply({ embeds: [e] });
+    } catch (err) {
+      await respondError(interaction, err);
+    }
+  },
+};
+
 // ─── /ems ───────────────────────────────────────────────────────────────────
 
 const HELP: [string, string][] = [
@@ -162,6 +227,7 @@ const HELP: [string, string][] = [
   ["/dm", "Message a member as the bot"],
   ["/permissions", "Give roles or people access to commands — or to all of them"],
   ["/duty", "Clock yourself on and off duty"],
+  ["/city", "Whether the FiveM server is up, and which EMS are in the city"],
   ["/ems", "Overview, help and status"],
 ];
 
@@ -185,7 +251,7 @@ export const ems: Command = {
               .setTitle("🚑  Nexus EMS Bot")
               .setDescription(
                 `Runs the ${config.websiteUrl ? `[${config.brandName} website](${config.websiteUrl})` : `${config.brandName} website`} from Discord.\n\n` +
-                  "**Who can use what:** server administrators can use everything; `/ems` and `/duty` are open to all. Everyone else needs a grant — `/permissions grant` (or Admin → Bot Permissions on the website). `/permissions check` shows what you can use."
+                  "**Who can use what:** server administrators can use everything; `/ems`, `/duty` and `/city` are open to all. Everyone else needs a grant — `/permissions grant` (or Admin → Bot Permissions on the website). `/permissions check` shows what you can use."
               )
               .addFields(HELP.map(([name, value]) => ({ name, value }))),
           ],

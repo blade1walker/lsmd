@@ -77,6 +77,20 @@ const GRANTS: { id: string; roles: Record<string, string[]> }[] = [
       "Roster Admin": ["bot.permissions.view", "bot.permissions.manage"],
     },
   },
+  {
+    id: "2026-10-14-city-link-duty-board-activity",
+    roles: {
+      // The roles that run the roster run the FiveM link, the Duty Board and
+      // the activity requirement.
+      "Super Admin": ["fivem.view", "fivem.manage", "duty.manage", "activity.view", "activity.manage"],
+      "Roster Admin": ["fivem.view", "fivem.manage", "duty.manage", "activity.view", "activity.manage"],
+      // HR follows activity up, so it sets the requirement and can check who
+      // was really in the city — but does not reconfigure the link.
+      "HR Admin": ["fivem.view", "activity.view", "activity.manage"],
+      "Assistant HR": ["activity.view"],
+      "Training Admin": ["activity.view"],
+    },
+  },
 ];
 
 const prisma = (() => {

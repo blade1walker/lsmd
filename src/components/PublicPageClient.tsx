@@ -13,6 +13,7 @@ import { RosterFilters } from "./roster/RosterFilters";
 import { RankStructure } from "./roster/RankStructure";
 import { RosterSectionCard } from "./roster/RosterSectionCard";
 import { DutyCard } from "./roster/DutyCard";
+import { CityStatusCard } from "./CityStatusCard";
 import {
   filtersToQuery,
   matchesFilters,
@@ -77,6 +78,8 @@ export function PublicPageClient({ data, initialFilters }: { data: RosterPageDat
 
       <main id="roster" className="mx-auto w-full max-w-[1600px] flex-1 space-y-5 px-4 py-8 sm:px-6">
         <RosterStats stats={stats} />
+
+        <CityStatusCard />
 
         {viewer.canClock && viewer.memberId && viewerDuty && (
           <DutyCard memberId={viewer.memberId} name={viewer.name} duty={viewerDuty} />

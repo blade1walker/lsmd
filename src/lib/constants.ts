@@ -147,6 +147,18 @@ export const ALL_PERMISSIONS = [
   // Who may use which Nexus EMS Bot command in Discord.
   "bot.permissions.view",
   "bot.permissions.manage",
+  // FiveM City Link. view reads who is in the city, how they matched the
+  // roster and where duty disagrees; manage sets the server address and what
+  // the link is allowed to do.
+  "fivem.view",
+  "fivem.manage",
+  // Duty Board: changing another medic's unit status. Setting your own only
+  // needs you to be on duty.
+  "duty.manage",
+  // Activity: every member's duty hours, city time and calls measured against
+  // the weekly requirement; manage sets the requirement.
+  "activity.view",
+  "activity.manage",
 ] as const;
 
 /**
@@ -349,3 +361,38 @@ export const BOT_PERMISSION_PERMISSIONS = {
 
 /** Any permission that opens the Bot Permissions page, for the sidebar check. */
 export const BOT_PERMISSION_SECTION_PERMISSIONS: string[] = [...BOT_PERMISSION_PERMISSIONS.view];
+
+/**
+ * FiveM City Link. `view` opens the live player list, roster matches and the
+ * duty mismatches; `manage` edits the server address and toggles. What the
+ * public sees of the server is decided by the settings, not by a permission.
+ */
+export const FIVEM_PERMISSIONS = {
+  view: ["fivem.view", "fivem.manage"],
+  manage: ["fivem.manage"],
+} as const satisfies Record<string, readonly string[]>;
+
+/** Any permission that opens the City Link page, for the sidebar check. */
+export const FIVEM_SECTION_PERMISSIONS: string[] = [...FIVEM_PERMISSIONS.view];
+
+/**
+ * Duty Board. Reading it is part of being on the roster, so it rides on
+ * roster.view like the roster's own Duty column. `manage` sets other medics'
+ * unit status — a supervisor's or dispatcher's job.
+ */
+export const DUTY_BOARD_PERMISSIONS = {
+  view: ["roster.view"],
+  manage: ["duty.manage"],
+} as const satisfies Record<string, readonly string[]>;
+
+/**
+ * Activity. `view` reads every member's hours and calls against the weekly
+ * requirement; `manage` changes the requirement.
+ */
+export const ACTIVITY_PERMISSIONS = {
+  view: ["activity.view", "activity.manage"],
+  manage: ["activity.manage"],
+} as const satisfies Record<string, readonly string[]>;
+
+/** Any permission that opens the Activity page, for the sidebar check. */
+export const ACTIVITY_SECTION_PERMISSIONS: string[] = [...ACTIVITY_PERMISSIONS.view];
