@@ -47,12 +47,43 @@ if (!process.env.DATABASE_URL) {
   process.exit(0);
 }
 
-console.log("[deploy-schema] Applying prisma/schema.prisma to the database...");
+/**
+ * Runs one deploy step with a time limit. Without one, a database that never
+ * answers (a pooled connection the schema engine stalls on, a lock held by an
+ * earlier build that was cancelled) hangs the whole deploy at this line with
+ * no error. stdin is closed so a prompt fails at once instead of waiting.
+ * Throws on failure or timeout, like execSync.
+ */
+function run(command, timeoutMs) {
+  try {
+    execSync(command, {
+      stdio: ["ignore", "inherit", "inherit"],
+      timeout: timeoutMs,
+      killSignal: "SIGKILL",
+    });
+  } catch (error) {
+    if (error?.code === "ETIMEDOUT" || error?.signal === "SIGKILL") {
+      console.warn(`[deploy-schema] "${command}" did not finish within ${timeoutMs / 1000}s and was stopped.`);
+    }
+    throw error;
+  }
+}
+
+const usingDirectUrl = !!(
+  process.env.DIRECT_URL ||
+  process.env.DATABASE_URL_UNPOOLED ||
+  process.env.POSTGRES_URL_NON_POOLING
+);
+console.log(
+  `[deploy-schema] Applying prisma/schema.prisma to the database (${
+    usingDirectUrl ? "direct connection" : "DATABASE_URL"
+  })...`
+);
 
 try {
   // No --skip-generate: Prisma 7 removed it, and passing it makes the command
   // exit immediately with "unknown or unexpected option".
-  execSync("npx prisma db push", { stdio: "inherit" });
+  run("npx prisma db push", 3 * 60 * 1000);
   console.log("[deploy-schema] Schema is up to date.");
   grantNewPermissions();
   backfillPromotionHistory();
@@ -63,6 +94,11 @@ try {
     "\n[deploy-schema] ==================================================\n" +
       "[deploy-schema] Schema push FAILED. Tables added in this release may\n" +
       "[deploy-schema] not exist. The deploy was allowed to continue.\n" +
+      "[deploy-schema]\n" +
+      "[deploy-schema] If it timed out and DATABASE_URL is a pooled address\n" +
+      "[deploy-schema] (port 6543, or \"pooler\"/\"pgbouncer\" in it), add the\n" +
+      "[deploy-schema] database's direct address as DIRECT_URL in Vercel ->\n" +
+      "[deploy-schema] Settings -> Environment Variables, then redeploy.\n" +
       "[deploy-schema]\n" +
       "[deploy-schema] If this is a destructive change (a dropped column or\n" +
       "[deploy-schema] table), apply it deliberately with\n" +
@@ -81,7 +117,7 @@ try {
  */
 function grantNewPermissions() {
   try {
-    execSync("npx tsx scripts/grant-permissions.ts", { stdio: "inherit" });
+    run("npx tsx scripts/grant-permissions.ts", 60 * 1000);
   } catch {
     console.warn("[deploy-schema] Permission grant failed — run `npm run db:grant-permissions` by hand.");
   }
@@ -95,7 +131,7 @@ function grantNewPermissions() {
  */
 function backfillPromotionHistory() {
   try {
-    execSync("npx tsx scripts/backfill-promotion-history.ts", { stdio: "inherit" });
+    run("npx tsx scripts/backfill-promotion-history.ts", 60 * 1000);
   } catch {
     console.warn("[deploy-schema] Promotion history backfill failed — run `npm run db:backfill-promotions` by hand.");
   }
