@@ -71,6 +71,21 @@ export async function requireAuth(permission?: string | readonly string[]): Prom
 
 export { hasPermission };
 
+/**
+ * The caller's access when they are signed in on the roster (or are the
+ * bot); null for an anonymous visitor. Never an error — for public routes
+ * that show more to members than to everyone else.
+ */
+export async function optionalAccess(): Promise<Access | null> {
+  const bot = await resolveBotAccess();
+  if (bot) return "access" in bot ? bot.access : null;
+
+  const session = await getServerSession(authOptions).catch(() => null);
+  if (!session?.user?.discordId) return null;
+  const access = await resolveAccess(session.user.discordId);
+  return access.allowed ? access : null;
+}
+
 /** Human-readable actor for audit entries — the roster name/callsign, falling back to the raw Discord ID for a super admin with no roster entry. */
 export function actorLabel(access: Access): string {
   return access.memberName ?? access.discordId;

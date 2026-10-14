@@ -56,6 +56,10 @@ model Member {
   medicalDocuments   MedicalDocument[]
   /** EMS calls this member responded to. */
   callResponses      EmsCallResponder[]
+  /** Time spent connected to the FiveM server, from the City Link. */
+  citySessions       CitySession[]
+  /** Where they are on the Duty Board while on duty. */
+  unitStatus         UnitStatus?
 }
 
 model ClockEntry {
@@ -64,6 +68,10 @@ model ClockEntry {
   clockInAt   DateTime @default(now())
   clockOutAt  DateTime?
   durationSec Int?
+  /// "site" for the website, the Discord bot and the panel; "fivem" when the
+  /// City Link clocked the member on from in-game duty. Only "fivem" entries
+  /// are closed automatically when the member leaves the city.
+  source      String   @default("site")
   member      Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
 }
 
@@ -1158,4 +1166,94 @@ model BotCommandGrant {
 
   @@unique([guildId, targetType, targetId, command])
   @@index([guildId])
+}
+
+// ─── FiveM City Link ────────────────────────────────────────────────────────
+
+/// How the site reaches the FiveM server, and what it does with what it
+/// learns. A singleton edited on Admin → City Link. The resource's shared
+/// secret is FIVEM_API_KEY in the environment, never stored here.
+model FiveMSettings {
+  id               String    @id @default("singleton")
+  /// "203.0.113.10:30120" or "http(s)://host:port" — the server's own
+  /// info.json, dynamic.json and players.json are read from here.
+  serverAddress    String?
+  /// cfx.re join code ("abc123"). Drives the Connect button, and is read from
+  /// the public server list when no address is set.
+  joinCode         String?
+  /// Public pages show the server card and the number of EMS in the city.
+  showPublicStatus Boolean   @default(true)
+  /// Visitors who are not signed in also see which EMS are in the city by name.
+  showPublicNames  Boolean   @default(false)
+  /// Fall back to matching players to the roster by character or player name
+  /// when none of their identifiers matches. Off by default: names collide.
+  matchByName      Boolean   @default(false)
+  /// In-game EMS duty clocks members on and off the site's duty clock.
+  dutySync         Boolean   @default(true)
+  /// Calls logged in-game with /emscall land in the Call Log.
+  callSync         Boolean   @default(true)
+  /// Unit statuses set in-game with /unitstatus update the Duty Board.
+  statusSync       Boolean   @default(true)
+  /// The last heartbeat the nexus-ems-sync resource sent: when, and the
+  /// players it listed with the roster member each one matched.
+  lastHeartbeatAt  DateTime?
+  lastHeartbeat    Json?
+  updatedBy        String?
+  updatedAt        DateTime  @updatedAt @default(now())
+}
+
+/// One stretch of time a roster member spent connected to the FiveM server,
+/// opened and closed by the resource's heartbeats. The Activity page sums
+/// these into "city time" next to duty hours.
+model CitySession {
+  id            String    @id @default(cuid())
+  memberId      String
+  joinedAt      DateTime  @default(now())
+  /// Null while they are still in the city.
+  leftAt        DateTime?
+  durationSec   Int?
+  /// The character they played, when the resource reported one.
+  characterName String?
+
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([memberId])
+  @@index([leftAt])
+  @@index([joinedAt])
+}
+
+// ─── Duty Board ─────────────────────────────────────────────────────────────
+
+/// Where an on-duty medic is right now — the live board supervisors and
+/// dispatch read. One row per member, kept between shifts so their unit
+/// designation carries over; the board only lists members clocked on.
+model UnitStatus {
+  memberId  String   @id
+  /// One of UNIT_STATUSES in src/lib/duty-board.ts.
+  status    String   @default("Available")
+  /// Ambulance or unit designation, e.g. "Medic 1".
+  unit      String?
+  /// Free text: where they are or what they are on.
+  note      String?
+  /// "site" | "fivem"
+  source    String   @default("site")
+  updatedBy String?
+  updatedAt DateTime @updatedAt @default(now())
+
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+}
+
+// ─── Activity ───────────────────────────────────────────────────────────────
+
+/// The weekly activity requirement the Activity page measures every member
+/// against. A singleton so command sets it, not a developer.
+model ActivitySettings {
+  id                String   @id @default("singleton")
+  /// Duty hours each member is expected to log per 7 days.
+  weeklyHoursTarget Int      @default(4)
+  /// Members who joined fewer than this many days ago are shown as New rather
+  /// than Below target.
+  graceDays         Int      @default(7)
+  updatedBy         String?
+  updatedAt         DateTime @updatedAt @default(now())
 }

@@ -50,6 +50,7 @@ To upload to a host, run `npm run package`. It creates `nexus-ems-bot.zip` (abou
 | `/banner show · set · hide` | The spotlight banner on the website's home page and roster | Admins + anyone granted |
 | `/dm` | Message a member as the bot; the message is kept in the website's conversation log | Admins + anyone granted |
 | `/duty on · off · status` | Clock yourself on or off duty | Everyone |
+| `/city` | Whether the FiveM server is up, how full it is, and which EMS are in the city (set up under Admin → City Link) | Everyone |
 | `/ems overview · help · ping` | Pending reviews, roster strength, upcoming announcements, and status | Everyone |
 
 `view` on a review queue shows **Approve** and **Decline** buttons. Onboarding shows a rank picker instead, because approving it assigns a rank.
@@ -59,7 +60,7 @@ To upload to a host, run `npm run package`. It creates `nexus-ems-bot.zip` (abou
 | Who | Can use |
 | --- | --- |
 | Server administrators and the owner | Every command. No grant needed, so nobody can be locked out |
-| Everyone | `/ems` and `/duty` |
+| Everyone | `/ems`, `/duty` and `/city` |
 | Anyone else | Only the commands granted to one of their roles, or to them personally |
 
 Give access in Discord. The role and person pickers are Discord's own:

@@ -57,6 +57,8 @@ export const ROLE_PRESETS: RolePreset[] = [
       "interviews.view",
       "interviews.score",
       "interviews.readiness",
+      // Reads who is meeting the weekly activity requirement.
+      "activity.view",
     ],
     aliases: ["HR Assistant"],
   },
@@ -87,6 +89,11 @@ export const ROLE_PRESETS: RolePreset[] = [
       "interviews.readiness",
       "interviews.analytics",
       "interviews.export",
+      // Activity follow-up: the weekly requirement, and whether a member was
+      // really in the city.
+      "activity.view",
+      "activity.manage",
+      "fivem.view",
     ],
   },
   {

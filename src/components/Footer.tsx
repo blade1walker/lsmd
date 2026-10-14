@@ -84,7 +84,7 @@ export function Footer() {
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-500 hover:text-white text-sm transition-colors">
+                <a href="/connect" target="_blank" rel="noreferrer" className="text-gray-500 hover:text-white text-sm transition-colors">
                   FiveM Server
                 </a>
               </li>

@@ -35,6 +35,9 @@ import {
   TrendingUp,
   ClipboardCheck,
   ShieldCheck,
+  Siren,
+  Activity,
+  Gamepad2,
 } from "lucide-react";
 import {
   DEPARTMENT_SECTION_PERMISSIONS,
@@ -45,6 +48,9 @@ import {
   CALL_SECTION_PERMISSIONS,
   INTERVIEW_SECTION_PERMISSIONS,
   BOT_PERMISSION_SECTION_PERMISSIONS,
+  FIVEM_SECTION_PERMISSIONS,
+  ACTIVITY_SECTION_PERMISSIONS,
+  DUTY_BOARD_PERMISSIONS,
 } from "@/lib/constants";
 
 // `permission` mirrors the check on the matching API route, so a section is
@@ -59,6 +65,8 @@ const navItems: {
 }[] = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, permission: "roster.view" },
   { href: "/admin/roster", label: "Roster", icon: Users, permission: "roster.view" },
+  { href: "/admin/duty-board", label: "Duty Board", icon: Siren, permission: [...DUTY_BOARD_PERMISSIONS.view] },
+  { href: "/admin/fivem", label: "City Link", icon: Gamepad2, permission: FIVEM_SECTION_PERMISSIONS },
   { href: "/admin/roster-banner", label: "Roster Banner", icon: Megaphone, permission: "roster.announce" },
   { href: "/admin/callsigns", label: "Call Signs", icon: Hash, permission: "roster.edit" },
   { href: "/admin/trainees", label: "Trainees", icon: GraduationCap, permission: "trainees.view" },
@@ -78,6 +86,7 @@ const navItems: {
   { href: "/admin/restore", label: "Restore", icon: Trash2, permission: "roster.delete" },
   { href: "/admin/roles", label: "Roles", icon: Shield, permission: "roles.manage" },
   { href: "/admin/clock-log", label: "Clock Log", icon: Clock, permission: "clock.view" },
+  { href: "/admin/activity", label: "Activity", icon: Activity, permission: ACTIVITY_SECTION_PERMISSIONS },
   { href: "/admin/hr", label: "HR", icon: Heart, permission: "hr.view" },
   { href: "/admin/signoffs", label: "Sign-offs", icon: GraduationCap, permission: "training.signoff.manage" },
   { href: "/admin/notification-settings", label: "Notify Settings", icon: Settings, permission: "notifications" },
@@ -254,7 +263,10 @@ export default function AdminLayout({
         {sidebarContent}
       </aside>
 
-      <main className="flex-1 md:ml-64 pt-14 md:pt-0 p-8">{children}</main>
+      {/* min-w-0: a flex item will not shrink below its widest child, so
+          without it one wide table pushes the whole page sideways on a phone
+          instead of scrolling inside its own box. */}
+      <main className="flex-1 min-w-0 md:ml-64 pt-14 md:pt-0 p-8">{children}</main>
     </div>
   );
 }

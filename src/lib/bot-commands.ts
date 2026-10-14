@@ -1,6 +1,6 @@
 /**
  * The Nexus EMS Bot's slash commands that can be granted — kept in step with
- * bot/src/commands. Public commands (/ems, /duty) are open to everyone and
+ * bot/src/commands. Public commands (/ems, /duty, /city) are open to everyone and
  * are not listed. "*" grants every command here except /permissions, which
  * hands out access and so is only ever granted on its own.
  */
@@ -20,7 +20,7 @@ export const BOT_COMMANDS = [
 
 export const ALL_COMMANDS = "*";
 
-export const PUBLIC_BOT_COMMANDS = ["ems", "duty"] as const;
+export const PUBLIC_BOT_COMMANDS = ["ems", "duty", "city"] as const;
 
 export function isGrantableCommand(name: string) {
   return name === ALL_COMMANDS || BOT_COMMANDS.some((c) => c.name === name);

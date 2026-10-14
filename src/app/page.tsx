@@ -17,6 +17,7 @@ import { Footer } from "@/components/Footer";
 import { SiteHeader } from "@/components/home/SiteHeader";
 import { StarOfLife } from "@/components/roster/StarOfLife";
 import { RosterBannerStrip } from "@/components/roster/RosterBannerStrip";
+import { CityStatusCard } from "@/components/CityStatusCard";
 import { getHomeSummary } from "@/lib/roster";
 import type { RosterViewer } from "@/lib/roster-shared";
 
@@ -168,6 +169,7 @@ export default async function Home() {
                     <Stat label="Departments" value={summary.stats.departments} />
                   </dl>
                 )}
+                <CityStatusCard variant="compact" />
               </div>
             </div>
           </div>

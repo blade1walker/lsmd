@@ -31,7 +31,7 @@ export interface Grant {
 }
 
 export const ALL = "*";
-export const PUBLIC_COMMANDS = new Set(["ems", "duty"]);
+export const PUBLIC_COMMANDS = new Set(["ems", "duty", "city"]);
 /** Never covered by "*": handing out access is granted on its own. */
 const EXPLICIT_ONLY = new Set(["permissions"]);
 
