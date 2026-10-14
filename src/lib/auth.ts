@@ -2,6 +2,37 @@ import { NextAuthOptions } from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
 import { resolveAccess, provisionAdminUser, syncAdminUserFromRoster } from "./access";
 
+/**
+ * NEXTAUTH_URL is this site's own public address. It has been set to
+ * Discord's OAuth2 authorize link from the Developer Portal before, which
+ * points every sign-in redirect at discord.com and makes sign-in impossible.
+ * A value that is not a URL, or is a Discord address, is ignored instead, so
+ * NextAuth falls back to the address the request came in on (Vercel sets
+ * VERCEL, which turns that on; AUTH_TRUST_HOST does the same elsewhere).
+ */
+function dropInvalidNextAuthUrl() {
+  const value = process.env.NEXTAUTH_URL;
+  if (!value) return;
+
+  let reason: string | null = null;
+  try {
+    const { protocol, hostname } = new URL(value);
+    if (protocol !== "https:" && protocol !== "http:") reason = "it is not an http(s) address";
+    else if (/(^|\.)discord(app)?\.com$/i.test(hostname)) reason = "it points at Discord, not this site";
+  } catch {
+    reason = "it is not a valid URL";
+  }
+  if (!reason) return;
+
+  console.error(
+    `NEXTAUTH_URL is ignored because ${reason}. Set it to this site's own address ` +
+      `(e.g. https://nexis-ems.vercel.app) in Vercel -> Settings -> Environment Variables.`
+  );
+  delete process.env.NEXTAUTH_URL;
+}
+
+dropInvalidNextAuthUrl();
+
 export const authOptions: NextAuthOptions = {
   providers: [
     DiscordProvider({
