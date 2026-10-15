@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { getNotificationSettings, sendDiscordDM, renderTemplate } from "@/lib/discord-webhook";
 import { logAudit } from "@/lib/audit";
+import { endLeave } from "@/lib/loa-server";
+import { syncAllLoaRoles } from "@/lib/loa-role";
 
 export const dynamic = "force-dynamic";
 
@@ -45,12 +47,10 @@ export async function GET(req: NextRequest) {
     });
 
     for (const loa of due) {
-      await prisma.lOA.update({ where: { id: loa.id }, data: { status: "Expired" } });
-      // Only lift the flag if the member is still marked LOA — an admin may
-      // already have moved them to Reserve or back to Active by hand.
-      if (loa.member.activity === "LOA") {
-        await prisma.member.update({ where: { id: loa.memberId }, data: { activity: "Active" } });
-      }
+      // Ended as of its end date. endLeave only lifts the LOA flag if the
+      // member is still marked LOA — an admin may already have moved them to
+      // Reserve or back to Active by hand — and takes the EMS LOA role away.
+      await endLeave(loa.id, "Expired", "system (cron)", loa.endDate);
       expired.push(loa.member.name);
 
       await logAudit({
@@ -121,7 +121,27 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ ok: true, expired, reminded, ranAt: now.toISOString() });
+    // Nightly safety net for the EMS LOA role: anyone the per-change updates
+    // missed — Discord down at the time, or the bot's role moved — is put
+    // right here. Never fails the job.
+    const roleSync = await syncAllLoaRoles("system (nightly LOA job)").catch((err) => {
+      console.error("EMS LOA role sync failed:", err);
+      return null;
+    });
+
+    return NextResponse.json({
+      ok: true,
+      expired,
+      reminded,
+      roleSync: roleSync && {
+        ok: roleSync.ok,
+        error: roleSync.error,
+        added: roleSync.added.length,
+        removed: roleSync.removed.length,
+        failed: roleSync.failed.length,
+      },
+      ranAt: now.toISOString(),
+    });
   } catch (error) {
     return apiError("LOA expiry job failed", error);
   }

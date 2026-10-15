@@ -176,6 +176,13 @@ model LOA {
   status    String   @default("Active")
   notes     String?
   createdBy String?
+  /// Who approved the request, or placed the member on leave by hand.
+  approvedBy String?
+  approvedAt DateTime?
+  /// Set when the leave stops — early by HR ("Ended"), by date ("Expired"),
+  /// or cancelled — so how long it actually lasted stays readable.
+  endedAt    DateTime?
+  endedBy    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
@@ -1256,4 +1263,25 @@ model ActivitySettings {
   graceDays         Int      @default(7)
   updatedBy         String?
   updatedAt         DateTime @updatedAt @default(now())
+}
+
+// ─── Leave of Absence ───────────────────────────────────────────────────────
+
+/// The Discord role members hold while on leave. A singleton edited on
+/// Admin → LOA. The role is found by name in the server, or created there,
+/// the first time it is needed, and its id kept here.
+model LoaSettings {
+  id              String    @id @default("singleton")
+  /// Give the role when leave starts and take it away when it ends.
+  autoRole        Boolean   @default(true)
+  roleName        String    @default("EMS LOA")
+  /// Found or created automatically; DISCORD_LOA_ROLE_ID overrides it.
+  discordRoleId   String?
+  /// The Discord server, when DISCORD_GUILD_ID is not set in the environment.
+  guildId         String?
+  /// The last full sync: who was given the role, who lost it, and what failed.
+  lastSyncAt      DateTime?
+  lastSyncSummary Json?
+  updatedBy       String?
+  updatedAt       DateTime  @updatedAt @default(now())
 }

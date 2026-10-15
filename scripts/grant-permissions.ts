@@ -91,6 +91,16 @@ const GRANTS: { id: string; roles: Record<string, string[]> }[] = [
       "Training Admin": ["activity.view"],
     },
   },
+  {
+    id: "2026-10-15-loa-section",
+    roles: {
+      // HR and Assistant HR run leave; roles ranked above them inherit it
+      // through the role hierarchy.
+      "Super Admin": ["loa.view", "loa.manage"],
+      "HR Admin": ["loa.view", "loa.manage"],
+      "Assistant HR": ["loa.view", "loa.manage"],
+    },
+  },
 ];
 
 const prisma = (() => {

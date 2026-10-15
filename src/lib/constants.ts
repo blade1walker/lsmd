@@ -159,6 +159,10 @@ export const ALL_PERMISSIONS = [
   // the weekly requirement; manage sets the requirement.
   "activity.view",
   "activity.manage",
+  // The LOA section: everyone on leave and for how long, and putting a member
+  // on leave by hand. hr.loa still opens it — see LOA_PERMISSIONS.
+  "loa.view",
+  "loa.manage",
 ] as const;
 
 /**
@@ -396,3 +400,18 @@ export const ACTIVITY_PERMISSIONS = {
 
 /** Any permission that opens the Activity page, for the sidebar check. */
 export const ACTIVITY_SECTION_PERMISSIONS: string[] = [...ACTIVITY_PERMISSIONS.view];
+
+/**
+ * Leave of Absence section. hr.loa, which HR and Assistant HR already hold to
+ * approve requests, opens it too — so every HR role, and every role ranked
+ * above them, has it from the start. The dedicated permissions are for
+ * giving it to someone outside HR: loa.view reads, loa.manage also places
+ * members on leave, extends and ends leave, and runs the Discord role.
+ */
+export const LOA_PERMISSIONS = {
+  view: ["loa.view", "loa.manage", "hr.loa"],
+  manage: ["loa.manage", "hr.loa"],
+} as const satisfies Record<string, readonly string[]>;
+
+/** Any permission that opens the LOA section, for the sidebar check. */
+export const LOA_SECTION_PERMISSIONS: string[] = [...LOA_PERMISSIONS.view];
