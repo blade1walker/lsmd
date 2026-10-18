@@ -23,6 +23,26 @@ const onCI =
   process.env.CI === "1" ||
   process.env.CI === "true";
 
+/**
+ * Which database to apply the schema to — the same choice as
+ * src/lib/database-url.ts, which this file cannot import. With Vercel's Neon
+ * connection (NEON_*) present, it is the new database and DATABASE_URL is the
+ * old one: the old address is kept for the copy below, and DATABASE_URL is
+ * pointed at Neon for every step this script runs.
+ */
+const NEON_POOLED = ["NEON_URL", "NEON_DATABASE_URL", "NEON_POSTGRES_PRISMA_URL", "NEON_POSTGRES_URL"];
+const NEON_DIRECT = ["NEON_URL_UNPOOLED", "NEON_DATABASE_URL_UNPOOLED", "NEON_POSTGRES_URL_NON_POOLING"];
+const firstSet = (names) => names.map((n) => process.env[n]?.trim()).find(Boolean);
+const neonUrl = firstSet(NEON_POOLED);
+const oldDatabaseUrl = process.env.OLD_DATABASE_URL || (neonUrl ? process.env.DATABASE_URL : undefined);
+const directUrl = neonUrl
+  ? firstSet(NEON_DIRECT) || neonUrl
+  : firstSet(["DIRECT_URL", "DATABASE_URL_UNPOOLED", "POSTGRES_URL_NON_POOLING", "DATABASE_URL"]);
+if (neonUrl) {
+  console.log("[deploy-schema] Using the Neon database (NEON_*); DATABASE_URL is the old one.");
+  process.env.DATABASE_URL = neonUrl;
+}
+
 if (process.env.SKIP_DB_PUSH === "1") {
   console.log("[deploy-schema] SKIP_DB_PUSH=1 — skipping schema push.");
   process.exit(0);
@@ -69,11 +89,7 @@ function run(command, timeoutMs) {
   }
 }
 
-const usingDirectUrl = !!(
-  process.env.DIRECT_URL ||
-  process.env.DATABASE_URL_UNPOOLED ||
-  process.env.POSTGRES_URL_NON_POOLING
-);
+const usingDirectUrl = !!directUrl && directUrl !== process.env.DATABASE_URL;
 console.log(
   `[deploy-schema] Applying prisma/schema.prisma to the database (${
     usingDirectUrl ? "direct connection" : "DATABASE_URL"
@@ -123,20 +139,16 @@ try {
  * again on the next deploy; once it has worked, later deploys skip it.
  */
 function copyOldDatabase() {
-  if (!process.env.OLD_DATABASE_URL) return;
-  const target =
-    process.env.DIRECT_URL ||
-    process.env.DATABASE_URL_UNPOOLED ||
-    process.env.POSTGRES_URL_NON_POOLING ||
-    process.env.DATABASE_URL;
+  if (!oldDatabaseUrl) return;
+  const target = directUrl || process.env.DATABASE_URL;
   const mode = process.env.OLD_DATABASE_COPY === "merge" ? " --merge" : "";
-  console.log(`[deploy-schema] OLD_DATABASE_URL is set — copying the old database into the new one${mode ? " (merge)" : ""}...`);
+  console.log(`[deploy-schema] Copying the old database into the new one${mode ? " (merge)" : ""}...`);
   try {
     execSync(`npx tsx scripts/copy-database.ts --once${mode}`, {
       stdio: ["ignore", "inherit", "inherit"],
       timeout: 3 * 60 * 1000,
       killSignal: "SIGKILL",
-      env: { ...process.env, FROM_DATABASE_URL: process.env.OLD_DATABASE_URL, TO_DATABASE_URL: target },
+      env: { ...process.env, FROM_DATABASE_URL: oldDatabaseUrl, TO_DATABASE_URL: target },
     });
   } catch {
     console.warn(

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuth, isDenied } from "@/lib/api-auth";
+import { databaseUrl } from "@/lib/database-url";
 
 export async function GET() {
   // Reports which env vars are set, the NEXTAUTH_URL value, and raw database
@@ -8,7 +9,7 @@ export async function GET() {
   const auth = await requireAuth("roles.manage");
   if (isDenied(auth)) return auth.error;
 
-  const hasDbUrl = !!process.env.DATABASE_URL;
+  const hasDbUrl = !!databaseUrl();
   const hasNextauthSecret = !!process.env.NEXTAUTH_SECRET;
   const hasNextauthUrl = !!process.env.NEXTAUTH_URL;
   const hasDiscordId = !!process.env.DISCORD_CLIENT_ID;

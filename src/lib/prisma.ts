@@ -1,10 +1,11 @@
 import { PrismaClient } from "@/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { databaseUrl } from "./database-url";
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
 
 function createPrismaClient() {
-  const url = process.env.DATABASE_URL;
+  const url = databaseUrl();
   if (!url) {
     throw new Error(
       "DATABASE_URL is not set. Go to Vercel → Settings → Environment Variables and add it."
