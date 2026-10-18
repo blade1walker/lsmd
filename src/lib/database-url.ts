@@ -31,7 +31,7 @@ function first(names: string[]): string | undefined {
  * WARNING on every cold start, which buried real errors in the logs. Saying
  * verify-full outright keeps the same behaviour without the warning.
  */
-function quietSslMode(url: string): string {
+export function quietSslMode(url: string): string {
   try {
     const parsed = new URL(url);
     const mode = parsed.searchParams.get("sslmode");

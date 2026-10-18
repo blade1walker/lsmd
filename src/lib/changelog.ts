@@ -31,6 +31,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     date: "2026-10-19",
     changes: [
       { type: "fix", text: "Nexus EMS Bot: the bot no longer asks the website for new announcements every 20 seconds and for permissions every minute. It now waits until the next announcement is due, and checks permissions every half hour (and right away when someone would otherwise be turned away). The constant checking kept the database running around the clock and used up its monthly limit, which made every bot command fail with \"The website answered 500\"" },
+      { type: "feature", text: "Export: \"Full database backup\" downloads every table and row exactly as stored, as one JSON file — for the current database, and for the old one while the site still knows its address. Needs the export.data permission, and every download is recorded in the audit log" },
       { type: "fix", text: "Saved settings (notification webhooks, City Link, medical, promotion and activity settings, the roster banner) now come across from the old database too — the first copy kept the new database's blank defaults instead" },
       { type: "improvement", text: "Copying the old database now adds its records beside anything already saved in the new one, instead of waiting for the new one to be empty" },
       { type: "fix", text: "The site's error log is no longer flooded with a database security warning on every request, so real errors are easy to spot" },
