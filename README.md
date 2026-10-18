@@ -172,7 +172,17 @@ Any host that keeps a Node 18.17+ process running works (20 LTS recommended). Th
   4. Press **Start**. On the first start, `app.py` downloads Node.js from nodejs.org (31 MB), checks its official checksum, and keeps only the `node` program (125 MB) in `.node/`. Then it runs the bot. Later starts go straight to the bot. In total, allow about **150 MB** of disk. If there isn't enough, the console says how much is free and how much is needed. `requirements.txt` installs nothing.
 - **Python server on a panel, installed from GitHub** (updates itself on every restart): the `bot-release` branch of this repository holds the ready-to-run bot (the same files as the zip). `npm run release` in this folder builds it and publishes it there.
   1. In the panel's **Startup** tab, set **Git Repo Address** to `https://github.com/blade1walker/lsmd`, **Git Branch** to `bot-release`, **User Uploaded Files** to False, **Auto Update** to True, and **App Py File** to `app.py`.
-  2. Under **Settings**, choose **Reinstall Server**. This clones the branch into the empty `/home/container`. If the folder is still empty afterwards (some hosts' installers never clone), open the **File Manager**, choose **Upload from URL**, and enter `https://raw.githubusercontent.com/blade1walker/lsmd/bot-release/app.py`. On its first start, `app.py` downloads the rest from the branch itself.
+  2. Under **Settings**, choose **Reinstall Server**. This clones the branch into the empty `/home/container`. If the folder is still empty afterwards (some hosts' installers never clone), open the **File Manager**, choose **Upload from URL**, and enter `https://raw.githubusercontent.com/blade1walker/lsmd/bot-release/app.py`. On its first start, `app.py` downloads the rest from the branch itself. If that upload does nothing either, choose **New file**, paste the lines below, and save the file as `app.py`:
+     ```python
+     import os, subprocess, sys
+     g = lambda *a: subprocess.run(["git", *a]).returncode
+     b = os.environ.get("BRANCH") or "bot-release"
+     g("init", "-q")
+     g("remote", "add", "origin", os.environ.get("GIT_ADDRESS") or "https://github.com/blade1walker/lsmd")
+     g("fetch", "origin", f"+refs/heads/{b}:refs/remotes/origin/{b}")
+     g("checkout", "-f", "-B", b, f"origin/{b}")
+     os.execv(sys.executable, [sys.executable, "app.py"])
+     ```
   3. In the **File Manager**, create `.env` from `.env.example` and fill in `DISCORD_TOKEN` and `DISCORD_GUILD_ID`. The branch never contains `.env`, and `git pull` leaves your copy alone.
   4. Press **Start**. To update later: `npm run release` on your PC, then **Restart** the server.
 - **Node.js server on a panel (Pterodactyl and similar):** upload and unzip `nexus-ems-bot.zip` (from `npm run package`), choose a Node.js 20 egg, and set the main file to `index.js`. The zip already includes everything, so the panel's `npm install` step has nothing left to do. `index.js` starts the bot. Enter the variables in the panel, or upload `.env`. **Do not upload a `node_modules` folder from your PC.**
