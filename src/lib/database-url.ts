@@ -25,9 +25,30 @@ function first(names: string[]): string | undefined {
   return undefined;
 }
 
+/**
+ * Neon's addresses end in sslmode=require. The pg driver already treats that
+ * as verify-full (certificate checked) but prints a multi-line SECURITY
+ * WARNING on every cold start, which buried real errors in the logs. Saying
+ * verify-full outright keeps the same behaviour without the warning.
+ */
+function quietSslMode(url: string): string {
+  try {
+    const parsed = new URL(url);
+    const mode = parsed.searchParams.get("sslmode");
+    if (mode && ["prefer", "require", "verify-ca"].includes(mode) && !parsed.searchParams.has("uselibpqcompat")) {
+      parsed.searchParams.set("sslmode", "verify-full");
+      return parsed.toString();
+    }
+  } catch {
+    // Not a URL the parser understands — leave it to the driver.
+  }
+  return url;
+}
+
 /** The connection the app queries through. */
 export function databaseUrl(): string | undefined {
-  return first(NEON_POOLED) ?? process.env.DATABASE_URL;
+  const url = first(NEON_POOLED) ?? process.env.DATABASE_URL;
+  return url ? quietSslMode(url) : url;
 }
 
 /** The connection for `prisma db push` and other schema work. */
