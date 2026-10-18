@@ -32,6 +32,15 @@ const onCI =
  */
 const NEON_POOLED = ["NEON_URL", "NEON_DATABASE_URL", "NEON_POSTGRES_PRISMA_URL", "NEON_POSTGRES_URL"];
 const NEON_DIRECT = ["NEON_URL_UNPOOLED", "NEON_DATABASE_URL_UNPOOLED", "NEON_POSTGRES_URL_NON_POOLING"];
+/** One-row settings tables (id "singleton"), whose old values replace the new database's defaults. */
+const SETTINGS_TABLES = [
+  "NotificationSettings",
+  "MedicalSettings",
+  "RosterBanner",
+  "PromotionSettings",
+  "FiveMSettings",
+  "ActivitySettings",
+];
 const firstSet = (names) => names.map((n) => process.env[n]?.trim()).find(Boolean);
 const neonUrl = firstSet(NEON_POOLED);
 const oldDatabaseUrl = process.env.OLD_DATABASE_URL || (neonUrl ? process.env.DATABASE_URL : undefined);
@@ -157,8 +166,25 @@ function copyOldDatabase() {
     console.warn(
       "[deploy-schema] The old database was not copied (see above). It is tried again on the next deploy."
     );
+    return;
+  }
+
+  // The merge keeps rows the new database already has, but the one-row
+  // settings tables there are only defaults the site made on first load — the
+  // first move skipped every saved setting (webhooks, City Link address,
+  // activity target) because of them. Copied once more, old values winning.
+  try {
+    execSync(`npx tsx scripts/copy-database.ts --once --marker=DatabaseCopySettings --merge --overwrite --only=${SETTINGS_TABLES.join(",")}`, {
+      stdio: ["ignore", "inherit", "inherit"],
+      timeout: 2 * 60 * 1000,
+      killSignal: "SIGKILL",
+      env: { ...process.env, FROM_DATABASE_URL: oldDatabaseUrl, TO_DATABASE_URL: target },
+    });
+  } catch {
+    console.warn("[deploy-schema] The old settings were not copied (see above). Tried again on the next deploy.");
   }
 }
+
 
 /**
  * Adds permissions introduced in a release to the roles already in the

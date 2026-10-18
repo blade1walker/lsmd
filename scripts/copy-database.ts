@@ -23,6 +23,12 @@ import pg from "pg";
  *            first copy leaves a "DatabaseCopy" entry in its audit log, and a
  *            later run that finds it does nothing. Deploys use this (see
  *            deploy-schema.mjs), so a copy can never be repeated over newer data.
+ *   --marker=Name   records (and checks for) Name instead of "DatabaseCopy",
+ *            so a second, different one-time copy can run alongside the first.
+ *   --only=A,B      copies only these tables.
+ *   --overwrite     an old row whose id is already in the new database replaces
+ *            it, instead of being skipped — for one-row settings tables, where
+ *            the new database made a row of defaults before the copy ran.
  *
  * Never writes to the old database.
  */
@@ -32,7 +38,10 @@ const TO = process.env.TO_DATABASE_URL;
 const wipe = process.argv.includes("--wipe");
 const merge = process.argv.includes("--merge");
 const once = process.argv.includes("--once");
-const MARKER = "DatabaseCopy";
+const overwrite = process.argv.includes("--overwrite");
+const arg = (name: string) => process.argv.find((a) => a.startsWith(`--${name}=`))?.slice(name.length + 3);
+const MARKER = arg("marker") || "DatabaseCopy";
+const only = arg("only")?.split(",").map((t) => t.trim()).filter(Boolean);
 
 if (!FROM || !TO) {
   console.error("Set FROM_DATABASE_URL (the old database) and TO_DATABASE_URL (the new one), then re-run.");
@@ -40,6 +49,10 @@ if (!FROM || !TO) {
 }
 if (FROM === TO) {
   console.error("FROM_DATABASE_URL and TO_DATABASE_URL are the same database.");
+  process.exit(1);
+}
+if (wipe && only) {
+  console.error("--wipe empties every table, so it cannot be combined with --only.");
   process.exit(1);
 }
 if (wipe && merge) {
@@ -112,8 +125,13 @@ async function insert(db: pg.Client, table: string, cols: Column[], rows: Row[])
     });
     return `(${slots.join(", ")})`;
   });
+  const updates = cols.filter((c) => c.name !== "id").map((c) => `${q(c.name)} = EXCLUDED.${q(c.name)}`);
+  const onConflict =
+    overwrite && cols.some((c) => c.name === "id") && updates.length
+      ? `ON CONFLICT ("id") DO UPDATE SET ${updates.join(", ")}`
+      : "ON CONFLICT DO NOTHING";
   const res = await db.query(
-    `INSERT INTO ${q(table)} (${cols.map((c) => q(c.name)).join(", ")}) VALUES ${tuples.join(", ")} ON CONFLICT DO NOTHING`,
+    `INSERT INTO ${q(table)} (${cols.map((c) => q(c.name)).join(", ")}) VALUES ${tuples.join(", ")} ${onConflict}`,
     values
   );
   return res.rowCount ?? 0;
@@ -167,16 +185,17 @@ async function main() {
   if (once && target.has("AuditLog")) {
     const { rows } = await to.query(`SELECT 1 FROM "AuditLog" WHERE "entityType" = $1 LIMIT 1`, [MARKER]);
     if (rows.length) {
-      console.log("The old database was already copied into this one — nothing to do.");
+      console.log(`Already done (${MARKER}) — nothing to do.`);
       await from.end();
       await to.end();
       return;
     }
   }
 
-  const missing = source.filter((t) => !target.has(t));
+  const wanted = only ? source.filter((t) => only.includes(t)) : source;
+  const missing = wanted.filter((t) => !target.has(t));
   if (missing.length) console.warn(`Not in the new database, skipped: ${missing.join(", ")}`);
-  const shared = await inDependencyOrder(from, source.filter((t) => target.has(t)));
+  const shared = await inDependencyOrder(from, wanted.filter((t) => target.has(t)));
 
   if (!wipe && !merge) {
     const filled: string[] = [];
