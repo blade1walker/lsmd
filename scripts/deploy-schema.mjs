@@ -133,15 +133,18 @@ try {
  * copies everything across — once. Runs before the permission grant so the
  * copied roles get it too.
  *
- * Into an empty database only, unless OLD_DATABASE_COPY=merge, which adds the
- * old rows beside what the new one already has. A failure (the old database
+ * Merges: the old rows are added beside whatever the new database already
+ * has (it is in use while the old one is unreachable — people sign in, and
+ * settings get saved), and an old row whose id or other unique field is
+ * already taken there is skipped. OLD_DATABASE_COPY=empty copies only into an
+ * empty database instead. A failure (the old database
  * still refusing connections, say) leaves the new one untouched and is tried
  * again on the next deploy; once it has worked, later deploys skip it.
  */
 function copyOldDatabase() {
   if (!oldDatabaseUrl) return;
   const target = directUrl || process.env.DATABASE_URL;
-  const mode = process.env.OLD_DATABASE_COPY === "merge" ? " --merge" : "";
+  const mode = process.env.OLD_DATABASE_COPY === "empty" ? "" : " --merge";
   console.log(`[deploy-schema] Copying the old database into the new one${mode ? " (merge)" : ""}...`);
   try {
     execSync(`npx tsx scripts/copy-database.ts --once${mode}`, {
@@ -152,8 +155,7 @@ function copyOldDatabase() {
     });
   } catch {
     console.warn(
-      "[deploy-schema] The old database was not copied (see above). It is tried again on the next deploy.\n" +
-        "[deploy-schema] If the new database already has data you want to keep, set OLD_DATABASE_COPY=merge."
+      "[deploy-schema] The old database was not copied (see above). It is tried again on the next deploy."
     );
   }
 }
