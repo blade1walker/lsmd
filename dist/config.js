@@ -1,0 +1,90 @@
+import "dotenv/config";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+/**
+ * Settings, read once from the environment (or a .env file beside package.json).
+ *
+ * Only DISCORD_TOKEN is required to start. Everything that talks to the
+ * website needs WEBSITE_URL and NEXUS_BOT_API_KEY too; without them the bot
+ * still starts, and those commands say what is missing instead of the whole
+ * bot refusing to run.
+ */
+function read(name) {
+    return (process.env[name] ?? "").trim().replace(/^["']|["']$/g, "").trim();
+}
+/** Strips a pasted "Bot " prefix — it makes Discord answer 401. */
+function cleanToken(raw) {
+    return raw.replace(/^Bot\s+/i, "").trim();
+}
+const token = cleanToken(read("DISCORD_TOKEN"));
+if (!token) {
+    // The upload zip leaves .env out (it holds the token), so clearing the
+    // folder before unzipping an update deletes it. Say which case this is.
+    const envPath = join(process.cwd(), ".env");
+    const where = existsSync(envPath)
+        ? `  ${envPath} exists, but DISCORD_TOKEN in it is empty.`
+        : `  There is no .env file in ${process.cwd()} — it is not in the upload zip, so an update that replaced the folder removed it.`;
+    console.error([
+        "",
+        "  Nexus EMS Bot cannot start: DISCORD_TOKEN is not set.",
+        where,
+        "",
+        "  1. Copy .env.example to .env (in the same folder as package.json).",
+        "  2. Paste your bot token after DISCORD_TOKEN=",
+        "     (Developer Portal → your application → Bot → Reset Token).",
+        "  On a hosting panel, set DISCORD_TOKEN in the panel's environment/startup variables instead.",
+        "  Updating later: unzip over the old files without deleting .env.",
+        "",
+    ].join("\n"));
+    process.exit(1);
+}
+const warnings = [];
+const guildId = read("DISCORD_GUILD_ID");
+if (guildId && !/^\d{15,22}$/.test(guildId)) {
+    warnings.push(`DISCORD_GUILD_ID "${guildId}" is not a server ID — ignoring it and using every server the bot is in.`);
+}
+let websiteUrl = read("WEBSITE_URL").replace(/\/+$/, "");
+if (websiteUrl && !/^https?:\/\//.test(websiteUrl))
+    websiteUrl = `https://${websiteUrl}`;
+const apiKey = read("NEXUS_BOT_API_KEY");
+// The bot proves itself to the website with its own Discord token (the site
+// checks it belongs to the same application), so only the URL is needed.
+// NEXUS_BOT_API_KEY is an optional extra way in.
+let websiteProblem = null;
+if (!websiteUrl) {
+    websiteProblem = "Set WEBSITE_URL (e.g. https://your-site.vercel.app) to connect the bot to the website.";
+}
+else if (!/^https:\/\//.test(websiteUrl) && !/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(websiteUrl)) {
+    // The bot's token travels with every request, so only over HTTPS.
+    websiteProblem = "WEBSITE_URL must start with https:// — the bot's credentials are sent with every request.";
+}
+if (apiKey && apiKey.length < 32)
+    warnings.push("NEXUS_BOT_API_KEY is shorter than 32 characters and will be ignored by the website; the bot's token is used instead.");
+if (websiteProblem)
+    warnings.push(`${websiteProblem} Until then, commands that use the website are unavailable.`);
+let timezone = read("TIMEZONE") || "Asia/Kolkata";
+try {
+    new Intl.DateTimeFormat("en-US", { timeZone: timezone });
+}
+catch {
+    warnings.push(`TIMEZONE "${timezone}" is not a valid timezone name (e.g. Asia/Kolkata) — using Asia/Kolkata.`);
+    timezone = "Asia/Kolkata";
+}
+const logChannelId = read("LOG_CHANNEL_ID");
+if (logChannelId && !/^\d{15,22}$/.test(logChannelId))
+    warnings.push(`LOG_CHANNEL_ID "${logChannelId}" is not a channel ID — staff logging is off.`);
+export const config = {
+    token,
+    /** Null means "every server the bot is in". */
+    guildId: /^\d{15,22}$/.test(guildId) ? guildId : null,
+    websiteUrl,
+    apiKey,
+    /** Why the website cannot be used, or null when it is configured. */
+    websiteProblem,
+    timezone,
+    brandName: read("BOT_BRAND_NAME") || "Los Santos EMS",
+    logoUrl: /^https:\/\//.test(read("BOT_LOGO_URL")) ? read("BOT_LOGO_URL") : undefined,
+    logChannelId: /^\d{15,22}$/.test(logChannelId) ? logChannelId : undefined,
+};
+export const configWarnings = warnings;
+//# sourceMappingURL=config.js.map

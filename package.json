@@ -1,0 +1,28 @@
+{
+  "name": "nexus-ems-bot",
+  "version": "1.2.0",
+  "private": true,
+  "description": "Nexus EMS Bot — runs the Los Santos EMS website from Discord, and posts and schedules announcements.",
+  "type": "module",
+  "main": "index.js",
+  "engines": {
+    "node": ">=18.17"
+  },
+  "scripts": {
+    "build": "tsc -p .",
+    "start": "node index.js",
+    "dev": "tsc -p . && node index.js",
+    "typecheck": "tsc -p . --noEmit",
+    "register": "tsc -p . && node dist/register.js",
+    "package": "node scripts/package.mjs",
+    "release": "node scripts/release.mjs"
+  },
+  "dependencies": {
+    "discord.js": "^14.27.0",
+    "dotenv": "^17.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "typescript": "^5"
+  }
+}

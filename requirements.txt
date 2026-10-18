@@ -1,0 +1,2 @@
+# Nothing to install: app.py downloads Node.js itself (python hosting servers),
+# and the bot and its dependencies ship ready-built in nexus-ems-bot.zip.

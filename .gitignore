@@ -1,0 +1,8 @@
+# Files the host makes for itself — kept across `git pull`.
+.env
+.node/
+.node.download
+.local/
+.cache/
+__pycache__/
+*.log
