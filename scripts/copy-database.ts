@@ -19,6 +19,11 @@ import pg from "pg";
  *            an old row whose id (or another unique field) is already taken
  *            is skipped.
  *
+ *   --once   copies only if this has never run against the new database: the
+ *            first copy leaves a "DatabaseCopy" entry in its audit log, and a
+ *            later run that finds it does nothing. Deploys use this (see
+ *            deploy-schema.mjs), so a copy can never be repeated over newer data.
+ *
  * Never writes to the old database.
  */
 
@@ -26,6 +31,8 @@ const FROM = process.env.FROM_DATABASE_URL;
 const TO = process.env.TO_DATABASE_URL;
 const wipe = process.argv.includes("--wipe");
 const merge = process.argv.includes("--merge");
+const once = process.argv.includes("--once");
+const MARKER = "DatabaseCopy";
 
 if (!FROM || !TO) {
   console.error("Set FROM_DATABASE_URL (the old database) and TO_DATABASE_URL (the new one), then re-run.");
@@ -157,6 +164,16 @@ async function main() {
   if (target.size === 0) {
     throw new Error("The new database has no tables. Apply the schema to it first (prisma db push, or deploy with it as DATABASE_URL).");
   }
+  if (once && target.has("AuditLog")) {
+    const { rows } = await to.query(`SELECT 1 FROM "AuditLog" WHERE "entityType" = $1 LIMIT 1`, [MARKER]);
+    if (rows.length) {
+      console.log("The old database was already copied into this one — nothing to do.");
+      await from.end();
+      await to.end();
+      return;
+    }
+  }
+
   const missing = source.filter((t) => !target.has(t));
   if (missing.length) console.warn(`Not in the new database, skipped: ${missing.join(", ")}`);
   const shared = await inDependencyOrder(from, source.filter((t) => target.has(t)));
@@ -217,6 +234,14 @@ async function main() {
       await to.query(
         `SELECT setval(pg_get_serial_sequence($1, $2), COALESCE((SELECT MAX(${q(s.column_name)}) FROM ${q(s.table_name)}), 0) + 1, false)`,
         [q(s.table_name), s.column_name]
+      );
+    }
+
+    if (target.has("AuditLog")) {
+      await to.query(
+        `INSERT INTO "AuditLog" (id, action, "entityType", "entityId", "entityLabel", details, "performedBy")
+         VALUES ($1, 'copy', $2, 'old-database', 'Copied everything from the old database', $3, 'Database move')`,
+        [`dbcopy-${Date.now()}`, MARKER, JSON.stringify({ rows: total, mode: wipe ? "wipe" : merge ? "merge" : "empty" })]
       );
     }
 

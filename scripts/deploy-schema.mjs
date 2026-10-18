@@ -85,6 +85,7 @@ try {
   // exit immediately with "unknown or unexpected option".
   run("npx prisma db push", 3 * 60 * 1000);
   console.log("[deploy-schema] Schema is up to date.");
+  copyOldDatabase();
   grantNewPermissions();
   backfillPromotionHistory();
 } catch {
@@ -108,6 +109,41 @@ try {
       "[deploy-schema] against it yourself.\n" +
       "[deploy-schema] ==================================================\n"
   );
+}
+
+/**
+ * Moving to a new database host: with OLD_DATABASE_URL set (the old
+ * database's address, kept when DATABASE_URL was pointed at the new one),
+ * copies everything across — once. Runs before the permission grant so the
+ * copied roles get it too.
+ *
+ * Into an empty database only, unless OLD_DATABASE_COPY=merge, which adds the
+ * old rows beside what the new one already has. A failure (the old database
+ * still refusing connections, say) leaves the new one untouched and is tried
+ * again on the next deploy; once it has worked, later deploys skip it.
+ */
+function copyOldDatabase() {
+  if (!process.env.OLD_DATABASE_URL) return;
+  const target =
+    process.env.DIRECT_URL ||
+    process.env.DATABASE_URL_UNPOOLED ||
+    process.env.POSTGRES_URL_NON_POOLING ||
+    process.env.DATABASE_URL;
+  const mode = process.env.OLD_DATABASE_COPY === "merge" ? " --merge" : "";
+  console.log(`[deploy-schema] OLD_DATABASE_URL is set — copying the old database into the new one${mode ? " (merge)" : ""}...`);
+  try {
+    execSync(`npx tsx scripts/copy-database.ts --once${mode}`, {
+      stdio: ["ignore", "inherit", "inherit"],
+      timeout: 3 * 60 * 1000,
+      killSignal: "SIGKILL",
+      env: { ...process.env, FROM_DATABASE_URL: process.env.OLD_DATABASE_URL, TO_DATABASE_URL: target },
+    });
+  } catch {
+    console.warn(
+      "[deploy-schema] The old database was not copied (see above). It is tried again on the next deploy.\n" +
+        "[deploy-schema] If the new database already has data you want to keep, set OLD_DATABASE_COPY=merge."
+    );
+  }
 }
 
 /**
