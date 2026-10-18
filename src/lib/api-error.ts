@@ -16,8 +16,17 @@ const HINTS: Record<string, string> = {
  * fetch X". Including the Prisma code and message means the page can say which
  * one it is.
  */
+/**
+ * The database host refusing every query because the plan's monthly limit
+ * (compute time, data transfer, operations) is used up — Neon and Prisma
+ * Postgres both answer with SQLSTATE 53000 and this wording.
+ */
+const QUOTA_HINT =
+  "The database host's plan limit is used up, so it refuses every request. Upgrade the database plan or wait for its monthly reset — nothing on the site or the bot can load or save until then.";
+
 export function apiError(message: string, error: unknown, status = 500) {
   const { code, detail } = describe(error);
+  const hint = detail && /exceeded the .*quota|Code: `53000`/i.test(detail) ? QUOTA_HINT : code ? HINTS[code] : undefined;
   console.error(`${message}${code ? ` [${code}]` : ""}:`, error);
 
   return NextResponse.json(
@@ -25,7 +34,7 @@ export function apiError(message: string, error: unknown, status = 500) {
       error: message,
       ...(code ? { code } : {}),
       ...(detail ? { detail } : {}),
-      ...(code && HINTS[code] ? { hint: HINTS[code] } : {}),
+      ...(hint ? { hint } : {}),
     },
     { status }
   );

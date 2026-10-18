@@ -7,7 +7,7 @@ import { startScheduler } from "./scheduler.js";
 import { startJoinLink } from "./joinlink.js";
 import { api } from "./api.js";
 import { EPHEMERAL, failure, respondError } from "./ui.js";
-import { canUse, grantsProblem, startPermissions } from "./permissions.js";
+import { canUse, canUseFresh, grantsProblem, startPermissions } from "./permissions.js";
 
 /**
  * Nexus EMS Bot.
@@ -101,7 +101,7 @@ function createClient(withMembers: boolean) {
       if (interaction.isChatInputCommand()) {
         const command = commandMap.get(interaction.commandName);
         if (!command) return;
-        if (!canUse(interaction, interaction.commandName)) {
+        if (!(await canUseFresh(interaction, interaction.commandName))) {
           await interaction.reply({ embeds: [noAccess(interaction.commandName)], ...EPHEMERAL });
           return;
         }

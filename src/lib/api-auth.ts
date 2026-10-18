@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { authOptions } from "./auth";
 import { resolveAccess, hasPermission, type Access } from "./access";
 import { resolveBotAccess } from "./bot-auth";
+import { apiError } from "./api-error";
 
 export type AuthResult = { access: Access } | { error: NextResponse };
 
@@ -20,6 +21,16 @@ export function isDenied(result: AuthResult): result is { error: NextResponse } 
  * a revoked role or a roster removal takes effect on the next request.
  */
 export async function requireAuth(permission?: string | readonly string[]): Promise<AuthResult> {
+  // The checks read the database. Uncaught, a database outage became a bare
+  // 500 with no body, which the bot can only report as "answered 500".
+  try {
+    return await checkAuth(permission);
+  } catch (error) {
+    return { error: apiError("Could not check access", error) };
+  }
+}
+
+async function checkAuth(permission?: string | readonly string[]): Promise<AuthResult> {
   // The Discord bot. Its commands are permissioned in Discord's Integrations
   // settings, so it passes every check here — see bot-auth.ts.
   const bot = await resolveBotAccess();

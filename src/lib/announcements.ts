@@ -153,3 +153,21 @@ export async function claimDueAnnouncements(limit = 10) {
   if (claimed.length === 0) return [];
   return prisma.announcement.findMany({ where: { id: { in: claimed } }, orderBy: { scheduledFor: "asc" } });
 }
+
+/**
+ * When the claim loop next has something to do: the soonest scheduled post,
+ * or the moment a post stuck in "Sending" turns stale and is re-offered.
+ * Null when nothing is pending. Lets the bot sleep until then instead of
+ * asking every few seconds, which kept the database awake around the clock.
+ */
+export async function nextDueAt(): Promise<Date | null> {
+  const [scheduled, sending] = await Promise.all([
+    prisma.announcement.findFirst({ where: { status: "Scheduled" }, orderBy: { scheduledFor: "asc" }, select: { scheduledFor: true } }),
+    prisma.announcement.findFirst({ where: { status: "Sending" }, orderBy: { claimedAt: "asc" }, select: { claimedAt: true } }),
+  ]);
+  const times = [
+    scheduled?.scheduledFor.getTime(),
+    sending?.claimedAt ? sending.claimedAt.getTime() + STALE_CLAIM_MS : undefined,
+  ].filter((t): t is number => t !== undefined);
+  return times.length ? new Date(Math.min(...times)) : null;
+}

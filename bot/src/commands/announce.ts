@@ -26,6 +26,7 @@ import {
 import { discordTime, parseWhen } from "../time.js";
 import { COLORS, EPHEMERAL, actorOf, clip, embed, failure, respondError, statusBadge, success } from "../ui.js";
 import { staffLog } from "../log.js";
+import { wakeScheduler } from "../scheduler.js";
 
 const NAME = "announce";
 
@@ -400,6 +401,7 @@ export const announce: Command = {
           return;
         }
 
+        wakeScheduler(created.scheduledFor);
         await staffLog(
           interaction.client,
           actor,
@@ -427,6 +429,7 @@ export const announce: Command = {
           footer,
           scheduledFor: when.toISOString(),
         });
+        wakeScheduler(updated.scheduledFor);
         await staffLog(interaction.client, actor, "Edited a scheduled announcement", `**${title}** · now ${discordTime(updated.scheduledFor)}`);
         await interaction.editReply({ embeds: [success("Announcement updated"), describe(updated)] });
       }

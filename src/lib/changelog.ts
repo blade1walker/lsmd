@@ -28,6 +28,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: "2026-10-19",
+    changes: [
+      { type: "fix", text: "Nexus EMS Bot: the bot no longer asks the website for new announcements every 20 seconds and for permissions every minute. It now waits until the next announcement is due, and checks permissions every half hour (and right away when someone would otherwise be turned away). The constant checking kept the database running around the clock and used up its monthly limit, which made every bot command fail with \"The website answered 500\"" },
+      { type: "improvement", text: "When the database refuses requests because its plan limit is used up, the bot and the site now say exactly that, instead of a bare \"The website answered 500\"" },
+    ],
+  },
+  {
     date: "2026-10-15",
     changes: [
       { type: "fix", text: "Sign-in with Discord works again. Discord changed what it sends back after you press Authorize, and the site rejected every sign-in with \"Discord sign-in could not be completed\"" },

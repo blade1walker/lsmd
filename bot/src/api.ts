@@ -28,6 +28,16 @@ export async function api<T = unknown>(
   path: string,
   body?: unknown
 ): Promise<T> {
+  return (await apiWithHeaders<T>(actor, method, path, body)).data;
+}
+
+/** api(), also returning the response headers — for the few routes that say something there. */
+export async function apiWithHeaders<T = unknown>(
+  actor: Actor,
+  method: "GET" | "POST" | "PATCH" | "PUT" | "DELETE",
+  path: string,
+  body?: unknown
+): Promise<{ data: T; headers: Headers }> {
   if (config.websiteProblem) throw new ApiError(`The bot is not connected to the website yet. ${config.websiteProblem}`, 0);
 
   let res: Response;
@@ -99,5 +109,5 @@ export async function api<T = unknown>(
     throw new ApiError(message, res.status);
   }
 
-  return data as T;
+  return { data: data as T, headers: res.headers };
 }

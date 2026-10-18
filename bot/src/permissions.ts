@@ -6,8 +6,9 @@ import { config } from "./config.js";
  * Who may use which command.
  *
  * Grants live on the website (so they survive restarts and can be edited on
- * the Bot Permissions page too) and are cached here, refreshed every minute
- * and straight after /permissions changes them.
+ * the Bot Permissions page too) and are cached here, refreshed every half
+ * hour, straight after /permissions changes them, and when someone is about
+ * to be turned away (so a grant just made on the site works at once).
  *
  *   - Server administrators and the owner can use everything, always — nobody
  *     can lock the server out of its own bot.
@@ -38,10 +39,21 @@ const EXPLICIT_ONLY = new Set(["permissions"]);
 let grants: Grant[] = [];
 let loaded = false;
 let lastError: string | null = null;
+let refreshedAt = 0;
 
-const REFRESH_MS = 60_000;
+/**
+ * Was one minute. Every refresh is a database read on the website, and
+ * asking that often kept the database awake around the clock until its
+ * host's monthly quota ran out.
+ */
+const REFRESH_MS = 30 * 60_000;
+/** A denial re-checks the website at most this often, so spamming a command cannot. */
+const RECHECK_MS = 30_000;
+/** Discord wants an answer within 3 seconds; a re-check never holds the reply longer than this. */
+const RECHECK_WAIT_MS = 1_500;
 
 export async function refreshGrants(actor: Actor) {
+  refreshedAt = Date.now();
   try {
     grants = await api<Grant[]>(actor, "GET", "/api/bot/permissions");
     loaded = true;
@@ -78,6 +90,19 @@ export function startPermissions(client: Client<true>) {
     if (loaded) console.log(`[permissions] ${grants.length} grant(s) loaded`);
   });
   setInterval(tick, REFRESH_MS);
+}
+
+/**
+ * canUse, but before turning someone away it re-reads the grants if they are
+ * more than a moment old — grants made on the website reach the bot only on
+ * the half-hourly refresh otherwise.
+ */
+export async function canUseFresh(interaction: Interaction, command: string): Promise<boolean> {
+  if (canUse(interaction, command)) return true;
+  if (!interaction.inGuild() || Date.now() - refreshedAt < RECHECK_MS) return false;
+  const actor: Actor = { id: interaction.client.user.id, name: "Permissions" };
+  await Promise.race([refreshGrants(actor).catch(() => {}), new Promise((r) => setTimeout(r, RECHECK_WAIT_MS))]);
+  return canUse(interaction, command);
 }
 
 export function isServerAdmin(interaction: Interaction) {
