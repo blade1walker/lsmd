@@ -31,6 +31,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     date: "2026-10-19",
     changes: [
       { type: "fix", text: "Nexus EMS Bot: the bot no longer asks the website for new announcements every 20 seconds and for permissions every minute. It now waits until the next announcement is due, and checks permissions every half hour (and right away when someone would otherwise be turned away). The constant checking kept the database running around the clock and used up its monthly limit, which made every bot command fail with \"The website answered 500\"" },
+      { type: "fix", text: "Sign-in: when the database is not answering, signing in with Discord now returns to the login page with an explanation instead of a blank \"This page isn't working — HTTP ERROR 500\" page, and people already signed in are no longer signed out by it" },
       { type: "improvement", text: "Moving to a new database: with the old database's address kept as OLD_DATABASE_URL, the next site update copies all its records into the new one automatically — once, and only into an empty database unless told to merge. If the old database is still refusing connections, the copy is simply tried again on the next update" },
       { type: "fix", text: "Bot updates no longer show up as failed website builds (\"No Next.js version detected\") on Vercel — the bot's release branch is now skipped there" },
       { type: "improvement", text: "Nexus EMS Bot: the bot's server can now install it straight from GitHub and update itself on every restart, instead of needing a zip uploaded by hand each time" },

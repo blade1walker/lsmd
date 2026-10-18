@@ -70,19 +70,29 @@ export const authOptions: NextAuthOptions = {
       }
 
       const discordId = account?.providerAccountId;
-      const access = await resolveAccess(discordId);
 
-      if (!access.allowed) {
-        console.warn(`Sign-in denied for Discord ID ${discordId ?? "unknown"}: ${access.denialReason}`);
-        return "/admin/login?error=NotInRoster";
-      }
+      // A database error thrown from here becomes the redirect target —
+      // NextAuth puts its multi-line message in the Location header, which is
+      // invalid, so the visitor got a bare HTTP 500 page instead of the login
+      // page. Answer with an error code the login page explains instead.
+      try {
+        const access = await resolveAccess(discordId);
 
-      // signIn() fires only on an actual authentication event, unlike jwt()
-      // below which re-runs on every session check — so this is the one place
-      // that means "someone just logged in" rather than "a page was loaded".
-      if (discordId) {
-        await provisionAdminUser(discordId);
-        await syncAdminUserFromRoster(discordId);
+        if (!access.allowed) {
+          console.warn(`Sign-in denied for Discord ID ${discordId ?? "unknown"}: ${access.denialReason}`);
+          return "/admin/login?error=NotInRoster";
+        }
+
+        // signIn() fires only on an actual authentication event, unlike jwt()
+        // below which re-runs on every session check — so this is the one place
+        // that means "someone just logged in" rather than "a page was loaded".
+        if (discordId) {
+          await provisionAdminUser(discordId);
+          await syncAdminUserFromRoster(discordId);
+        }
+      } catch (error) {
+        console.error(`Sign-in for Discord ID ${discordId ?? "unknown"} could not be checked:`, error);
+        return "/admin/login?error=DatabaseUnavailable";
       }
 
       return true;
@@ -95,8 +105,17 @@ export const authOptions: NextAuthOptions = {
 
       if (token.discordId) {
         // Re-resolved on every decode rather than frozen at sign-in, so role
-        // changes and roster removals take effect without a re-login.
-        const access = await resolveAccess(token.discordId as string);
+        // changes and roster removals take effect without a re-login. When the
+        // database is down the claims from the last good check are kept: every
+        // API route re-checks access against the database anyway, so nothing
+        // is reachable on them meanwhile, and the session itself stays intact.
+        let access;
+        try {
+          access = await resolveAccess(token.discordId as string);
+        } catch (error) {
+          console.error("Session access could not be re-checked; keeping the last result:", error);
+          return token;
+        }
         token.isAdmin = access.allowed;
         token.isSuperAdmin = access.isSuperAdmin;
         token.isMember = access.isMember;

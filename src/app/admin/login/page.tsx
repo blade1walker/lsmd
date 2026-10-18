@@ -15,6 +15,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   OAuthCallback:
     "Discord sign-in could not be completed. Please try again, and contact an administrator if it keeps happening.",
   Callback: "Discord sign-in was cancelled or could not be completed. Please try again.",
+  DatabaseUnavailable:
+    "Signed in with Discord, but the site's database is not answering, so your access could not be checked. Try again later, and tell an administrator if it keeps happening.",
 };
 
 function LoginError() {
