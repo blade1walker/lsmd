@@ -48,13 +48,7 @@ export default function AdminExportPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<"xlsx" | "pdf" | null>(null);
-  const [hasOldDatabase, setHasOldDatabase] = useState(false);
 
-  useEffect(() => {
-    fetchJson<{ old: boolean }>("/api/admin/export/database?check=1")
-      .then((r) => setHasOldDatabase(r.old))
-      .catch(() => setHasOldDatabase(false));
-  }, []);
 
   const load = useCallback(async () => {
     setError(null);
@@ -292,26 +286,14 @@ export default function AdminExportPage() {
         <p className="text-sm text-gray-500 mb-4">
           Every table and every row exactly as stored, as one JSON file — a backup to keep, not a
           report to read.
-          {hasOldDatabase &&
-            " The old database is the one the site used before it moved to the current one."}
         </p>
         <div className="flex flex-wrap gap-3">
-          {hasOldDatabase && (
-            <Button
-              onClick={() => window.location.assign("/api/admin/export/database?source=old")}
-              className="bg-[#dc2626] text-black hover:bg-[#b91c1c]"
-            >
-              <Database className="w-4 h-4 mr-2" />
-              Download old database
-            </Button>
-          )}
           <Button
-            onClick={() => window.location.assign("/api/admin/export/database?source=current")}
-            variant="outline"
-            className="border-[#1e1e1e] text-gray-200"
+            onClick={() => window.location.assign("/api/admin/export/database")}
+            className="bg-[#dc2626] text-black hover:bg-[#b91c1c]"
           >
             <Database className="w-4 h-4 mr-2" />
-            Download current database
+            Download database
           </Button>
         </div>
       </div>

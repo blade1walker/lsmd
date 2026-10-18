@@ -26,29 +26,18 @@ const onCI =
 /**
  * Which database to apply the schema to — the same choice as
  * src/lib/database-url.ts, which this file cannot import. With Vercel's Neon
- * connection (NEON_*) present, it is the new database and DATABASE_URL is the
- * old one: the old address is kept for the copy below, and DATABASE_URL is
- * pointed at Neon for every step this script runs.
+ * connection (NEON_*) present it wins, and DATABASE_URL is pointed at it for
+ * every step this script runs.
  */
 const NEON_POOLED = ["NEON_URL", "NEON_DATABASE_URL", "NEON_POSTGRES_PRISMA_URL", "NEON_POSTGRES_URL"];
 const NEON_DIRECT = ["NEON_URL_UNPOOLED", "NEON_DATABASE_URL_UNPOOLED", "NEON_POSTGRES_URL_NON_POOLING"];
-/** One-row settings tables (id "singleton"), whose old values replace the new database's defaults. */
-const SETTINGS_TABLES = [
-  "NotificationSettings",
-  "MedicalSettings",
-  "RosterBanner",
-  "PromotionSettings",
-  "FiveMSettings",
-  "ActivitySettings",
-];
 const firstSet = (names) => names.map((n) => process.env[n]?.trim()).find(Boolean);
 const neonUrl = firstSet(NEON_POOLED);
-const oldDatabaseUrl = process.env.OLD_DATABASE_URL || (neonUrl ? process.env.DATABASE_URL : undefined);
 const directUrl = neonUrl
   ? firstSet(NEON_DIRECT) || neonUrl
   : firstSet(["DIRECT_URL", "DATABASE_URL_UNPOOLED", "POSTGRES_URL_NON_POOLING", "DATABASE_URL"]);
 if (neonUrl) {
-  console.log("[deploy-schema] Using the Neon database (NEON_*); DATABASE_URL is the old one.");
+  console.log("[deploy-schema] Using the Neon database (NEON_*).");
   process.env.DATABASE_URL = neonUrl;
 }
 
@@ -110,7 +99,6 @@ try {
   // exit immediately with "unknown or unexpected option".
   run("npx prisma db push", 3 * 60 * 1000);
   console.log("[deploy-schema] Schema is up to date.");
-  copyOldDatabase();
   grantNewPermissions();
   backfillPromotionHistory();
 } catch {
@@ -135,56 +123,6 @@ try {
       "[deploy-schema] ==================================================\n"
   );
 }
-
-/**
- * Moving to a new database host: with OLD_DATABASE_URL set (the old
- * database's address, kept when DATABASE_URL was pointed at the new one),
- * copies everything across — once. Runs before the permission grant so the
- * copied roles get it too.
- *
- * Merges: the old rows are added beside whatever the new database already
- * has (it is in use while the old one is unreachable — people sign in, and
- * settings get saved), and an old row whose id or other unique field is
- * already taken there is skipped. OLD_DATABASE_COPY=empty copies only into an
- * empty database instead. A failure (the old database
- * still refusing connections, say) leaves the new one untouched and is tried
- * again on the next deploy; once it has worked, later deploys skip it.
- */
-function copyOldDatabase() {
-  if (!oldDatabaseUrl) return;
-  const target = directUrl || process.env.DATABASE_URL;
-  const mode = process.env.OLD_DATABASE_COPY === "empty" ? "" : " --merge";
-  console.log(`[deploy-schema] Copying the old database into the new one${mode ? " (merge)" : ""}...`);
-  try {
-    execSync(`npx tsx scripts/copy-database.ts --once${mode}`, {
-      stdio: ["ignore", "inherit", "inherit"],
-      timeout: 3 * 60 * 1000,
-      killSignal: "SIGKILL",
-      env: { ...process.env, FROM_DATABASE_URL: oldDatabaseUrl, TO_DATABASE_URL: target },
-    });
-  } catch {
-    console.warn(
-      "[deploy-schema] The old database was not copied (see above). It is tried again on the next deploy."
-    );
-    return;
-  }
-
-  // The merge keeps rows the new database already has, but the one-row
-  // settings tables there are only defaults the site made on first load — the
-  // first move skipped every saved setting (webhooks, City Link address,
-  // activity target) because of them. Copied once more, old values winning.
-  try {
-    execSync(`npx tsx scripts/copy-database.ts --once --marker=DatabaseCopySettings --merge --overwrite --only=${SETTINGS_TABLES.join(",")}`, {
-      stdio: ["ignore", "inherit", "inherit"],
-      timeout: 2 * 60 * 1000,
-      killSignal: "SIGKILL",
-      env: { ...process.env, FROM_DATABASE_URL: oldDatabaseUrl, TO_DATABASE_URL: target },
-    });
-  } catch {
-    console.warn("[deploy-schema] The old settings were not copied (see above). Tried again on the next deploy.");
-  }
-}
-
 
 /**
  * Adds permissions introduced in a release to the roles already in the
