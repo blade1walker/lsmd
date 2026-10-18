@@ -61,6 +61,10 @@ try {
   for (const name of readdirSync(tree)) if (name !== ".git") rmSync(join(tree, name), { recursive: true, force: true });
   for (const name of contents) if (!LEAVE_OUT.has(name)) cpSync(join(dir, name), join(tree, name), { recursive: true });
   writeFileSync(join(tree, ".gitignore"), IGNORE);
+  // The website's Vercel project builds every branch pushed to this repo, and
+  // this one has no website in it — every release failed with "No Next.js
+  // version detected". Vercel reads this from the branch it would build.
+  writeFileSync(join(tree, "vercel.json"), JSON.stringify({ git: { deploymentEnabled: false } }, null, 2) + "\n");
 
   git(["add", "-A"], tree);
   if (!git(["status", "--porcelain"], tree)) {
