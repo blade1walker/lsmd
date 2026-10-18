@@ -31,6 +31,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     date: "2026-10-19",
     changes: [
       { type: "fix", text: "Nexus EMS Bot: the bot no longer asks the website for new announcements every 20 seconds and for permissions every minute. It now waits until the next announcement is due, and checks permissions every half hour (and right away when someone would otherwise be turned away). The constant checking kept the database running around the clock and used up its monthly limit, which made every bot command fail with \"The website answered 500\"" },
+      { type: "improvement", text: "Nexus EMS Bot: the bot's server can now install it straight from GitHub and update itself on every restart, instead of needing a zip uploaded by hand each time" },
       { type: "improvement", text: "Moving to a new database host: `npm run db:copy` copies everything from the old database to the new one, keeping every record and the links between them" },
       { type: "improvement", text: "When the database refuses requests because its plan limit is used up, the bot and the site now say exactly that, instead of a bare \"The website answered 500\"" },
     ],
