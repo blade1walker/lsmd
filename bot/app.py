@@ -183,8 +183,61 @@ def find_node() -> str:
     return NODE_BIN
 
 
+def git_bootstrap() -> None:
+    """
+    Turns this folder into a checkout of the panel's Git Repo Address and
+    Branch (GIT_ADDRESS and BRANCH, which the panel passes to the server), for
+    a host whose installer never cloned it. Once .git exists, the panel's own
+    start line (`git pull`) keeps it up to date on every start.
+
+    Starting from just this file, uploaded on its own, is enough. Files the
+    repository ignores (.env, .node) are left alone.
+    """
+    address = os.environ.get("GIT_ADDRESS", "").strip()
+    if os.path.isdir(os.path.join(HERE, ".git")) or not address:
+        return
+    if not shutil.which("git"):
+        say("GIT_ADDRESS is set, but this server has no git - skipping the GitHub install")
+        return
+
+    branch = os.environ.get("BRANCH", "").strip()
+    say(f"installing from {address}{f' ({branch})' if branch else ''}...")
+
+    def run(*args: str, quiet: bool = False) -> bool:
+        out = subprocess.DEVNULL if quiet else None
+        return subprocess.run(["git", *args], cwd=HERE, stdout=out, stderr=out).returncode == 0
+
+    # A public repository needs no login; a Git Username and Access Token are
+    # used only when anonymous access is refused.
+    urls = [address]
+    user, token = os.environ.get("USERNAME", "").strip(), os.environ.get("ACCESS_TOKEN", "").strip()
+    if user and token and address.startswith("https://"):
+        urls.append(f"https://{user}:{token}@{address[len('https://'):]}")
+
+    run("init", "-q")
+    # Fetched into origin/<branch> so the panel's `git pull` has an upstream to follow.
+    ref = f"+refs/heads/{branch}:refs/remotes/origin/{branch}" if branch else "HEAD"
+    for url in urls:
+        run("remote", "remove", "origin", quiet=True)
+        run("remote", "add", "origin", url)
+        if run("fetch", "-q", "origin", ref):
+            break
+    else:
+        shutil.rmtree(os.path.join(HERE, ".git"), ignore_errors=True)
+        fail([f"Could not download {address}{f' branch {branch}' if branch else ''}. Check the Git Repo Address and Git Branch on the Startup tab."])
+
+    if not run("checkout", "-q", "-f", "-B", branch or "main", f"origin/{branch}" if branch else "FETCH_HEAD"):
+        fail(["Downloaded the bot from GitHub, but could not unpack it - press Start to try again."])
+    if branch:
+        run("branch", "-q", f"--set-upstream-to=origin/{branch}")
+    say("installed from GitHub - later starts update it automatically")
+    # This file may just have been replaced by the repository's copy.
+    os.execv(sys.executable, [sys.executable, os.path.abspath(__file__)])
+
+
 def main() -> None:
     os.chdir(HERE)
+    git_bootstrap()
     reclaim_space()
 
     if not os.path.exists(os.path.join(HERE, "node_modules", "discord.js")):
