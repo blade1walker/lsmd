@@ -94,6 +94,8 @@ export const ROLE_PRESETS: RolePreset[] = [
       "activity.view",
       "activity.manage",
       "fivem.view",
+      // Reads and marks test results, e.g. a written exam before promotion.
+      "tests.grade",
     ],
   },
   {
@@ -120,6 +122,9 @@ export const ROLE_PRESETS: RolePreset[] = [
       "interviews.view",
       "interviews.score",
       "interviews.readiness",
+      // Theory tests are part of training, so FTP builds them and marks them.
+      "tests.manage",
+      "tests.grade",
     ],
   },
 ];

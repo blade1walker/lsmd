@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FileText, Radio, Shirt, GraduationCap, CalendarOff, Building2, UserPlus, Lock } from "lucide-react";
+import { FileText, Radio, Shirt, GraduationCap, CalendarOff, Building2, UserPlus, Lock, ClipboardList } from "lucide-react";
 import { StarOfLife } from "./StarOfLife";
 
 /** Every public destination the old header and hero linked to, kept in one row. */
@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/radio-codes", label: "Radio Codes", icon: Radio },
   { href: "/uniform", label: "Uniform Guide", icon: Shirt },
   { href: "/training", label: "Training", icon: GraduationCap },
+  { href: "/tests", label: "Tests", icon: ClipboardList },
   { href: "/loa", label: "Request LOA", icon: CalendarOff },
   { href: "/departments", label: "Join a Department", icon: Building2 },
   { href: "/onboarding", label: "Enroll", icon: UserPlus },

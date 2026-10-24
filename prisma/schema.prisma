@@ -1257,3 +1257,79 @@ model ActivitySettings {
   updatedBy         String?
   updatedAt         DateTime @updatedAt @default(now())
 }
+
+// ─── Tests & Quizzes ────────────────────────────────────────────────────────
+
+/// A test or quiz built in the admin panel and taken by members on /tests.
+/// Questions live in one JSON column (shape: TestQuestion in src/lib/tests.ts)
+/// rather than a table, so the builder saves the whole test in one write and
+/// reordering is just the array order — the same choice MedicalFormVersion
+/// makes for its fields.
+model Test {
+  id               String   @id @default(cuid())
+  title            String
+  description      String?
+  /// Shown on the start screen before the member begins.
+  instructions     String?
+  /// "Draft" | "Published" | "Closed". Only Published tests can be started.
+  status           String   @default("Draft")
+  /// [TestQuestion]
+  questions        Json     @default("[]")
+  /// Percent needed to pass, 0-100.
+  passingScore     Int      @default(70)
+  /// Null means untimed.
+  timeLimitMinutes Int?
+  /// Submitted attempts allowed per member. Null means unlimited.
+  maxAttempts      Int?     @default(1)
+  shuffleQuestions Boolean  @default(false)
+  shuffleOptions   Boolean  @default(false)
+  /// Whether the member sees their score after submitting.
+  showResults      Boolean  @default(true)
+  /// Whether they also see which answers were right, and the explanations.
+  showCorrectAnswers Boolean @default(false)
+  createdBy        String
+  updatedBy        String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  attempts TestAttempt[]
+
+  @@index([status])
+}
+
+/// One member's sitting of a test. The questions are copied in when the
+/// attempt starts, so editing the test later never changes what someone was
+/// asked or how their answers were marked.
+model TestAttempt {
+  id          String    @id @default(cuid())
+  testId      String
+  memberId    String?
+  memberName  String
+  callSign    String?
+  discordId   String
+  /// [TestQuestion] as they stood when the attempt started.
+  questions   Json      @default("[]")
+  /// { [questionId]: string | string[] }
+  answers     Json      @default("{}")
+  /// { [questionId]: points } awarded by a grader, overriding the auto mark.
+  manualPoints Json     @default("{}")
+  /// { [questionId]: comment } from the grader.
+  comments    Json      @default("{}")
+  /// "In Progress" | "Awaiting Grading" | "Graded"
+  status      String    @default("In Progress")
+  earned      Float?
+  total       Float     @default(0)
+  /// Percent, null until every question is marked.
+  score       Int?
+  passed      Boolean?
+  feedback    String?
+  startedAt   DateTime  @default(now())
+  submittedAt DateTime?
+  gradedBy    String?
+  gradedAt    DateTime?
+
+  test Test @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  @@index([testId, status])
+  @@index([discordId])
+}
