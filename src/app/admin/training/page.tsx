@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { CheckCircle2, Circle, ChevronDown, Minus, Plus, Search } from "lucide-react";
+import { CheckCircle2, Circle, ChevronDown, ClipboardList, Minus, Plus, Search } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import RankInsignia from "@/components/RankInsignia";
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
-import { getRankWeight } from "@/lib/constants";
+import { getRankWeight, TEST_SECTION_PERMISSIONS } from "@/lib/constants";
 import {
   EMS_TRAINING,
   overallProgress,
@@ -43,6 +44,9 @@ export default function AdminTrainingPage() {
   // UX only — the PATCH route enforces training.manage regardless.
   const canManage =
     !!session?.user && (session.user.isSuperAdmin || (session.user.permissions ?? []).includes("training.manage"));
+  // The Theory Exam is set as a test, so trainers get a way straight there.
+  const canOpenTests =
+    !!session?.user && (session.user.isSuperAdmin || TEST_SECTION_PERMISSIONS.some((p) => (session.user.permissions ?? []).includes(p)));
 
   const [rows, setRows] = useState<TrainingSummaryRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -174,6 +178,12 @@ export default function AdminTrainingPage() {
           </p>
           {!canManage && (
             <p className="mt-1 text-xs text-yellow-500/80">View only — signing off skills needs the training.manage permission.</p>
+          )}
+          {canOpenTests && (
+            <Link href="/admin/tests" className="mt-2 inline-flex items-center gap-1.5 text-xs text-red-400 hover:underline">
+              <ClipboardList className="h-3.5 w-3.5" />
+              Theory tests & quizzes — build, import questions and see results
+            </Link>
           )}
         </div>
         <button

@@ -31,6 +31,9 @@ export const CHANGELOG: ChangelogEntry[] = [
     date: "2026-10-24",
     title: "Tests & Quizzes",
     changes: [
+      { type: "feature", text: "Import questions into a test from an Excel or CSV spreadsheet (one question per row — download the template to start), a JSON file, a text file, or by copying chosen questions from another test. Every question is previewed exactly as it will be imported, with anything that needs fixing flagged" },
+      { type: "feature", text: "Export a test's questions as Excel, CSV or JSON, to edit in a spreadsheet and import back, or to move them to another test" },
+      { type: "improvement", text: "Training: a link straight to Tests & Quizzes, where the theory exam is set" },
       { type: "feature", text: "Tests & Quizzes: build a test in the admin panel from multiple choice, checkbox, true/false, dropdown, short answer, long answer and number questions. Mark the correct option right on it, set points per question, and preview the test exactly as members will see it" },
       { type: "feature", text: "Paste a whole test in at once — numbered questions, \"- option\" lines with * on the correct ones, and tags like [short], [long] or [number] — and see how it will be read before adding it" },
       { type: "feature", text: "Test settings: pass mark, time limit, attempts per member, shuffled questions and options, and whether members see their score and the correct answers afterwards" },

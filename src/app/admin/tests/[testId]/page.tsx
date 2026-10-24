@@ -1,33 +1,32 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { ArrowLeft, ClipboardPaste, Download, Eye, EyeOff, Lock, Plus, RotateCcw, Save } from "lucide-react";
+import { ArrowLeft, Download, FileUp, Eye, EyeOff, Lock, Plus, RotateCcw, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { ErrorState } from "@/components/ui/error-state";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { QuestionEditor } from "@/components/tests/QuestionEditor";
 import { QuestionInput } from "@/components/tests/QuestionInput";
 import { QUESTION_TYPE_ICONS } from "@/components/tests/QuestionTypeIcons";
 import { AnswerReview, AttemptGrader, ScoreBadge } from "@/components/tests/AttemptGrader";
+import { ImportQuestionsDialog } from "@/components/tests/ImportQuestionsDialog";
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
 import { TEST_PERMISSIONS } from "@/lib/constants";
+import { cloneQuestion, downloadQuestions } from "@/lib/tests-import";
 import {
-  PASTE_EXAMPLE,
   QUESTION_TYPES,
   QUESTION_TYPE_HINTS,
   QUESTION_TYPE_LABELS,
   STATUS_STYLES,
   blankQuestion,
   grade,
-  newId,
-  parseQuestionText,
   publicQuestions,
   questionProblems,
   totalPoints,
@@ -81,8 +80,8 @@ export default function TestBuilderPage() {
   const [pickedTab, setTab] = useState<Tab | null>(null);
   const tab: Tab = pickedTab ?? (canManage ? "questions" : "results");
   const [open, setOpen] = useState<string | null>(null);
-  const [showPaste, setShowPaste] = useState(false);
-  const [pasteText, setPasteText] = useState("");
+  const [showImport, setShowImport] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -172,31 +171,29 @@ export default function TestBuilderPage() {
   };
 
   const duplicate = (index: number) => {
-    const src = questions[index];
-    // Option ids are re-minted so the copy's correct answers point at its own options.
-    const idMap = new Map(src.options.map((o) => [o.id, src.type === "truefalse" ? o.id : newId() + o.id.slice(-3)]));
-    const copy: TestQuestion = {
-      ...src,
-      id: newId(),
-      options: src.options.map((o) => ({ ...o, id: idMap.get(o.id)! })),
-      correct: src.correct.map((c) => idMap.get(c) ?? c),
-      accepted: [...src.accepted],
-    };
+    // Fresh option ids, so the copy's correct answers point at its own options.
+    const copy = cloneQuestion(questions[index]);
     const next = [...questions];
     next.splice(index + 1, 0, copy);
     mutate(next);
     setOpen(copy.id);
   };
 
-  const parsed = useMemo(() => parseQuestionText(pasteText), [pasteText]);
-
-  const applyPaste = (replace: boolean) => {
-    if (!parsed.questions.length) return;
-    mutate(replace ? parsed.questions : [...questions, ...parsed.questions]);
-    setShowPaste(false);
-    setPasteText("");
+  const applyImport = (incoming: TestQuestion[], replace: boolean) => {
+    mutate(replace ? incoming : [...questions, ...incoming]);
     setOpen(null);
-    toast.success(`${parsed.questions.length} question${parsed.questions.length === 1 ? "" : "s"} added — remember to save`);
+    toast.success(`${incoming.length} question${incoming.length === 1 ? "" : "s"} imported — remember to save`);
+  };
+
+  const exportQuestions = async (format: "xlsx" | "csv" | "json") => {
+    setExporting(true);
+    try {
+      await downloadQuestions(questions, `${settings?.title || "test"}-questions`, format);
+    } catch (err) {
+      toast.error(errorMessage(err));
+    } finally {
+      setExporting(false);
+    }
   };
 
   if (error && !test) return <ErrorState title="Failed to load test" message={error} onRetry={load} />;
@@ -285,14 +282,31 @@ export default function TestBuilderPage() {
         <div>
           {questions.length === 0 ? (
             <div className="mb-4 rounded-xl border border-dashed border-[#1e1e28] p-8 text-center">
-              <p className="text-sm text-gray-400">No questions yet. Pick a type below to add one, or paste a whole test in.</p>
-              <Button variant="outline" className="mt-4" onClick={() => setShowPaste(true)}>
-                <ClipboardPaste className="mr-2 h-4 w-4" />
-                Paste questions
+              <p className="text-sm text-gray-400">
+                No questions yet. Pick a type below to add one, or import them from a spreadsheet, another test or pasted text.
+              </p>
+              <Button variant="outline" className="mt-4" onClick={() => setShowImport(true)}>
+                <FileUp className="mr-2 h-4 w-4" />
+                Import questions
               </Button>
             </div>
           ) : (
             <div className="mb-4 space-y-2">
+              <div className="flex flex-wrap items-center justify-end gap-2 pb-1">
+                <Button variant="outline" size="sm" onClick={() => setShowImport(true)}>
+                  <FileUp className="mr-2 h-4 w-4" />
+                  Import
+                </Button>
+                <div className="flex items-center gap-1 rounded-md border border-[#1e1e28] px-2 py-1 text-xs text-gray-400">
+                  <Download className="h-3.5 w-3.5" />
+                  Export:
+                  {(["xlsx", "csv", "json"] as const).map((f) => (
+                    <button key={f} type="button" disabled={exporting} onClick={() => exportQuestions(f)} className="rounded px-1.5 py-0.5 uppercase hover:bg-white/5 hover:text-white disabled:opacity-40">
+                      {f === "xlsx" ? "Excel" : f}
+                    </button>
+                  ))}
+                </div>
+              </div>
               {questions.map((q, i) => (
                 <div key={q.id} id={`q-${q.id}`}>
                   <QuestionEditor
@@ -317,9 +331,9 @@ export default function TestBuilderPage() {
           <div className="rounded-xl border border-[#1e1e28] bg-card p-4">
             <div className="mb-3 flex items-center justify-between">
               <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Add a question</p>
-              <button type="button" onClick={() => setShowPaste(true)} className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-white">
-                <ClipboardPaste className="h-3.5 w-3.5" />
-                Paste several at once
+              <button type="button" onClick={() => setShowImport(true)} className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-white">
+                <FileUp className="h-3.5 w-3.5" />
+                Import several at once
               </button>
             </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
@@ -380,79 +394,15 @@ export default function TestBuilderPage() {
         </div>
       )}
 
-      <Dialog open={showPaste} onOpenChange={setShowPaste}>
-        <DialogContent className="w-[calc(100vw-2rem)] max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Paste questions</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <Textarea
-                rows={16}
-                value={pasteText}
-                onChange={(e) => setPasteText(e.target.value)}
-                placeholder={PASTE_EXAMPLE}
-                className="font-[family-name:var(--font-mono)] text-xs"
-              />
-              <div className="mt-2 space-y-0.5 text-[11px] text-gray-500">
-                <p>One question per line. <code className="text-gray-300">- option</code> lines are choices; end a correct one with <code className="text-gray-300">*</code>.</p>
-                <p>
-                  <code className="text-gray-300">= answer</code> sets accepted short answers (separate with <code className="text-gray-300">|</code>).
-                  Tags: <code className="text-gray-300">[short] [long] [number] [checkbox] [dropdown] [true] [false]</code>,
-                  points: <code className="text-gray-300">(5 pts)</code>.
-                </p>
-                {!pasteText && (
-                  <button type="button" onClick={() => setPasteText(PASTE_EXAMPLE)} className="text-red-400 hover:underline">
-                    Load the example
-                  </button>
-                )}
-              </div>
-            </div>
-            <div className="max-h-[420px] overflow-y-auto rounded-lg border border-[#1e1e28] p-3">
-              <p className="mb-2 text-xs font-medium uppercase tracking-wider text-gray-500">
-                Will add {parsed.questions.length} question{parsed.questions.length === 1 ? "" : "s"}
-              </p>
-              <ol className="space-y-2">
-                {parsed.questions.map((q, i) => {
-                  const Icon = QUESTION_TYPE_ICONS[q.type];
-                  return (
-                    <li key={q.id} className="rounded border border-[#1e1e28] px-3 py-2 text-xs">
-                      <div className="flex items-center gap-2 text-gray-200">
-                        <span className="text-gray-500">{i + 1}.</span>
-                        <Icon className="h-3.5 w-3.5 text-red-400" />
-                        <span className="flex-1">{q.prompt}</span>
-                        <span className="text-gray-500">{q.points} pt{q.points === 1 ? "" : "s"}</span>
-                      </div>
-                      <p className="mt-0.5 text-gray-500">
-                        {QUESTION_TYPE_LABELS[q.type]}
-                        {q.options.length > 0 && q.type !== "truefalse" && ` · ${q.options.length} options`}
-                        {q.correct.length > 0 && ` · correct: ${q.options.filter((o) => q.correct.includes(o.id)).map((o) => o.text).join(", ")}`}
-                        {q.accepted.length > 0 && ` · accepts: ${q.accepted.join(", ")}`}
-                        {q.type === "number" && q.numberAnswer !== null && ` · = ${q.numberAnswer}${q.tolerance ? ` ± ${q.tolerance}` : ""}`}
-                      </p>
-                      {questionProblems(q).length > 0 && <p className="mt-0.5 text-amber-400">{questionProblems(q).join(" · ")}</p>}
-                    </li>
-                  );
-                })}
-              </ol>
-            </div>
-          </div>
-          <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => setShowPaste(false)}>
-              Cancel
-            </Button>
-            {questions.length > 0 && (
-              <Button variant="outline" disabled={!parsed.questions.length} onClick={() => confirm("Replace every existing question?") && applyPaste(true)}>
-                Replace all
-              </Button>
-            )}
-            <Button disabled={!parsed.questions.length} onClick={() => applyPaste(false)} className="bg-[#dc2626] hover:bg-[#b91c1c]">
-              <Plus className="mr-2 h-4 w-4" />
-              Add {parsed.questions.length || ""} question{parsed.questions.length === 1 ? "" : "s"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {canManage && (
+        <ImportQuestionsDialog
+          open={showImport}
+          onOpenChange={setShowImport}
+          currentTestId={testId}
+          hasQuestions={questions.length > 0}
+          onImport={applyImport}
+        />
+      )}
     </div>
   );
 }
