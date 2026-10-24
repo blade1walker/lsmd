@@ -38,6 +38,7 @@ import {
   Siren,
   Activity,
   Gamepad2,
+  ClipboardList,
 } from "lucide-react";
 import {
   DEPARTMENT_SECTION_PERMISSIONS,
@@ -51,6 +52,7 @@ import {
   FIVEM_SECTION_PERMISSIONS,
   ACTIVITY_SECTION_PERMISSIONS,
   DUTY_BOARD_PERMISSIONS,
+  TEST_SECTION_PERMISSIONS,
 } from "@/lib/constants";
 
 // `permission` mirrors the check on the matching API route, so a section is
@@ -80,6 +82,7 @@ const navItems: {
   { href: "/admin/medical", label: "Medical Docs", icon: Stethoscope, permission: MEDICAL_SECTION_PERMISSIONS },
   { href: "/admin/medical/forms", label: "Form Builder", icon: LayoutTemplate, permission: MEDICAL_ADMIN_PERMISSIONS },
   { href: "/admin/training", label: "Training", icon: GraduationCap, permission: "training.view" },
+  { href: "/admin/tests", label: "Tests & Quizzes", icon: ClipboardList, permission: TEST_SECTION_PERMISSIONS },
   { href: "/admin/sop", label: "SOP", icon: FileText, permission: "sop.edit" },
   { href: "/admin/radio-codes", label: "Radio Codes", icon: Radio, permission: "radio.edit" },
   { href: "/admin/templates", label: "Templates", icon: Settings, permission: "templates" },

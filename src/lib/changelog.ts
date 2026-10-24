@@ -28,6 +28,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: "2026-10-24",
+    title: "Tests & Quizzes",
+    changes: [
+      { type: "feature", text: "Tests & Quizzes: build a test in the admin panel from multiple choice, checkbox, true/false, dropdown, short answer, long answer and number questions. Mark the correct option right on it, set points per question, and preview the test exactly as members will see it" },
+      { type: "feature", text: "Paste a whole test in at once — numbered questions, \"- option\" lines with * on the correct ones, and tags like [short], [long] or [number] — and see how it will be read before adding it" },
+      { type: "feature", text: "Test settings: pass mark, time limit, attempts per member, shuffled questions and options, and whether members see their score and the correct answers afterwards" },
+      { type: "feature", text: "Members take published tests at /tests. Answers save as they go, the timer hands the paper in when time runs out, and choice, short and number answers are marked the moment it is submitted" },
+      { type: "feature", text: "Results tab: every attempt with its score, a pass rate and average, CSV download, and a marking screen for written answers with points and comments per question. Needs tests.grade (or tests.manage, which builds tests)" },
+    ],
+  },
+  {
     date: "2026-10-19",
     changes: [
       { type: "fix", text: "Nexus EMS Bot: the bot no longer asks the website for new announcements every 20 seconds and for permissions every minute. It now waits until the next announcement is due, and checks permissions every half hour (and right away when someone would otherwise be turned away). The constant checking kept the database running around the clock and used up its monthly limit, which made every bot command fail with \"The website answered 500\"" },

@@ -47,6 +47,7 @@ const PERMISSION_GROUP_LABELS: Record<string, string> = {
   trainees: "Trainees",
   promotions: "Promotion History",
   interviews: "Promotion & Interview",
+  tests: "Tests & Quizzes",
 };
 
 /**

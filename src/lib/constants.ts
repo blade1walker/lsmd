@@ -159,6 +159,11 @@ export const ALL_PERMISSIONS = [
   // the weekly requirement; manage sets the requirement.
   "activity.view",
   "activity.manage",
+  // Tests & Quizzes. manage builds and publishes tests; grade reads every
+  // member's attempts and marks the written answers. Taking a test needs no
+  // permission beyond being signed in on the roster.
+  "tests.manage",
+  "tests.grade",
 ] as const;
 
 /**
@@ -396,3 +401,16 @@ export const ACTIVITY_PERMISSIONS = {
 
 /** Any permission that opens the Activity page, for the sidebar check. */
 export const ACTIVITY_SECTION_PERMISSIONS: string[] = [...ACTIVITY_PERMISSIONS.view];
+
+/**
+ * Tests & Quizzes. `manage` builds, edits and publishes tests; `grade` reads
+ * the results and marks answers that need a person. A builder can always see
+ * the results of the tests they build.
+ */
+export const TEST_PERMISSIONS = {
+  manage: ["tests.manage"],
+  grade: ["tests.grade", "tests.manage"],
+} as const satisfies Record<string, readonly string[]>;
+
+/** Any permission that opens the Tests page, for the sidebar check. */
+export const TEST_SECTION_PERMISSIONS: string[] = [...TEST_PERMISSIONS.grade];
