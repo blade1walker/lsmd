@@ -4,15 +4,16 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useSession, signIn } from "next-auth/react";
-import { AlertTriangle, CheckCircle, Clock, Timer, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle, Clock, Lock, Maximize, ShieldAlert, Timer, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { TestShell } from "@/components/tests/TestShell";
 import { QuestionInput } from "@/components/tests/QuestionInput";
 import { AnswerReview } from "@/components/tests/AttemptGrader";
+import { ExamGuard, enterFullscreen, type LeaveReason } from "@/components/tests/ExamGuard";
 import { fetchJson, errorMessage, ApiError } from "@/lib/fetch-json";
-import { isAnswered, type Answers, type PublicQuestion, type TestQuestion } from "@/lib/tests";
+import { isAnswered, minRankMessage, type Answers, type PublicQuestion, type TestQuestion } from "@/lib/tests";
 import { toast } from "sonner";
 
 interface PastAttempt {
@@ -24,6 +25,7 @@ interface PastAttempt {
   earned: number | null;
   total: number;
   feedback: string | null;
+  autoSubmittedReason: string | null;
   review: (TestQuestion & { answer: string | string[] | null; awarded: number | null; comment: string | null })[] | null;
 }
 
@@ -39,8 +41,13 @@ interface TestView {
   questionCount: number;
   totalPoints: number;
   showResults: boolean;
+  minRank: string | null;
+  eligible: boolean;
+  viewerRank: string | null;
+  examMode: boolean;
+  maxTabSwitches: number;
   attemptsUsed: number;
-  current: { id: string; startedAt: string; questions: PublicQuestion[]; answers: Answers } | null;
+  current: { id: string; startedAt: string; questions: PublicQuestion[]; answers: Answers; tabSwitches: number } | null;
   attempts: PastAttempt[];
 }
 
@@ -60,6 +67,9 @@ export default function TakeTestPage() {
   const [busy, setBusy] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const [reviewing, setReviewing] = useState<string | null>(null);
+  const [leaveWarning, setLeaveWarning] = useState<{ reason: LeaveReason; remaining: number } | null>(null);
+  const [confirming, setConfirming] = useState<string | null>(null);
+  const [fullscreen, setFullscreen] = useState(true);
   const savedRef = useRef<string>("");
   const submittingRef = useRef(false);
 
@@ -113,7 +123,48 @@ export default function TakeTestPage() {
     return () => clearTimeout(timer);
   }, [answers, current, id]);
 
+  // Track full screen so a member who drops out of it can be offered the way back.
+  useEffect(() => {
+    const sync = () => setFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", sync);
+    return () => document.removeEventListener("fullscreenchange", sync);
+  }, []);
+
+  /**
+   * Exam mode: every leave goes to the server with the answers so far. The
+   * server decides — under the allowance it is a warning, over it the test
+   * is handed in and the result is loaded.
+   */
+  const reportLeave = useCallback(
+    async (reason: LeaveReason) => {
+      if (!current || submittingRef.current) return;
+      try {
+        const res = await fetchJson<{ closed?: boolean; remaining?: number }>(`/api/tests/${id}/submit`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ attemptId: current.id, answers, left: true }),
+        });
+        savedRef.current = JSON.stringify(answers);
+        if (res.closed) {
+          setLeaveWarning(null);
+          setConfirming(null);
+          if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+          toast.error("You left the test page too many times — your test was handed in.", { duration: 10000 });
+          await load();
+          window.scrollTo({ top: 0 });
+        } else {
+          setLeaveWarning({ reason, remaining: res.remaining ?? 0 });
+        }
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 409) await load();
+      }
+    },
+    [answers, current, id, load]
+  );
+
   const start = async () => {
+    // Must run inside the click, before any await, or the browser refuses it.
+    if (test?.examMode) enterFullscreen();
     setBusy(true);
     try {
       await fetchJson(`/api/tests/${id}`, { method: "POST" });
@@ -130,9 +181,9 @@ export default function TakeTestPage() {
   };
 
   const submit = useCallback(
-    async (timedOut = false) => {
+    async (timedOut = false, confirmed = false) => {
       if (!current || submittingRef.current) return;
-      if (!timedOut) {
+      if (!timedOut && !confirmed) {
         const unanswered = current.questions.filter((q) => !isAnswered(answers[q.id]));
         const required = unanswered.filter((q) => q.required);
         if (required.length) {
@@ -141,8 +192,16 @@ export default function TakeTestPage() {
           toast.error(`Answer every required question first (${required.length} left)`);
           return;
         }
-        if (!confirm(unanswered.length ? `Submit with ${unanswered.length} question${unanswered.length === 1 ? "" : "s"} unanswered?` : "Submit your answers? You cannot change them afterwards.")) return;
+        // An in-page confirmation rather than confirm(): the browser's own
+        // dialog takes focus from the window, which exam mode counts as leaving.
+        setConfirming(
+          unanswered.length
+            ? `Submit with ${unanswered.length} question${unanswered.length === 1 ? "" : "s"} unanswered? You cannot change your answers afterwards.`
+            : "Submit your answers? You cannot change them afterwards."
+        );
+        return;
       }
+      setConfirming(null);
       submittingRef.current = true;
       setBusy(true);
       try {
@@ -152,6 +211,7 @@ export default function TakeTestPage() {
           body: JSON.stringify({ attemptId: current.id, answers }),
         });
         if (timedOut) toast.warning("Time is up — your answers were handed in");
+        if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
         setMissing(new Set());
         await load();
         window.scrollTo({ top: 0 });
@@ -209,7 +269,25 @@ export default function TakeTestPage() {
     const answered = current.questions.filter((q) => isAnswered(answers[q.id])).length;
     const low = remaining !== null && remaining < 60;
     return (
+      <ExamGuard active={test.examMode} onLeave={reportLeave}>
       <TestShell back="/tests">
+        {test.examMode && (
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-2 text-xs text-amber-200">
+            <span className="flex items-center gap-2">
+              <ShieldAlert className="h-4 w-4 shrink-0" />
+              Exam mode: copying and pasting are off, and leaving this page is recorded.{" "}
+              {test.maxTabSwitches === 0
+                ? "Leaving it once hands your test in."
+                : `Leaving it more than ${test.maxTabSwitches} time${test.maxTabSwitches === 1 ? "" : "s"} hands your test in.`}
+            </span>
+            {!fullscreen && (
+              <button type="button" onClick={enterFullscreen} className="inline-flex items-center gap-1 rounded border border-amber-500/40 px-2 py-1 hover:bg-amber-500/10">
+                <Maximize className="h-3.5 w-3.5" />
+                Full screen
+              </button>
+            )}
+          </div>
+        )}
         <div className="sticky top-0 z-20 -mx-4 mb-6 border-b border-[#1e1e1e] bg-[#0a0a0a]/95 px-4 py-3 backdrop-blur">
           <div className="flex items-center justify-between gap-3">
             <p className="truncate font-semibold text-white">{test.title}</p>
@@ -259,13 +337,59 @@ export default function TakeTestPage() {
             {busy ? "Submitting…" : "Submit test"}
           </Button>
         </div>
+
+        {(leaveWarning || confirming) && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+            <div className="w-full max-w-md rounded-xl border border-[#2e2e3a] bg-[#111] p-6">
+              {leaveWarning ? (
+                <>
+                  <div className="mb-3 flex items-center gap-2 text-amber-300">
+                    <AlertTriangle className="h-5 w-5" />
+                    <p className="font-semibold">You left the test page</p>
+                  </div>
+                  <p className="text-sm text-gray-300">
+                    You {leaveWarning.reason}. This has been recorded.{" "}
+                    {leaveWarning.remaining === 0
+                      ? "If you leave again, your test is handed in straight away."
+                      : `${leaveWarning.remaining} more time${leaveWarning.remaining === 1 ? "" : "s"} and your test is handed in.`}
+                  </p>
+                  <div className="mt-5 flex justify-end">
+                    <Button
+                      className="bg-[#dc2626] hover:bg-[#b91c1c]"
+                      onClick={() => {
+                        setLeaveWarning(null);
+                        enterFullscreen();
+                      }}
+                    >
+                      Back to the test
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="font-semibold text-white">Submit test?</p>
+                  <p className="mt-2 text-sm text-gray-300">{confirming}</p>
+                  <div className="mt-5 flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setConfirming(null)}>
+                      Keep working
+                    </Button>
+                    <Button className="bg-[#dc2626] hover:bg-[#b91c1c]" onClick={() => submit(false, true)}>
+                      Submit
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </TestShell>
+      </ExamGuard>
     );
   }
 
   // ─── Start screen and past results ────────────────────────────────────
   const left = test.maxAttempts === null ? null : Math.max(0, test.maxAttempts - test.attemptsUsed);
-  const canStart = test.status === "Published" && (left === null || left > 0);
+  const canStart = test.status === "Published" && test.eligible && (left === null || left > 0);
   const latest = test.attempts[0];
   const review = test.attempts.find((a) => a.id === reviewing)?.review ?? null;
 
@@ -309,6 +433,12 @@ export default function TakeTestPage() {
               <p className={`text-4xl font-bold ${latest.passed ? "text-emerald-300" : "text-red-300"}`}>{latest.score}%</p>
             </div>
           )}
+          {latest.autoSubmittedReason && (
+            <p className="mt-4 flex items-center gap-2 text-xs text-amber-300">
+              <ShieldAlert className="h-4 w-4 shrink-0" />
+              Handed in automatically: {latest.autoSubmittedReason.toLowerCase()}.
+            </p>
+          )}
           {latest.feedback && <p className="mt-4 whitespace-pre-wrap rounded bg-black/30 p-3 text-sm text-gray-300">{latest.feedback}</p>}
         </div>
       )}
@@ -321,10 +451,32 @@ export default function TakeTestPage() {
           <Fact label="Attempts left" value={left === null ? "Unlimited" : String(left)} />
         </div>
         {test.instructions && <p className="mt-5 whitespace-pre-wrap border-t border-[#1e1e1e] pt-4 text-sm text-gray-300">{test.instructions}</p>}
+        {!test.eligible && test.minRank && (
+          <div className="mt-5 flex items-start gap-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4">
+            <Lock className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" />
+            <div>
+              <p className="font-semibold text-amber-200">{minRankMessage(test.minRank)}</p>
+              <p className="mt-0.5 text-sm text-gray-400">
+                {test.viewerRank ? `Your rank is ${test.viewerRank}.` : "Your account has no rank on the roster."} This test opens once you
+                reach {test.minRank} or above.
+              </p>
+            </div>
+          </div>
+        )}
         {test.timeLimitMinutes && canStart && (
           <p className="mt-4 flex items-center gap-2 text-xs text-amber-300">
             <AlertTriangle className="h-4 w-4" />
             The clock starts when you press Start and keeps running if you leave the page.
+          </p>
+        )}
+        {test.examMode && canStart && (
+          <p className="mt-2 flex items-start gap-2 text-xs text-amber-300">
+            <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
+            Exam mode: the test opens full screen, copying and pasting are switched off, and switching to another tab or app is
+            recorded.{" "}
+            {test.maxTabSwitches === 0
+              ? "Leaving the page once hands your test in."
+              : `Leaving more than ${test.maxTabSwitches} time${test.maxTabSwitches === 1 ? "" : "s"} hands it in.`}
           </p>
         )}
         <div className="mt-5">
@@ -334,7 +486,11 @@ export default function TakeTestPage() {
             </Button>
           ) : (
             <p className="text-sm text-gray-500">
-              {test.status !== "Published" ? "This test is closed." : "You have used all your attempts at this test."}
+              {test.status !== "Published"
+                ? "This test is closed."
+                : !test.eligible
+                  ? "Starting is locked until you meet the rank requirement."
+                  : "You have used all your attempts at this test."}
             </p>
           )}
         </div>

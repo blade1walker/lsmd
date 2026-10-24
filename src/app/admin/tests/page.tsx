@@ -28,6 +28,9 @@ interface TestRow {
   attempts: number;
   passed: number;
   awaitingGrading: number;
+  minRank: string | null;
+  showOnHomepage: boolean;
+  examMode: boolean;
   updatedAt: string;
 }
 
@@ -146,6 +149,15 @@ export default function TestsPage() {
                       <span className="rounded-full bg-sky-500/15 px-2 py-0.5 text-[11px] font-medium text-sky-300">
                         {t.awaitingGrading} to grade
                       </span>
+                    )}
+                    {t.showOnHomepage && (
+                      <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[11px] font-medium text-red-300">On homepage</span>
+                    )}
+                    {t.minRank && (
+                      <span className="rounded-full bg-white/5 px-2 py-0.5 text-[11px] font-medium text-gray-300">{t.minRank}+</span>
+                    )}
+                    {t.examMode && (
+                      <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-medium text-amber-300">Exam mode</span>
                     )}
                   </div>
                   {t.description && <p className="mt-1 line-clamp-2 text-sm text-gray-500">{t.description}</p>}

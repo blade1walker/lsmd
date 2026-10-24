@@ -18,6 +18,7 @@ import { SiteHeader } from "@/components/home/SiteHeader";
 import { StarOfLife } from "@/components/roster/StarOfLife";
 import { RosterBannerStrip } from "@/components/roster/RosterBannerStrip";
 import { CityStatusCard } from "@/components/CityStatusCard";
+import { TrainingAssessments } from "@/components/home/TrainingAssessments";
 import { getHomeSummary } from "@/lib/roster";
 import type { RosterViewer } from "@/lib/roster-shared";
 
@@ -187,6 +188,8 @@ export default async function Home() {
             ))}
           </div>
         </Section>
+
+        <TrainingAssessments />
 
         {/* How joining works */}
         <section className="border-y border-white/[0.06] bg-[#0b0b10]">

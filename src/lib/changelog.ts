@@ -31,6 +31,9 @@ export const CHANGELOG: ChangelogEntry[] = [
     date: "2026-10-24",
     title: "Tests & Quizzes",
     changes: [
+      { type: "feature", text: "Homepage: a new Training Assessments section lists every test marked \"Show on homepage\". Everyone can see them; members at or above the test's minimum rank can start one, and anyone below it sees \"You require this minimum rank\" instead" },
+      { type: "feature", text: "Tests can now require a minimum rank. The site refuses to start the test for anyone below it, wherever they open it from" },
+      { type: "feature", text: "Exam mode for tests: the test opens full screen, copying, cutting, pasting, right-click and text selection are blocked, and leaving the page (another tab, app or window, or exiting full screen) is recorded. Each leave shows a warning, and past the allowance set on the test it is handed in automatically. Results show how many times each member left" },
       { type: "feature", text: "Import questions into a test from an Excel or CSV spreadsheet (one question per row — download the template to start), a JSON file, a text file, or by copying chosen questions from another test. Every question is previewed exactly as it will be imported, with anything that needs fixing flagged" },
       { type: "feature", text: "Export a test's questions as Excel, CSV or JSON, to edit in a spreadsheet and import back, or to move them to another test" },
       { type: "improvement", text: "Training: a link straight to Tests & Quizzes, where the theory exam is set" },

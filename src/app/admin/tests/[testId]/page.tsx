@@ -8,6 +8,7 @@ import { ArrowLeft, Download, FileUp, Eye, EyeOff, Lock, Plus, RotateCcw, Save }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { ErrorState } from "@/components/ui/error-state";
@@ -18,7 +19,7 @@ import { QUESTION_TYPE_ICONS } from "@/components/tests/QuestionTypeIcons";
 import { AnswerReview, AttemptGrader, ScoreBadge } from "@/components/tests/AttemptGrader";
 import { ImportQuestionsDialog } from "@/components/tests/ImportQuestionsDialog";
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
-import { TEST_PERMISSIONS } from "@/lib/constants";
+import { RANKS, TEST_PERMISSIONS } from "@/lib/constants";
 import { cloneQuestion, downloadQuestions } from "@/lib/tests-import";
 import {
   QUESTION_TYPES,
@@ -60,6 +61,10 @@ function settingsOf(t: TestDetail): TestSettings {
     shuffleOptions: t.shuffleOptions,
     showResults: t.showResults,
     showCorrectAnswers: t.showCorrectAnswers,
+    showOnHomepage: t.showOnHomepage,
+    minRank: t.minRank,
+    examMode: t.examMode,
+    maxTabSwitches: t.maxTabSwitches,
   };
 }
 
@@ -454,6 +459,58 @@ function SettingsPanel({ settings: s, set }: { settings: TestSettings; set: (pat
         </div>
       </Section>
 
+      <Section title="Who can take it">
+        <Check
+          label="Show on the homepage"
+          hint="Listed under Training Assessments for everyone to see. Only members who meet the minimum rank can start it."
+          checked={s.showOnHomepage}
+          onChange={(v) => set({ showOnHomepage: v })}
+        />
+        <div className="max-w-sm">
+          <Label className="text-sm text-gray-400">Minimum rank</Label>
+          <Select className="mt-1" value={s.minRank ?? ""} onChange={(e) => set({ minRank: e.target.value || null })}>
+            <option value="">Any rank</option>
+            {[...RANKS].reverse().map((r) => (
+              <option key={r.name} value={r.name}>
+                {r.name} and above
+              </option>
+            ))}
+          </Select>
+          <p className="mt-1 text-xs text-gray-500">
+            {s.minRank
+              ? `Members below ${s.minRank} still see the test, with "You require this minimum rank: ${s.minRank}" in place of Start.`
+              : "Every member on the roster can take it."}
+          </p>
+        </div>
+      </Section>
+
+      <Section title="Exam mode">
+        <Check
+          label="Lock down the test while it is open"
+          hint="Opens full screen, blocks copy, cut, paste, right-click and text selection, and records every time the member leaves the page"
+          checked={s.examMode}
+          onChange={(v) => set({ examMode: v })}
+        />
+        {s.examMode && (
+          <div className="max-w-sm">
+            <Label className="text-sm text-gray-400">Times a member may leave the page</Label>
+            <Input
+              className="mt-1 w-32"
+              type="number"
+              min={0}
+              max={20}
+              value={s.maxTabSwitches}
+              onChange={(e) => set({ maxTabSwitches: Math.max(0, Math.min(20, Number(e.target.value) || 0)) })}
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              {s.maxTabSwitches === 0
+                ? "Switching tab, app or window once hands the test in immediately."
+                : `Each leave shows a warning; leave ${s.maxTabSwitches + 1} times and the test is handed in automatically.`}
+            </p>
+          </div>
+        )}
+      </Section>
+
       <Section title="While taking the test">
         <Check label="Shuffle question order" hint="Each attempt gets its own order" checked={s.shuffleQuestions} onChange={(v) => set({ shuffleQuestions: v })} />
         <Check label="Shuffle answer options" hint="Multiple choice, checkboxes and dropdowns" checked={s.shuffleOptions} onChange={(v) => set({ shuffleOptions: v })} />
@@ -699,6 +756,14 @@ function ResultsPanel({ testId, title, passing, canManage }: { testId: string; t
                   <td className="px-4 py-3 text-gray-200">
                     {a.callSign && <span className="font-[family-name:var(--font-mono)] font-bold text-white">{a.callSign} </span>}
                     {a.memberName}
+                    {a.tabSwitches > 0 && (
+                      <span
+                        title={a.autoSubmittedReason ?? "Times they left the page during the test"}
+                        className={`ml-2 rounded px-1.5 py-0.5 text-[11px] ${a.autoSubmittedReason ? "bg-red-500/15 text-red-300" : "bg-amber-500/15 text-amber-300"}`}
+                      >
+                        left page {a.tabSwitches}×{a.autoSubmittedReason ? " · auto-submitted" : ""}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-gray-400">{a.submittedAt ? new Date(a.submittedAt).toLocaleString() : "—"}</td>
                   <td className="px-4 py-3 text-gray-200">

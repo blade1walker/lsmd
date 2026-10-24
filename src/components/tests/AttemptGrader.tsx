@@ -99,6 +99,12 @@ export function AttemptGrader({ attemptId, onSaved, onClose }: { attemptId: stri
             Submitted {detail.submittedAt ? new Date(detail.submittedAt).toLocaleString() : "—"}
             {detail.gradedBy && ` · last marked by ${detail.gradedBy}`}
           </p>
+          {detail.tabSwitches > 0 && (
+            <p className={`mt-1 text-xs ${detail.autoSubmittedReason ? "text-red-300" : "text-amber-300"}`}>
+              Left the test page {detail.tabSwitches} time{detail.tabSwitches === 1 ? "" : "s"}
+              {detail.autoSubmittedReason ? " — handed in automatically" : ""}
+            </p>
+          )}
         </div>
         <ScoreBadge score={live.score} pending={live.pendingManual} passing={detail.passingScore} earned={live.earned} total={live.total} />
       </div>

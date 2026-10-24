@@ -10,7 +10,9 @@ type Params = { params: Promise<{ id: string }> };
 async function findOwnAttempt(id: string, attemptId: string, discordId: string) {
   const attempt = await prisma.testAttempt.findUnique({
     where: { id: attemptId },
-    include: { test: { select: { passingScore: true, timeLimitMinutes: true, showResults: true } } },
+    include: {
+      test: { select: { passingScore: true, timeLimitMinutes: true, showResults: true, examMode: true, maxTabSwitches: true } },
+    },
   });
   return attempt && attempt.testId === id && attempt.discordId === discordId ? attempt : null;
 }
@@ -18,6 +20,12 @@ async function findOwnAttempt(id: string, attemptId: string, discordId: string) 
 /**
  * Saves answers as the member goes, so a closed tab or a timer running out
  * loses nothing. Not marked — that happens on submit.
+ *
+ * In exam mode the page also reports here each time the member leaves it
+ * (`left: true`). The count is kept on the attempt, and once it passes the
+ * test's allowance the attempt is handed in from here, on the answers sent
+ * with that report — the page cannot talk its way out of it by not
+ * submitting.
  */
 export async function PUT(req: NextRequest, { params }: Params) {
   const auth = await requireAuth();
@@ -36,6 +44,20 @@ export async function PUT(req: NextRequest, { params }: Params) {
     }
 
     const answers = cleanAnswers(body.answers, parseQuestions(attempt.questions));
+
+    if (body.left === true && attempt.test.examMode) {
+      const tabSwitches = attempt.tabSwitches + 1;
+      if (tabSwitches > attempt.test.maxTabSwitches) {
+        const closed = await closeAttempt(attempt, answers, {
+          tabSwitches,
+          autoSubmittedReason: `Left the test page ${tabSwitches} time${tabSwitches === 1 ? "" : "s"} (allowed ${attempt.test.maxTabSwitches})`,
+        });
+        return NextResponse.json({ saved: true, closed: true, tabSwitches, status: closed.status });
+      }
+      await prisma.testAttempt.update({ where: { id: attempt.id }, data: { answers: answers as never, tabSwitches } });
+      return NextResponse.json({ saved: true, tabSwitches, remaining: attempt.test.maxTabSwitches - tabSwitches });
+    }
+
     await prisma.testAttempt.update({ where: { id: attempt.id }, data: { answers: answers as never } });
     return NextResponse.json({ saved: true });
   } catch (error) {

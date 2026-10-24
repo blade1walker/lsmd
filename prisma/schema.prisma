@@ -1287,6 +1287,16 @@ model Test {
   showResults      Boolean  @default(true)
   /// Whether they also see which answers were right, and the explanations.
   showCorrectAnswers Boolean @default(false)
+  /// Listed in the Training Assessments section of the homepage, for everyone
+  /// to see — only members who meet minRank can start it.
+  showOnHomepage   Boolean  @default(false)
+  /// Lowest roster rank (by RANKS name) allowed to take the test. Null means any rank.
+  minRank          String?
+  /// Exam mode: copying and pasting are blocked while the test is open, and
+  /// leaving the page (another tab, another window, exiting full screen) is counted.
+  examMode         Boolean  @default(true)
+  /// Times a member may leave the page in exam mode; one more hands the test in.
+  maxTabSwitches   Int      @default(1)
   createdBy        String
   updatedBy        String?
   createdAt        DateTime @default(now())
@@ -1315,6 +1325,10 @@ model TestAttempt {
   manualPoints Json     @default("{}")
   /// { [questionId]: comment } from the grader.
   comments    Json      @default("{}")
+  /// Times the member left the page during an exam-mode attempt.
+  tabSwitches Int       @default(0)
+  /// Set when exam mode handed the attempt in because they left the page too often.
+  autoSubmittedReason String?
   /// "In Progress" | "Awaiting Grading" | "Graded"
   status      String    @default("In Progress")
   earned      Float?

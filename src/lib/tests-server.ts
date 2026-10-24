@@ -1,7 +1,10 @@
 import type { TestAttempt } from "@/generated/prisma/client";
 import { prisma } from "./prisma";
+import type { Access } from "./access";
+import { RANKS } from "./constants";
 import {
   TEST_STATUSES,
+  meetsMinRank,
   TIME_LIMIT_GRACE_SECONDS,
   cleanAnswers,
   grade,
@@ -30,13 +33,19 @@ export function isPastDeadline(startedAt: Date, limitMinutes: number | null): bo
 /** Marks and closes an attempt on the given answers. */
 export async function closeAttempt(
   attempt: TestAttempt & { test: { passingScore: number } },
-  answers: Answers
+  answers: Answers,
+  extra: { tabSwitches?: number; autoSubmittedReason?: string } = {}
 ): Promise<TestAttempt> {
   const { data } = gradedColumns(parseQuestions(attempt.questions), answers, {}, attempt.test.passingScore);
   return prisma.testAttempt.update({
     where: { id: attempt.id },
-    data: { ...data, answers: answers as never, submittedAt: new Date() },
+    data: { ...data, ...extra, answers: answers as never, submittedAt: new Date() },
   });
+}
+
+/** Whether this caller may take a test with the given rank requirement. */
+export function canTakeTest(test: { minRank: string | null }, access: Access): boolean {
+  return meetsMinRank(test.minRank, { rank: access.memberRank, isSuperAdmin: access.isSuperAdmin });
 }
 
 /**
@@ -87,9 +96,15 @@ export function readSettings(
   if (has("passingScore")) data.passingScore = optionalInt(body.passingScore, 0, 100) ?? 70;
   if (has("timeLimitMinutes")) data.timeLimitMinutes = optionalInt(body.timeLimitMinutes, 1, 600);
   if (has("maxAttempts")) data.maxAttempts = optionalInt(body.maxAttempts, 1, 100);
-  for (const key of ["shuffleQuestions", "shuffleOptions", "showResults", "showCorrectAnswers"] as const) {
+  for (const key of ["shuffleQuestions", "shuffleOptions", "showResults", "showCorrectAnswers", "showOnHomepage", "examMode"] as const) {
     if (body[key] !== undefined) data[key] = Boolean(body[key]);
   }
+  if (body.minRank !== undefined) {
+    const minRank = text(body.minRank, 100);
+    if (minRank && !RANKS.some((r) => r.name === minRank)) return { error: `"${minRank}" is not a rank` };
+    data.minRank = minRank;
+  }
+  if (body.maxTabSwitches !== undefined) data.maxTabSwitches = optionalInt(body.maxTabSwitches, 0, 20) ?? 0;
   return data;
 }
 
@@ -136,6 +151,8 @@ export function attemptSummary(a: TestAttempt): AttemptSummary {
     startedAt: a.startedAt.toISOString(),
     submittedAt: a.submittedAt?.toISOString() ?? null,
     gradedBy: a.gradedBy,
+    tabSwitches: a.tabSwitches,
+    autoSubmittedReason: a.autoSubmittedReason,
   };
 }
 

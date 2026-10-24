@@ -10,9 +10,10 @@ import {
   seededShuffle,
   totalPoints,
   CHOICE_TYPES,
+  minRankMessage,
   type TestQuestion,
 } from "@/lib/tests";
-import { closeIfExpired, readNumberMap, readStringMap } from "@/lib/tests-server";
+import { canTakeTest, closeIfExpired, readNumberMap, readStringMap } from "@/lib/tests-server";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -69,6 +70,11 @@ export async function GET(_req: NextRequest, { params }: Params) {
       totalPoints: totalPoints(questions),
       showResults: test.showResults,
       showCorrectAnswers: test.showCorrectAnswers,
+      minRank: test.minRank,
+      eligible: canTakeTest(test, auth.access),
+      viewerRank: auth.access.memberRank,
+      examMode: test.examMode,
+      maxTabSwitches: test.maxTabSwitches,
       attemptsUsed: submitted.length,
       current: current
         ? {
@@ -77,6 +83,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
             questions: publicQuestions(orderFor(parseQuestions(current.questions), current.id, test)),
             // What autosave stored, so a reload picks up where the member left off.
             answers: cleanAnswers(current.answers, parseQuestions(current.questions)),
+            tabSwitches: current.tabSwitches,
           }
         : null,
       attempts: submitted.map((a) => {
@@ -94,6 +101,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
           earned: test.showResults ? a.earned : null,
           total: a.total,
           feedback: test.showResults ? a.feedback : null,
+          autoSubmittedReason: a.autoSubmittedReason,
           // The full marked paper, only when the test is set to hand it back.
           review:
             test.showResults && test.showCorrectAnswers
@@ -121,6 +129,11 @@ export async function POST(_req: NextRequest, { params }: Params) {
     const test = await prisma.test.findUnique({ where: { id } });
     if (!test || test.status !== "Published") {
       return NextResponse.json({ error: "This test is not open" }, { status: 409 });
+    }
+    // The rank gate is checked here, not only on the page: the page shows the
+    // test to everyone, so this is what actually keeps the questions back.
+    if (!canTakeTest(test, auth.access)) {
+      return NextResponse.json({ error: minRankMessage(test.minRank ?? "") }, { status: 403 });
     }
 
     const running = await prisma.testAttempt.findFirst({

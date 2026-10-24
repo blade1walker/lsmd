@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, isDenied } from "@/lib/api-auth";
 import { apiError } from "@/lib/api-error";
 import { parseQuestions, totalPoints } from "@/lib/tests";
+import { canTakeTest } from "@/lib/tests-server";
 
 /**
  * The tests a signed-in member can take, with how their own attempts went.
@@ -38,6 +39,8 @@ export async function GET() {
           passingScore: t.passingScore,
           timeLimitMinutes: t.timeLimitMinutes,
           maxAttempts: t.maxAttempts,
+          minRank: t.minRank,
+          eligible: canTakeTest(t, auth.access),
           attemptsUsed: submitted.length,
           inProgress: mine.some((a) => a.status === "In Progress"),
           passed: submitted.some((a) => a.passed === true),

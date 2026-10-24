@@ -6,6 +6,8 @@
  * server stored it with. Nothing here touches the database.
  */
 
+import { isRankAtLeast } from "./constants";
+
 export const QUESTION_TYPES = ["single", "multiple", "truefalse", "dropdown", "short", "long", "number"] as const;
 
 export type QuestionType = (typeof QUESTION_TYPES)[number];
@@ -499,6 +501,10 @@ export interface TestSettings {
   shuffleOptions: boolean;
   showResults: boolean;
   showCorrectAnswers: boolean;
+  showOnHomepage: boolean;
+  minRank: string | null;
+  examMode: boolean;
+  maxTabSwitches: number;
 }
 
 export const DEFAULT_SETTINGS: TestSettings = {
@@ -513,7 +519,29 @@ export const DEFAULT_SETTINGS: TestSettings = {
   shuffleOptions: false,
   showResults: true,
   showCorrectAnswers: false,
+  showOnHomepage: false,
+  minRank: null,
+  examMode: true,
+  maxTabSwitches: 1,
 };
+
+/**
+ * Whether someone may take a test with this rank requirement. A super admin
+ * always may, so command can sit a test to check it; anyone else needs a
+ * roster rank at or above the minimum. No minimum means any roster member.
+ */
+export function meetsMinRank(
+  minRank: string | null | undefined,
+  viewer: { rank: string | null; isSuperAdmin?: boolean }
+): boolean {
+  if (!minRank || viewer.isSuperAdmin) return true;
+  return isRankAtLeast(viewer.rank, minRank);
+}
+
+/** The line shown to someone who does not meet the requirement. */
+export function minRankMessage(minRank: string): string {
+  return `You require this minimum rank: ${minRank}`;
+}
 
 export type AttemptStatus = "In Progress" | "Awaiting Grading" | "Graded";
 
@@ -530,4 +558,6 @@ export interface AttemptSummary {
   startedAt: string;
   submittedAt: string | null;
   gradedBy: string | null;
+  tabSwitches: number;
+  autoSubmittedReason: string | null;
 }

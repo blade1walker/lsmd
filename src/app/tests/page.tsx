@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSession, signIn } from "next-auth/react";
-import { CheckCircle, ClipboardList, Timer } from "lucide-react";
+import { CheckCircle, ClipboardList, Lock, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
@@ -19,6 +19,8 @@ interface TestCard {
   passingScore: number;
   timeLimitMinutes: number | null;
   maxAttempts: number | null;
+  minRank: string | null;
+  eligible: boolean;
   attemptsUsed: number;
   inProgress: boolean;
   passed: boolean;
@@ -107,7 +109,12 @@ export default function TestsPage() {
                     </p>
                   </div>
                   <div className="text-right text-sm">
-                    {t.inProgress ? (
+                    {!t.eligible && t.minRank ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-1 text-xs text-amber-300">
+                        <Lock className="h-3 w-3" />
+                        {t.minRank}+
+                      </span>
+                    ) : t.inProgress ? (
                       <span className="rounded-full bg-amber-500/15 px-2.5 py-1 text-xs text-amber-300">In progress</span>
                     ) : t.latest?.status === "Awaiting Grading" ? (
                       <span className="rounded-full bg-sky-500/15 px-2.5 py-1 text-xs text-sky-300">Being marked</span>
