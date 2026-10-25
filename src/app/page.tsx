@@ -18,7 +18,7 @@ import { SiteHeader } from "@/components/home/SiteHeader";
 import { StarOfLife } from "@/components/roster/StarOfLife";
 import { RosterBannerStrip } from "@/components/roster/RosterBannerStrip";
 import { CityStatusCard } from "@/components/CityStatusCard";
-import { TrainingAssessments } from "@/components/home/TrainingAssessments";
+import { TrainingCards } from "@/components/home/TrainingCards";
 import { getHomeSummary } from "@/lib/roster";
 import type { RosterViewer } from "@/lib/roster-shared";
 
@@ -180,16 +180,15 @@ export default async function Home() {
           id="applications"
           eyebrow="Applications"
           title="Apply, request and enrol"
-          intro="Every form the department runs. Each one goes straight to the right team, and you hear back on Discord."
+          intro="Every form and training test the department runs. Each one goes straight to the right team, and you hear back on Discord."
         >
-          <div className="grid gap-5 md:grid-cols-3">
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
             {APPLICATIONS.map((item) => (
               <DestinationCard key={item.href} item={item} featured />
             ))}
+            <TrainingCards />
           </div>
         </Section>
-
-        <TrainingAssessments />
 
         {/* How joining works */}
         <section className="border-y border-white/[0.06] bg-[#0b0b10]">

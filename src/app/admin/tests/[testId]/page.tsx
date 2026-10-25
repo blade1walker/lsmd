@@ -462,7 +462,7 @@ function SettingsPanel({ settings: s, set }: { settings: TestSettings; set: (pat
       <Section title="Who can take it">
         <Check
           label="Show on the homepage"
-          hint="Listed under Training Assessments for everyone to see. Only members who meet the minimum rank can start it."
+          hint="Shown as a card in the Applications row of the homepage for everyone to see. Only members who meet the minimum rank can start it."
           checked={s.showOnHomepage}
           onChange={(v) => set({ showOnHomepage: v })}
         />
