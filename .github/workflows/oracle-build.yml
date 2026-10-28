@@ -1,0 +1,74 @@
+# Builds the website on every push to main and publishes it to the
+# `oracle-build` release, where the Oracle VM (deploy/oracle/deploy.sh) picks it
+# up within 2 minutes. The VM has 1 GB of memory and building there takes 15+
+# minutes and slows the live site; here it takes a few. The build includes the
+# type check, so a push with type errors never reaches the site.
+name: Build for Oracle
+
+on:
+  push:
+    branches: [main]
+    # Files the running site never uses; the VM refreshes its scripts on its own.
+    paths-ignore:
+      - "**.md"
+      - "deploy/**"
+      - "bot/**"
+      - "fivem/**"
+      - "Dockerfile"
+      - ".dockerignore"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# A newer push supersedes a build still in progress.
+concurrency:
+  group: oracle-build
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      # The VM applies the schema when it deploys; no database secret lives here.
+      SKIP_DB_PUSH: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      - uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: next-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
+          restore-keys: next-${{ hashFiles('package-lock.json') }}-
+
+      - run: npx next build
+
+      - name: Package
+        run: |
+          short="${GITHUB_SHA::10}"
+          echo "$short" > BUILD_SHA
+          rm -rf .next/cache
+          tar --exclude=./.git --exclude=./node_modules/.cache -czf "$RUNNER_TEMP/lsmd.tar.gz" .
+          echo "$short" > "$RUNNER_TEMP/sha.txt"
+          ls -lh "$RUNNER_TEMP/lsmd.tar.gz"
+
+      # The archive goes up first and sha.txt last: the VM only fetches an
+      # archive once sha.txt names it.
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view oracle-build >/dev/null 2>&1 ||
+            gh release create oracle-build --prerelease --title "Oracle build" \
+              --notes "The built website for the Oracle VM (deploy/oracle/deploy.sh). Replaced on every push to main — not a versioned release."
+          gh release upload oracle-build "$RUNNER_TEMP/lsmd.tar.gz" --clobber
+          gh release upload oracle-build "$RUNNER_TEMP/sha.txt" --clobber
