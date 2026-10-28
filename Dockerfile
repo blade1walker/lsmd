@@ -11,6 +11,8 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends openssl ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 ENV NEXT_TELEMETRY_DISABLED=1
+# Many hosts have no IPv6 route; prefer IPv4 so database connections do not time out.
+ENV NODE_OPTIONS=--dns-result-order=ipv4first
 
 # Dependencies first so they are cached between builds. postinstall runs
 # `prisma generate`, which needs the schema and prisma.config.ts (and the file
