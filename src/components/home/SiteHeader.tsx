@@ -4,35 +4,38 @@ import { useState } from "react";
 import Link from "next/link";
 import { signIn, signOut } from "next-auth/react";
 import { LayoutDashboard, LogOut, Menu, X } from "lucide-react";
-import { StarOfLife } from "@/components/roster/StarOfLife";
+import { BrandLogo, useSiteContent } from "@/components/SiteContentProvider";
 import { UserNotificationBell } from "@/components/UserNotificationBell";
 import type { RosterViewer } from "@/lib/roster-shared";
 
+/** In-page links name the Boss Menu switch that shows their section. */
 const NAV = [
-  { href: "#applications", label: "Applications" },
-  { href: "#resources", label: "Resources" },
+  { href: "#applications", label: "Applications", shownBy: "home.applications.show" },
+  { href: "#resources", label: "Resources", shownBy: "home.resources.show" },
   { href: "/roster", label: "Roster" },
 ] as const;
 
 /** The landing page's top bar. Sign-in returns here, not to the panel. */
 export function SiteHeader({ viewer }: { viewer: RosterViewer }) {
   const [open, setOpen] = useState(false);
+  const { text, flag } = useSiteContent();
+  const nav = NAV.filter((item) => !("shownBy" in item) || flag(item.shownBy));
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-[#08080c]/85 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
         <Link href="/" className="flex items-center gap-3">
-          <StarOfLife className="h-9 w-9" />
+          <BrandLogo className="h-9 w-9" />
           <div className="leading-tight">
             <div className="font-[family-name:var(--font-oswald)] text-base font-semibold uppercase tracking-[0.12em] text-white">
-              Los Santos EMS
+              {text("brand.name")}
             </div>
-            <div className="text-[10px] font-semibold uppercase tracking-[0.3em] text-gray-500">Nexus Universe</div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.3em] text-gray-500">{text("brand.community")}</div>
           </div>
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">
-          {NAV.map((item) => (
+          {nav.map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -61,7 +64,7 @@ export function SiteHeader({ viewer }: { viewer: RosterViewer }) {
       {open && (
         <div className="border-t border-white/[0.06] px-4 pb-4 pt-2 md:hidden">
           <nav className="flex flex-col">
-            {NAV.map((item) => (
+            {nav.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}

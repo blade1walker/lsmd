@@ -110,6 +110,13 @@ const GRANTS: { id: string; roles: Record<string, string[]> }[] = [
       "Assistant HR": ["loa.view", "loa.manage"],
     },
   },
+  {
+    id: "2026-10-28-boss-menu",
+    roles: {
+      // The website's public face is the owners' call.
+      "Super Admin": ["content.edit", "content.publish"],
+    },
+  },
 ];
 
 const prisma = (() => {

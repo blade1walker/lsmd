@@ -89,6 +89,11 @@ The first run installs everything and stops to ask for the settings:
 | Run the LOA job now | `sudo systemctl start lsmd-loa-expiry` |
 | Restart | `sudo systemctl restart lsmd` |
 
-The Oracle Always Free VM has no automatic backups, but it holds nothing that
-can't be rebuilt from this repo and `/opt/lsmd/.env` — keep a copy of that file
-somewhere safe. The data itself lives in Neon.
+The Oracle Always Free VM has no automatic backups. Two things on it can't be
+rebuilt from this repo — keep a copy of both somewhere safe:
+
+- `/opt/lsmd/.env`, the settings;
+- `/opt/lsmd/data/uploads`, the images uploaded in the Boss Menu
+  (`sudo tar -czf lsmd-uploads.tgz -C /opt/lsmd data`).
+
+The rest of the data lives in Neon.

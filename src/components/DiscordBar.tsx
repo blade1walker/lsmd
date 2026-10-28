@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { StarOfLife } from "./roster/StarOfLife";
+import { BrandLogo, useSiteContent } from "./SiteContentProvider";
 
 const NAV = [
   { href: "/", label: "Home" },
@@ -18,6 +18,7 @@ const NAV = [
 export function DiscordBar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
+  const { text } = useSiteContent();
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
   return (
@@ -25,13 +26,13 @@ export function DiscordBar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-3">
-            <StarOfLife className="h-9 w-9" />
+            <BrandLogo className="h-9 w-9" />
             <div className="leading-tight">
               <div className="font-[family-name:var(--font-oswald)] text-white font-semibold text-base uppercase tracking-[0.12em]">
-                Los Santos EMS
+                {text("brand.name")}
               </div>
               <div className="text-gray-500 text-[10px] font-semibold uppercase tracking-[0.3em] hidden sm:block">
-                Nexus Universe
+                {text("brand.community")}
               </div>
             </div>
           </Link>

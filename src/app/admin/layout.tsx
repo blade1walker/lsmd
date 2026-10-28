@@ -41,6 +41,7 @@ import {
   ClipboardList,
   Award,
   CalendarOff,
+  Crown,
 } from "lucide-react";
 import {
   DEPARTMENT_SECTION_PERMISSIONS,
@@ -57,6 +58,7 @@ import {
   TEST_SECTION_PERMISSIONS,
   RANK_PERMISSIONS,
   LOA_SECTION_PERMISSIONS,
+  CONTENT_SECTION_PERMISSIONS,
 } from "@/lib/constants";
 
 // `permission` mirrors the check on the matching API route, so a section is
@@ -73,6 +75,7 @@ const navItems: {
   { href: "/admin/roster", label: "Roster", icon: Users, permission: "roster.view" },
   { href: "/admin/duty-board", label: "Duty Board", icon: Siren, permission: [...DUTY_BOARD_PERMISSIONS.view] },
   { href: "/admin/fivem", label: "City Link", icon: Gamepad2, permission: FIVEM_SECTION_PERMISSIONS },
+  { href: "/admin/boss", label: "Boss Menu", icon: Crown, permission: CONTENT_SECTION_PERMISSIONS },
   { href: "/admin/roster-banner", label: "Roster Banner", icon: Megaphone, permission: "roster.announce" },
   { href: "/admin/callsigns", label: "Call Signs", icon: Hash, permission: "roster.edit" },
   { href: "/admin/ranks", label: "Ranks & Insignia", icon: Award, permission: [...RANK_PERMISSIONS.manage] },

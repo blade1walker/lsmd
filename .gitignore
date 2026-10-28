@@ -51,3 +51,7 @@ next-env.d.ts
 skills-lock.json
 dev.log
 start-dev.bat
+
+# Runtime data: uploaded images (and the database, once on SQLite). Lives
+# outside the release folders on the server; see DATA_DIR in .env.example.
+/data/

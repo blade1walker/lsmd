@@ -1394,3 +1394,58 @@ model LoaSettings {
   updatedBy       String?
   updatedAt       DateTime  @updatedAt @default(now())
 }
+
+// ─── Boss Menu: website content ─────────────────────────────────────────────
+
+/// One editable piece of the public website — a heading, a paragraph, a link,
+/// an image or a section's visibility — keyed as in SITE_CONTENT
+/// (src/lib/site-content.ts). Values are JSON text so the table means the
+/// same on any database. A key with no row shows its built-in default.
+model SiteContent {
+  key         String    @id
+  /// The edited value waiting to be published; null when nothing is pending.
+  draft       String?
+  /// What the public site shows; null means the built-in default.
+  published   String?
+  updatedBy   String?
+  updatedAt   DateTime  @updatedAt @default(now())
+  publishedBy String?
+  publishedAt DateTime?
+}
+
+/// A notice on the home page — an event, a recruitment drive, a change people
+/// need to know about. Drafts are only seen in preview.
+model SiteNotice {
+  id          String    @id @default(cuid())
+  title       String
+  body        String
+  /// info | success | warning | urgent
+  tone        String    @default("info")
+  linkUrl     String?
+  linkLabel   String?
+  /// "Draft" | "Published"
+  status      String    @default("Draft")
+  /// Lower first.
+  order       Int       @default(0)
+  publishedAt DateTime?
+  createdBy   String
+  updatedBy   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status, order])
+}
+
+/// An image uploaded through the Boss Menu, stored on the server's disk under
+/// DATA_DIR/uploads and served from /media/<fileName>.
+model MediaAsset {
+  id           String   @id @default(cuid())
+  /// <sha256 prefix>.<ext> — the same image uploaded twice is stored once.
+  fileName     String   @unique
+  originalName String
+  mimeType     String
+  size         Int
+  alt          String?
+  uploadedBy   String
+  createdAt    DateTime @default(now())
+}

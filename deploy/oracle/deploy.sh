@@ -35,6 +35,18 @@ git -C "$REPO" fetch -q origin main
 git -C "$REPO" reset -q --hard origin/main
 CURRENT=$(readlink -f "$APP/current" 2>/dev/null || true)
 
+# Files the site writes at runtime (Boss Menu uploads) live in $APP/data, outside
+# the release folders, so deploys and release clean-up never touch them; each
+# release links ./data there.
+link_data() {
+  mkdir -p "$APP/data"
+  # A release deployed by an older copy of this script kept them in its own folder.
+  if [ -n "$CURRENT" ] && [ -d "$CURRENT/data" ] && [ ! -L "$CURRENT/data" ]; then
+    cp -an "$CURRENT/data/." "$APP/data/"
+  fi
+  ln -sfn "$APP/data" "$DEST/data"
+}
+
 load_env() {
   set -a
   # shellcheck disable=SC1091
@@ -66,6 +78,7 @@ if [ -z "${LOCAL_BUILD:-}" ]; then
   fi
   rm -rf "$DEST" && mv "$TMP" "$DEST"
   ln -sf "$APP/.env" "$DEST/.env"
+  link_data
 
   cd "$DEST"
   load_env
@@ -82,6 +95,7 @@ else
   rm -rf "$DEST" && mkdir -p "$DEST"
   git -C "$REPO" archive origin/main | tar -x -C "$DEST"
   ln -sf "$APP/.env" "$DEST/.env"
+  link_data
 
   cd "$DEST"
   load_env

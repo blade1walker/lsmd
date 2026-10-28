@@ -249,6 +249,11 @@ export const ALL_PERMISSIONS = [
   // on leave by hand. hr.loa still opens it — see LOA_PERMISSIONS.
   "loa.view",
   "loa.manage",
+  // Boss Menu: the public website's text, sections, notices and images.
+  // edit drafts changes and uploads images; publish puts drafts live, takes
+  // things down and deletes them.
+  "content.edit",
+  "content.publish",
 ] as const;
 
 /**
@@ -521,3 +526,17 @@ export const LOA_PERMISSIONS = {
 
 /** Any permission that opens the LOA section, for the sidebar check. */
 export const LOA_SECTION_PERMISSIONS: string[] = [...LOA_PERMISSIONS.view];
+
+/**
+ * Boss Menu (Admin → Boss Menu): the public website's content. `edit` drafts
+ * text, notices and images and opens the preview; `publish` makes drafts
+ * live, unpublishes and deletes. Granted to Super Admin; roles ranked above
+ * it inherit it.
+ */
+export const CONTENT_PERMISSIONS = {
+  edit: ["content.edit", "content.publish"],
+  publish: ["content.publish"],
+} as const satisfies Record<string, readonly string[]>;
+
+/** Any permission that opens the Boss Menu, for the sidebar check. */
+export const CONTENT_SECTION_PERMISSIONS: string[] = [...CONTENT_PERMISSIONS.edit];

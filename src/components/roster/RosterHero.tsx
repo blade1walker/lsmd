@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { FileText, Radio, Shirt, GraduationCap, CalendarOff, Building2, UserPlus, Lock, ClipboardList } from "lucide-react";
-import { StarOfLife } from "./StarOfLife";
+import { BrandLogo } from "../SiteContentProvider";
 
 /** Every public destination the old header and hero linked to, kept in one row. */
 const LINKS = [
@@ -23,7 +23,7 @@ export function RosterHero({ adminHref }: { adminHref: string }) {
       <div className="pointer-events-none absolute left-1/2 top-0 h-[520px] w-[900px] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(220,38,38,0.22),rgba(220,38,38,0.06)_45%,transparent_70%)]" />
 
       <div className="relative mx-auto max-w-6xl px-4 pb-12 pt-16 text-center sm:pt-20">
-        <StarOfLife className="mx-auto h-24 w-24 drop-shadow-[0_0_28px_rgba(220,38,38,0.55)] sm:h-28 sm:w-28" />
+        <BrandLogo className="mx-auto h-24 w-24 drop-shadow-[0_0_28px_rgba(220,38,38,0.55)] sm:h-28 sm:w-28" />
 
         <p className="mt-8 text-[11px] font-bold uppercase tracking-[0.5em] text-red-500">Nexus Universe RP</p>
 
