@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { optionalAccess, hasPermission } from "@/lib/api-auth";
 import { apiError } from "@/lib/api-error";
+import { cached } from "@/lib/data-cache";
 import { getCitySnapshot, readFiveMSettings, toPublicStatus } from "@/lib/fivem-server";
 import type { CityStatusPublic } from "@/lib/fivem";
 
@@ -16,10 +17,14 @@ const NO_STORE = { "Cache-Control": "private, no-store" };
  */
 export async function GET() {
   try {
-    const access = await optionalAccess();
+    // The card is on every homepage and roster load; the city changes slowly,
+    // so the settings and snapshot are cached briefly and read in parallel.
+    const [access, settings] = await Promise.all([
+      optionalAccess(),
+      cached("fivem:settings", 60_000, () => readFiveMSettings()),
+    ]);
     const member = !!access && hasPermission(access, "roster.view");
 
-    const settings = await readFiveMSettings();
     if (settings && !settings.showPublicStatus && !member) {
       const hidden: CityStatusPublic = {
         enabled: false,
@@ -36,8 +41,10 @@ export async function GET() {
       return NextResponse.json(hidden, { headers: NO_STORE });
     }
 
-    const snapshot = await getCitySnapshot();
-    const status = await toPublicStatus(snapshot, member || (settings?.showPublicNames ?? false));
+    const names = member || (settings?.showPublicNames ?? false);
+    const status = await cached(`fivem:status:${names}`, 15_000, async () =>
+      toPublicStatus(await getCitySnapshot(), names)
+    );
     return NextResponse.json({ ...status, enabled: true }, { headers: NO_STORE });
   } catch (error) {
     return apiError("Failed to read the city status", error);

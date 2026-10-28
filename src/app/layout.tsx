@@ -10,15 +10,18 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
+// Oswald is a variable font: with no weight list next/font serves one file
+// covering 200–700, instead of one file per weight.
 const oswald = Oswald({
   variable: "--font-oswald",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
 });
 
+// Only call signs and IDs use it, so it is not worth preloading on every page.
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -36,8 +39,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // Pinch-zoom stays on: blocking it locks people out of small text on phones.
   themeColor: "#0a0a0f",
 };
 

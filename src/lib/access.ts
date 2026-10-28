@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import { cached } from "./data-cache";
 import { SUPER_ADMIN_IDS, ALL_PERMISSIONS } from "./constants";
 import { DEFAULT_MEMBER_ROLE, defaultMemberPermissions } from "./role-presets";
 import { memberDisplayLabel } from "./utils";
@@ -63,11 +64,19 @@ function combinedRoles(adminUser: {
  * A pure read — never writes an AdminUser row. It falls back to the default
  * permission set when one doesn't exist yet, so this stays correct whether or
  * not provisionAdminUser (below) has run for this account yet. Called on
- * every session decode, so it needs to stay cheap and side-effect-free.
+ * every session decode and again by every API route, so the answer is cached
+ * for a short while (src/lib/data-cache.ts) — and dropped at once by any
+ * database write, so a role change or roster removal still applies on the
+ * next request.
  */
 export async function resolveAccess(discordId: string | null | undefined): Promise<Access> {
   if (!discordId) return denied("", "no-discord-id");
+  return cached(`access:${discordId}`, ACCESS_CACHE_MS, () => loadAccess(discordId));
+}
 
+const ACCESS_CACHE_MS = 30_000;
+
+async function loadAccess(discordId: string): Promise<Access> {
   const isSuperAdmin = SUPER_ADMIN_IDS.includes(discordId);
 
   const [member, adminUser, allRoles] = await Promise.all([

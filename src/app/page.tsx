@@ -199,7 +199,7 @@ export default async function Home() {
                 <li key={step.title} className="relative rounded-xl border border-white/[0.06] bg-[#101016] p-6">
                   <div className="flex items-center justify-between">
                     <step.icon className="h-6 w-6 text-red-500" />
-                    <span className="font-[family-name:var(--font-oswald)] text-3xl font-bold text-white/10">
+                    <span aria-hidden="true" className="font-[family-name:var(--font-oswald)] text-3xl font-bold text-white/10">
                       0{i + 1}
                     </span>
                   </div>

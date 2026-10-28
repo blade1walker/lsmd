@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, isDenied } from "@/lib/api-auth";
 import { apiError } from "@/lib/api-error";
+import { cached } from "@/lib/data-cache";
 
 /**
  * What the public join page needs: every department, its blurb, and the
@@ -14,7 +15,7 @@ import { apiError } from "@/lib/api-error";
  */
 export async function GET() {
   try {
-    const departments = await prisma.departmentTemplate.findMany({
+    const departments = await cached("departments:public", 60_000, () => prisma.departmentTemplate.findMany({
       orderBy: { order: "asc" },
       select: {
         id: true,
@@ -39,7 +40,7 @@ export async function GET() {
           },
         },
       },
-    });
+    }));
 
     const auth = await requireAuth();
     if (isDenied(auth)) {

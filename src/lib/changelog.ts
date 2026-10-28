@@ -30,6 +30,8 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     date: "2026-10-28",
     changes: [
+      { type: "improvement", text: "Faster pages: the roster, homepage, departments, radio codes and city status are served from a short-lived cache that clears itself the moment anything is changed, sign-in checks no longer go to the database on every request, and database connections are kept open between visits" },
+      { type: "improvement", text: "Phones: pinch-to-zoom works again, the admin panel uses more of the screen, and the Recruit tables scroll sideways instead of cutting off columns. Smaller font download and clearer text contrast on the homepage and roster" },
       { type: "security", text: "Members' Discord, Steam and State IDs, timezones and HR flags are no longer readable without signing in (the full section list now needs roster access), and the public roster no longer shows why someone is on leave" },
       { type: "security", text: "Filing a removal request, reporting a member inactive and recording a promotion notice now need the matching permission (removal.request, hr.inactivity, roster.promote), and the requester is always the signed-in user. Training sign-off records now need training access. All of these were open to anyone before" },
       { type: "security", text: "LOA requests now need you to be signed in, and you can only request leave for yourself (HR can still file for someone). Before, anyone could file and announce leave for any member without signing in" },

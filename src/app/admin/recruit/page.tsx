@@ -398,7 +398,7 @@ export default function AdminRecruitPage() {
                   {query ? `No pending recruits match "${query}"` : "No pending recruits"}
                 </p>
               ) : (
-                <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl overflow-hidden">
+                <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-[#1e1e1e]">
@@ -454,7 +454,7 @@ export default function AdminRecruitPage() {
                   {query ? `No reviewed recruits match "${query}"` : "No reviewed recruits yet"}
                 </p>
               ) : (
-                <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl overflow-hidden">
+                <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-[#1e1e1e]">

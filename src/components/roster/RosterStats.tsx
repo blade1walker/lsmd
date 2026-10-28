@@ -19,7 +19,7 @@ export function RosterStats({ stats }: { stats: Stats }) {
         <div key={tile.label} className="flex items-start gap-3 rounded-xl border border-[#1c1c24] bg-[#0e0e14] px-5 py-4">
           <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${tile.dot}`} />
           <div>
-            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-500">{tile.label}</div>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-400">{tile.label}</div>
             <div className={`mt-0.5 font-[family-name:var(--font-oswald)] text-3xl font-bold leading-tight ${tile.tone}`}>
               {tile.value}
             </div>

@@ -272,7 +272,7 @@ export default function AdminLayout({
       {/* min-w-0: a flex item will not shrink below its widest child, so
           without it one wide table pushes the whole page sideways on a phone
           instead of scrolling inside its own box. */}
-      <main className="flex-1 min-w-0 md:ml-64 pt-14 md:pt-0 p-8">{children}</main>
+      <main className="flex-1 min-w-0 px-4 pb-8 pt-[4.5rem] sm:px-6 md:ml-64 md:p-8">{children}</main>
     </div>
   );
 }

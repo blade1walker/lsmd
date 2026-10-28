@@ -42,6 +42,7 @@ export function DepartmentMark({
 
   return (
     <span
+      role="img"
       title={mark.label}
       aria-label={mark.label}
       className={`inline-flex items-center justify-center ${mark.className}`}

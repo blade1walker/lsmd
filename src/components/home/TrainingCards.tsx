@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, CheckCircle, ClipboardList, GraduationCap, Lock } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { cached } from "@/lib/data-cache";
 import { optionalAccess } from "@/lib/api-auth";
 import { meetsMinRank, minRankMessage, parseQuestions } from "@/lib/tests";
 
@@ -36,7 +37,9 @@ export async function TrainingCards() {
   let signedIn = false;
   try {
     const [tests, access] = await Promise.all([
-      prisma.test.findMany({ where: { status: "Published", showOnHomepage: true }, orderBy: { title: "asc" } }),
+      cached("home:tests", 60_000, () =>
+        prisma.test.findMany({ where: { status: "Published", showOnHomepage: true }, orderBy: { title: "asc" } })
+      ),
       optionalAccess().catch(() => null),
     ]);
     signedIn = !!access;

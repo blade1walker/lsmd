@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "./auth";
 import { prisma } from "./prisma";
 import { resolveAccess, hasPermission } from "./access";
+import { cached } from "./data-cache";
 import type { Prisma } from "@/generated/prisma/client";
 import type { RosterMember, RosterPageData, RosterViewer, ViewerDuty } from "./roster-shared";
 
@@ -91,36 +92,51 @@ async function resolveViewer(): Promise<RosterViewer> {
   };
 }
 
-export async function getRosterPageData(): Promise<RosterPageData> {
-  const viewer = await resolveViewer();
-  const full = viewer.fullAccess;
-
-  const [sectionRows, departments, banner, openEntries] = await Promise.all([
-    full
-      ? prisma.section.findMany({
-          orderBy: { order: "asc" },
-          select: { id: true, name: true, members: { orderBy: { order: "asc" }, select: FULL_SELECT } },
-        })
-      : prisma.section.findMany({
-          orderBy: { order: "asc" },
-          select: { id: true, name: true, members: { orderBy: { order: "asc" }, select: PUBLIC_SELECT } },
-        }),
+/**
+ * Reads every visitor shares. Cached (src/lib/data-cache.ts) — any database
+ * write drops them, so edits still show on the next load — and started before
+ * the viewer is known, so they run alongside the session check, not after it.
+ */
+const ROSTER_CACHE_MS = 60_000;
+const rosterSections = (full: boolean) =>
+  cached(full ? "roster:sections:full" : "roster:sections:public", ROSTER_CACHE_MS, () =>
+    prisma.section.findMany({
+      orderBy: { order: "asc" },
+      select: { id: true, name: true, members: { orderBy: { order: "asc" }, select: full ? FULL_SELECT : PUBLIC_SELECT } },
+    })
+  );
+const rosterDepartments = () =>
+  cached("roster:departments", ROSTER_CACHE_MS, () =>
     prisma.departmentTemplate.findMany({
       orderBy: { order: "asc" },
       select: { id: true, name: true, tag: true, color: true },
-    }),
-    // The banner is decoration. If its table has not been created yet — a
-    // deploy whose schema push failed — the roster must still load.
-    prisma.rosterBanner.findUnique({ where: { id: "singleton" } }).catch(() => null),
-    prisma.clockEntry.findMany({
-      where: { clockOutAt: null },
-      select: { memberId: true, clockInAt: true },
-    }),
-  ]);
+    })
+  );
+// The banner is decoration. If its table has not been created yet — a deploy
+// whose schema push failed — the roster must still load.
+const rosterBanner = () =>
+  cached("roster:banner", ROSTER_CACHE_MS, () =>
+    prisma.rosterBanner.findUnique({ where: { id: "singleton" } }).catch(() => null)
+  );
+const openClockEntries = () =>
+  cached("roster:on-duty", ROSTER_CACHE_MS, () =>
+    prisma.clockEntry.findMany({ where: { clockOutAt: null }, select: { memberId: true, clockInAt: true } })
+  );
+const clockTotals = () =>
+  cached("roster:clock-totals", ROSTER_CACHE_MS, () =>
+    prisma.clockEntry.groupBy({ by: ["memberId"], _sum: { durationSec: true } })
+  );
 
-  const totals = full
-    ? await prisma.clockEntry.groupBy({ by: ["memberId"], _sum: { durationSec: true } })
-    : [];
+export async function getRosterPageData(): Promise<RosterPageData> {
+  const shared = Promise.all([rosterDepartments(), rosterBanner(), openClockEntries()]);
+  const viewer = await resolveViewer();
+  const full = viewer.fullAccess;
+
+  const [sectionRows, [departments, banner, openEntries], totals] = await Promise.all([
+    rosterSections(full),
+    shared,
+    full ? clockTotals() : Promise.resolve([]),
+  ]);
 
   // Earliest open entry per member, in case a missed clock-out left two.
   const onDuty = new Map<string, Date>();
@@ -183,13 +199,16 @@ export async function getRosterPageData(): Promise<RosterPageData> {
   if (viewer.canClock && viewer.memberId) {
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
-    const [today, lifetime] = await Promise.all([
-      prisma.clockEntry.aggregate({
-        where: { memberId: viewer.memberId, clockInAt: { gte: startOfToday } },
-        _sum: { durationSec: true },
-      }),
-      prisma.clockEntry.aggregate({ where: { memberId: viewer.memberId }, _sum: { durationSec: true } }),
-    ]);
+    const memberId = viewer.memberId;
+    const [today, lifetime] = await cached(`duty:${memberId}:${startOfToday.getTime()}`, ROSTER_CACHE_MS, () =>
+      Promise.all([
+        prisma.clockEntry.aggregate({
+          where: { memberId, clockInAt: { gte: startOfToday } },
+          _sum: { durationSec: true },
+        }),
+        prisma.clockEntry.aggregate({ where: { memberId }, _sum: { durationSec: true } }),
+      ])
+    );
     viewerDuty = {
       onDutySince: onDuty.get(viewer.memberId)?.toISOString() ?? null,
       todaySeconds: today._sum.durationSec ?? 0,
@@ -232,12 +251,16 @@ export interface HomeSummary {
  */
 export async function getHomeSummary(): Promise<HomeSummary | null> {
   try {
-    const [viewer, personnel, departments, onDuty, banner] = await Promise.all([
+    const [viewer, [personnel, departments, onDuty], banner] = await Promise.all([
       resolveViewer(),
-      prisma.member.count({ where: { sectionId: { not: null } } }),
-      prisma.departmentTemplate.count(),
-      prisma.clockEntry.groupBy({ by: ["memberId"], where: { clockOutAt: null } }),
-      prisma.rosterBanner.findUnique({ where: { id: "singleton" } }).catch(() => null),
+      cached("home:counts", ROSTER_CACHE_MS, () =>
+        Promise.all([
+          prisma.member.count({ where: { sectionId: { not: null } } }),
+          prisma.departmentTemplate.count(),
+          prisma.clockEntry.groupBy({ by: ["memberId"], where: { clockOutAt: null } }),
+        ])
+      ),
+      rosterBanner(),
     ]);
 
     const bannerText = banner && [banner.label, banner.highlight, banner.message].some((v) => v.trim());
