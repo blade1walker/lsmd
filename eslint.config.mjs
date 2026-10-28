@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // The Discord bot is its own deployable project with its own lint setup.
     "bot/**",
+    // The FiveM resource runs inside the game server's own script runtime.
+    "fivem/**",
   ]),
 ]);
 

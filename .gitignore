@@ -55,3 +55,6 @@ start-dev.bat
 # Runtime data: uploaded images (and the database, once on SQLite). Lives
 # outside the release folders on the server; see DATA_DIR in .env.example.
 /data/
+
+# The bot's settings for the Docker setup (holds its token).
+/deploy/docker/bot.env

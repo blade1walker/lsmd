@@ -1,0 +1,23 @@
+# The Nexus EMS Discord bot (bot/), on the same VM as the website. It only
+# makes outgoing connections. Its settings are /opt/lsmd/bot.env; it is built
+# and updated by deploy/oracle/deploy-bot.sh whenever bot/ changes on main.
+[Unit]
+Description=Nexus EMS Discord bot
+After=network-online.target lsmd.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=lsmd
+WorkingDirectory=/opt/lsmd/bot
+EnvironmentFile=/opt/lsmd/bot.env
+Environment=NODE_ENV=production
+# No IPv6 route on Oracle VMs; see lsmd.service.
+Environment="NODE_OPTIONS=--dns-result-order=ipv4first --no-network-family-autoselection"
+ExecStart=/usr/bin/node index.js
+# An update stops the running bot (as lsmd, which owns it); this starts the new one.
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -12,6 +12,7 @@ What runs on the VM:
 | **lsmd.service** | The website (`next start`), only reachable through Caddy |
 | **lsmd-update.timer** | Every 2 minutes: if `main` has new commits, builds them and switches over. The old version keeps serving during the build, and a release that fails to start is rolled back |
 | **lsmd-loa-expiry.timer** | 08:00 UTC daily: the LOA expiry job that `vercel.json` used to schedule |
+| **lsmd-bot.service** | The Discord bot (`bot/`), rebuilt by the update job whenever `bot/` changes on `main`. Switched on once its token is in `/opt/lsmd/bot.env` — see [`bot/README.md`](../../bot/README.md#hosting) |
 
 Pushing to `main` still deploys the site — it just lands on the VM within
 about 2 minutes instead of on Vercel.
@@ -88,13 +89,14 @@ The first run installs everything and stops to ask for the settings:
 | Roll back | `ls -dt /opt/lsmd/releases/*` → `sudo ln -sfn /opt/lsmd/releases/<older> /opt/lsmd/current && sudo systemctl restart lsmd` (a schema change may also need its pre-deploy backup restored — see docs/DATABASE.md) |
 | Database health / backups | `cd /opt/lsmd/current && sudo -u lsmd npm run db:check` · `npm run db:backup -- --list` |
 | Run the LOA job now | `sudo systemctl start lsmd-loa-expiry` |
+| Bot logs / restart | `journalctl -u lsmd-bot -f` · `sudo systemctl restart lsmd-bot` (after editing `/opt/lsmd/bot.env`) |
 | Restart | `sudo systemctl restart lsmd` |
 
 The site backs its database up before every deploy and once a day, into
 `/opt/lsmd/data/backups` — but the VM itself has no automatic backups, so those
 copies go if the VM does. Keep a copy of these somewhere else:
 
-- `/opt/lsmd/.env`, the settings;
+- `/opt/lsmd/.env` and `/opt/lsmd/bot.env`, the settings;
 - `/opt/lsmd/data`, the database, its backups and uploaded images
   (`sudo tar -czf lsmd-data.tgz -C /opt/lsmd data`).
 

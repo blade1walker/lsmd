@@ -4,11 +4,11 @@ Runs the Los Santos EMS website from Discord, and posts and schedules official a
 
 The bot does its work through the website's own API. Approving an application in Discord therefore does exactly what the panel's button does: the member gets the same DM, the channel gets the same webhook post, and the website's audit log records the change as "*Name* (via Discord)".
 
-This folder is self-contained. Deploy it on its own; the website does not need it in order to build.
+It runs on the same Oracle VM as the website, as the `lsmd-bot` service, and updates itself within two minutes of a push to `main` that changes this folder (see [Hosting](#hosting)). The folder is self-contained: the website does not need it in order to build.
 
-## Quick start
+## Quick start (on your own computer)
 
-You need [Node.js](https://nodejs.org) 18.17 or newer (20 LTS recommended).
+You need [Node.js](https://nodejs.org) 18.17 or newer (22 LTS recommended).
 
 ```bash
 npm install     # installs dependencies
@@ -21,15 +21,12 @@ The only required setting is `DISCORD_TOKEN` in `.env` (copy `.env.example`). Ev
 
 On startup the bot prints a short checklist: whether the token is valid, Server Members Intent, command registration, and the website connection. It prints every problem it finds, with how to fix it.
 
-To upload to a host, run `npm run package`. It creates `nexus-ems-bot.zip` (about 5 MB), which is complete: the bot is already built and its dependencies are included. They're pure JavaScript, so a zip made on Windows runs on Linux. The host needs only Node.js, with no `npm install` and no build. The zip leaves out `.env`, because it holds your token. Use `npm run package -- --with-env` to include it, for a panel where you upload files instead of setting variables.
-
 | Script | Does |
 | --- | --- |
 | `npm install` | Installs dependencies, including the TypeScript compiler |
 | `npm start` | Starts the bot. Rebuilds first if the source changed |
 | `npm run build` | Compiles `src/` into `dist/` |
 | `npm run register` | Re-registers the slash commands without starting the bot |
-| `npm run package` | Makes the upload zip |
 | `npm run typecheck` | Checks the code without building |
 
 ---
@@ -131,11 +128,7 @@ https://discord.com/oauth2/authorize?client_id=1540114135444889701&scope=bot+app
 
 This grants View Channels, Send Messages, Embed Links, Read Message History, Mention @everyone/@here/All Roles (for announcements that ping), and, for the join link, Create Invite, Manage Server and Manage Roles. After inviting, drag the bot's role above EMS Recruit and EMS in Server Settings → Roles.
 
-### 3. Stop the old Python bot
-
-The earlier Python bot in `d:\nexus-ems-bot` uses the same application. Stop it before starting this one, because two processes answering the same commands will conflict. On first start this bot replaces the old bot's commands.
-
-### 4. Configure
+### 3. Configure
 
 ```bash
 cp .env.example .env     # then fill it in
@@ -145,14 +138,14 @@ cp .env.example .env     # then fill it in
 | --- | --- | --- |
 | `DISCORD_TOKEN` | **yes** | Bot token |
 | `DISCORD_GUILD_ID` | no | Register commands in just this server. When empty, commands register in every server the bot is in |
-| `WEBSITE_URL` | for website commands | e.g. `https://your-site.vercel.app` |
+| `WEBSITE_URL` | for website commands | e.g. `https://lsmd.tech`; on the website's own VM, `http://127.0.0.1:3000` |
 | `NEXUS_BOT_API_KEY` | no | Optional second way to authenticate; must match the website's value |
 | `TIMEZONE` | no | IANA timezone for typed times (default `Asia/Kolkata`) |
 | `BOT_BRAND_NAME` | no | Name in embed footers (default `Los Santos EMS`) |
 | `BOT_LOGO_URL` | no | Logo shown on announcements |
 | `LOG_CHANNEL_ID` | no | Staff channel that receives a line for every action taken through the bot |
 
-### 5. Run
+### 4. Run
 
 ```bash
 npm install
@@ -163,36 +156,40 @@ npm start
 
 ## Hosting
 
-Any host that keeps a Node 18.17+ process running works (20 LTS recommended). The bot only makes outgoing connections, so it needs no port and no domain.
+### On the website's Oracle VM (how it runs today)
 
-- **Python server on a panel** (the console shows `Python 3.x` and a start line beginning `if [[ -d .git ]]`): this works as-is.
-  1. On your PC, run `npm run package -- --with-env` in this folder.
-  2. In the panel's **File Manager**, delete the old bot's files (`app.py`, `bot.py`, `commands/`, `services/`, `requirements.txt`, and so on). Then upload `nexus-ems-bot.zip` and unzip it into `/home/container`.
-  3. Check the **Startup** tab: the app file should be `app.py` (`bot.py` and `main.py` also work), and the requirements file `requirements.txt`.
-  4. Press **Start**. On the first start, `app.py` downloads Node.js from nodejs.org (31 MB), checks its official checksum, and keeps only the `node` program (125 MB) in `.node/`. Then it runs the bot. Later starts go straight to the bot. In total, allow about **150 MB** of disk. If there isn't enough, the console says how much is free and how much is needed. `requirements.txt` installs nothing.
-- **Python server on a panel, installed from GitHub** (updates itself on every restart): the `bot-release` branch of this repository holds the ready-to-run bot (the same files as the zip). `npm run release` in this folder builds it and publishes it there.
-  1. In the panel's **Startup** tab, set **Git Repo Address** to `https://github.com/blade1walker/lsmd`, **Git Branch** to `bot-release`, **User Uploaded Files** to False, **Auto Update** to True, and **App Py File** to `app.py`.
-  2. Under **Settings**, choose **Reinstall Server**. This clones the branch into the empty `/home/container`. If the folder is still empty afterwards (some hosts' installers never clone), open the **File Manager**, choose **Upload from URL**, and enter `https://raw.githubusercontent.com/blade1walker/lsmd/bot-release/app.py`. On its first start, `app.py` downloads the rest from the branch itself. If that upload does nothing either, choose **New file**, paste the lines below, and save the file as `app.py`:
-     ```python
-     import os, subprocess, sys
-     g = lambda *a: subprocess.run(["git", *a]).returncode
-     b = os.environ.get("BRANCH") or "bot-release"
-     g("init", "-q")
-     g("remote", "add", "origin", os.environ.get("GIT_ADDRESS") or "https://github.com/blade1walker/lsmd")
-     g("fetch", "origin", f"+refs/heads/{b}:refs/remotes/origin/{b}")
-     g("checkout", "-f", "-B", b, f"origin/{b}")
-     os.execv(sys.executable, [sys.executable, "app.py"])
-     ```
-  3. In the **File Manager**, create `.env` from `.env.example` and fill in `DISCORD_TOKEN` and `DISCORD_GUILD_ID`. The branch never contains `.env`, and `git pull` leaves your copy alone.
-  4. Press **Start**. To update later: `npm run release` on your PC, then **Restart** the server.
-- **Node.js server on a panel (Pterodactyl and similar):** upload and unzip `nexus-ems-bot.zip` (from `npm run package`), choose a Node.js 20 egg, and set the main file to `index.js`. The zip already includes everything, so the panel's `npm install` step has nothing left to do. `index.js` starts the bot. Enter the variables in the panel, or upload `.env`. **Do not upload a `node_modules` folder from your PC.**
-- **Railway / Render:** create a service from this repository with the root directory set to `bot`. On Render, make it a **Background Worker**. Build command: `npm install`. Start command: `npm start`. Add the variables.
-- **Docker:** `docker build -t nexus-ems-bot . && docker run -d --restart unless-stopped --env-file .env nexus-ems-bot`
-- **VPS:** `npm install`, then keep it running with `pm2 start index.js --name nexus-ems-bot`.
+The bot is the `lsmd-bot` systemd service beside the website. Its settings are `/opt/lsmd/bot.env`. The website's update job (`deploy/oracle/deploy.sh`, every 2 minutes) rebuilds the bot whenever this folder changes on `main`: it builds the new copy beside the running one and swaps it in only once it has built. A failed build leaves the running bot alone.
 
-To push only this folder to a repository of its own, copy the `bot` folder out and `git init` it. Nothing in it depends on the rest of this repo.
+First time, or moving the bot here from another host:
 
----
+1. Get the VM up to date. `deploy/oracle/setup.sh` installs the service and creates `/opt/lsmd/bot.env`. On a VM set up before the bot moved, run it again; it is safe to repeat:
+   ```bash
+   bash /opt/lsmd/repo/deploy/oracle/setup.sh lsmd.tech
+   ```
+2. Fill in the settings. `WEBSITE_URL` is already `http://127.0.0.1:3000`, the website on the same machine:
+   ```bash
+   sudo -u lsmd nano /opt/lsmd/bot.env      # DISCORD_TOKEN, DISCORD_GUILD_ID, …
+   ```
+3. **Stop the bot wherever it ran before.** Two copies answering the same commands conflict.
+4. Start it:
+   ```bash
+   sudo systemctl enable --now lsmd-bot
+   journalctl -u lsmd-bot -f                # the startup checklist
+   ```
+
+| Task | Command |
+| --- | --- |
+| Logs | `journalctl -u lsmd-bot -f` |
+| Restart (after changing `bot.env`) | `sudo systemctl restart lsmd-bot` |
+| Rebuild now | `sudo -u lsmd FORCE=1 bash /opt/lsmd/repo/deploy/oracle/deploy-bot.sh` |
+| Stop | `sudo systemctl disable --now lsmd-bot` |
+
+### Elsewhere
+
+Any machine that keeps a Node 18.17+ process running works. The bot only makes outgoing connections, so it needs no port and no domain.
+
+- **Docker:** `docker build -t nexus-ems-bot . && docker run -d --restart unless-stopped --env-file .env nexus-ems-bot`. Alongside the website's Docker setup, `deploy/docker/compose.yml` has a `bot` service; see the comment there.
+- **Any server with Node.js:** `npm ci && npm run build`, then keep `node index.js` running with systemd or pm2.
 
 ## Troubleshooting
 
@@ -202,7 +199,6 @@ To push only this folder to a repository of its own, copy the `bot` folder out a
 | "The website could not be reached" | Check `WEBSITE_URL` |
 | Commands do not appear | The bot was invited without `applications.commands` (the startup log says so), or `DISCORD_GUILD_ID` is wrong. Re-invite with the link above, then restart the bot or run `npm run register` |
 | "Dependencies are not installed" | Run `npm install` in the bot's folder |
-| `No space left on device` | An older setup installed Node.js through pip. Upload the current zip and press Start: `app.py` removes that copy and pip's cache, then needs about 150 MB in total |
 | "The bot is not connected to the website yet" | Set `WEBSITE_URL` in the bot's `.env` to the website's address, then restart |
 | "You don't have access to this command" | An administrator runs `/permissions grant` for that person's role, or adds it under Admin → Bot Permissions |
 | Someone was granted a command but cannot see it | Restart the bot on the current version (it re-registers the commands as visible to everyone). If it is still hidden, open Server Settings → Integrations → Nexus EMS Bot and remove any override that turns the command off for `@everyone` or their role. Overrides set there are Discord's and the bot cannot change them |
