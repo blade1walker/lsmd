@@ -188,7 +188,6 @@ First time, or moving the bot here from another host:
 
 Any machine that keeps a Node 18.17+ process running works. The bot only makes outgoing connections, so it needs no port and no domain.
 
-- **Docker:** `docker build -t nexus-ems-bot . && docker run -d --restart unless-stopped --env-file .env nexus-ems-bot`. Alongside the website's Docker setup, `deploy/docker/compose.yml` has a `bot` service; see the comment there.
 - **Any server with Node.js:** `npm ci && npm run build`, then keep `node index.js` running with systemd or pm2.
 
 ## Troubleshooting

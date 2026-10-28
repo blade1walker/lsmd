@@ -19,7 +19,6 @@ import { execSync } from "node:child_process";
  */
 
 const onCI =
-  process.env.VERCEL === "1" ||
   process.env.CI === "1" ||
   process.env.CI === "true";
 
@@ -54,9 +53,8 @@ if (!process.env.DATABASE_URL) {
         "[deploy-schema] The schema was NOT applied. Tables added in this\n" +
         "[deploy-schema] release will not exist and their pages will fail.\n" +
         "[deploy-schema]\n" +
-        "[deploy-schema] Vercel: Settings -> Environment Variables -> DATABASE_URL\n" +
-        "[deploy-schema] must be enabled for Production and Preview. Then redeploy,\n" +
-        "[deploy-schema] or run `npm run db:push` against the database yourself.\n" +
+        "[deploy-schema] Set DATABASE_URL and redeploy, or run\n" +
+        "[deploy-schema] `npm run db:push` against the database yourself.\n" +
         "[deploy-schema] ==================================================\n"
     );
   } else {
@@ -112,8 +110,8 @@ try {
       "[deploy-schema]\n" +
       "[deploy-schema] If it timed out and DATABASE_URL is a pooled address\n" +
       "[deploy-schema] (port 6543, or \"pooler\"/\"pgbouncer\" in it), add the\n" +
-      "[deploy-schema] database's direct address as DIRECT_URL in Vercel ->\n" +
-      "[deploy-schema] Settings -> Environment Variables, then redeploy.\n" +
+      "[deploy-schema] database's direct address as DIRECT_URL in\n" +
+      "[deploy-schema] /opt/lsmd/.env, then redeploy.\n" +
       "[deploy-schema]\n" +
       "[deploy-schema] If this is a destructive change (a dropped column or\n" +
       "[deploy-schema] table), apply it deliberately with\n" +

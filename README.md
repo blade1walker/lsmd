@@ -1,42 +1,28 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LSMD — Nexus EMS website
 
-## Getting Started
+The roster, training, LOA, SOP and admin site for Nexus EMS, live at
+<https://lsmd.tech>. Next.js + Prisma on a Neon PostgreSQL database.
 
-First, run the development server:
+| Folder | What it is |
+| --- | --- |
+| `src/` | The website |
+| `prisma/` | Database schema and seed |
+| `scripts/` | Database scripts (`npm run db:*`); `deploy-schema.mjs` runs on every deploy |
+| `bot/` | The Nexus EMS Discord bot — see [`bot/README.md`](bot/README.md) |
+| `fivem/` | The FiveM resource that syncs with the site |
+| `deploy/oracle/` | The Oracle Cloud VM the site runs on — see [`deploy/oracle/README.md`](deploy/oracle/README.md) |
+
+## Develop
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env   # fill in DATABASE_URL, NEXTAUTH_SECRET, Discord app
+npm install
+npm run dev            # http://localhost:3000
+npm test               # unit tests
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Deploy
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-## Deploy anywhere else
-
-[`deploy/README.md`](deploy/README.md) moves the site to any other host — a
-`Dockerfile` for Railway / Render / Fly.io and the like, Docker Compose with
-automatic HTTPS for any server, or an Oracle Cloud free VM.
+Push to `main`. GitHub Actions ("Build for Oracle") tests and builds it, and
+the VM picks the build up within 2 minutes, applies the database schema and
+switches over — rolling back on its own if the new version does not start.

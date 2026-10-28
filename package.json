@@ -21,9 +21,7 @@
     "db:seed-ems-sop": "npx tsx scripts/seed-ems-sop.ts",
     "db:seed-medical-types": "npx tsx scripts/seed-medical-types.ts",
     "lookup-discord-ids": "npx tsx scripts/lookup-discord-ids.ts",
-    "db:migrate-user-roles": "npx tsx scripts/migrate-user-roles.ts",
     "db:migrate-ftp-departments": "npx tsx scripts/migrate-ftp-departments.ts",
-    "db:provision-admin-users": "npx tsx scripts/provision-admin-users.ts",
     "db:reset": "npx prisma db push --force-reset && npm run db:seed",
     "postinstall": "prisma generate && node scripts/deploy-schema.mjs",
     "test": "node --import tsx --test \"tests/**/*.test.ts\""

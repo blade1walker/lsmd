@@ -18,7 +18,8 @@ const DAY_MS = 86_400_000;
  * admin had to notice the end date had passed and click the button, so members
  * stayed flagged LOA on the roster indefinitely.
  *
- * Vercel sends `Authorization: Bearer $CRON_SECRET` when that variable is set.
+ * lsmd-loa-expiry.timer on the server calls it daily with
+ * `Authorization: Bearer $CRON_SECRET`.
  * Without it the route refuses rather than running unauthenticated — it mutates
  * the roster and sends DMs.
  */

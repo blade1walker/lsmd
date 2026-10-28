@@ -26,7 +26,7 @@ function createPrismaClient() {
   const url = databaseUrl();
   if (!url) {
     throw new Error(
-      "DATABASE_URL is not set. Go to Vercel → Settings → Environment Variables and add it."
+      "DATABASE_URL is not set. Add it to /opt/lsmd/.env (or .env locally)."
     );
   }
   const adapter = new PrismaPg({

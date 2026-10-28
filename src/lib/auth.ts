@@ -7,8 +7,8 @@ import { resolveAccess, provisionAdminUser, syncAdminUserFromRoster } from "./ac
  * Discord's OAuth2 authorize link from the Developer Portal before, which
  * points every sign-in redirect at discord.com and makes sign-in impossible.
  * A value that is not a URL, or is a Discord address, is ignored instead, so
- * NextAuth falls back to the address the request came in on (Vercel sets
- * VERCEL, which turns that on; AUTH_TRUST_HOST does the same elsewhere).
+ * NextAuth falls back to the address the request came in on (AUTH_TRUST_HOST
+ * turns that on).
  */
 function dropInvalidNextAuthUrl() {
   const value = process.env.NEXTAUTH_URL;
@@ -26,7 +26,7 @@ function dropInvalidNextAuthUrl() {
 
   console.error(
     `NEXTAUTH_URL is ignored because ${reason}. Set it to this site's own address ` +
-      `(e.g. https://nexis-ems.vercel.app) in Vercel -> Settings -> Environment Variables.`
+      `(e.g. https://lsmd.tech) in /opt/lsmd/.env.`
   );
   delete process.env.NEXTAUTH_URL;
 }

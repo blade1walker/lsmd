@@ -14,7 +14,7 @@ export default async function RadioCodesPage() {
           Database Error
         </h1>
         <p className="text-gray-400 text-center max-w-md">
-          Cannot connect to the database. Please ensure DATABASE_URL is set in Vercel environment variables.
+          Cannot connect to the database. Please ensure DATABASE_URL is set in /opt/lsmd/.env on the server.
         </p>
       </div>
     );

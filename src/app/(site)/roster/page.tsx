@@ -16,16 +16,16 @@ function DatabaseError() {
       <p className="text-gray-400 text-center max-w-md mb-6">
         The application cannot connect to the database. Please make sure
         <code className="bg-white/10 px-2 py-1 rounded mx-1">DATABASE_URL</code>
-        is set in your Vercel environment variables.
+        is set in the server settings.
       </p>
       <div className="bg-white/5 border border-white/10 rounded-lg p-4 text-sm text-gray-500 max-w-lg w-full">
         <p className="font-semibold text-gray-300 mb-2">Steps to fix:</p>
         <ol className="list-decimal list-inside space-y-1">
-          <li>Go to vercel.com → Your project → Settings → Environment Variables</li>
           <li>
-            Add <code className="bg-white/10 px-1 rounded">DATABASE_URL</code> with your PostgreSQL connection string
+            Add <code className="bg-white/10 px-1 rounded">DATABASE_URL</code> with your PostgreSQL connection string to{" "}
+            <code className="bg-white/10 px-1 rounded">/opt/lsmd/.env</code> on the server
           </li>
-          <li>Redeploy the project</li>
+          <li>Restart the site</li>
         </ol>
       </div>
     </div>

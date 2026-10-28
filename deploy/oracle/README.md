@@ -1,81 +1,53 @@
-# Hosting the website on Oracle Cloud (Always Free)
+# Hosting on Oracle Cloud (Always Free)
 
-This runs the site on one free Oracle Cloud VM instead of Vercel. The
-database stays on Neon, which works from any server, so no data moves. Images
-uploaded on the site are kept on the VM itself, in `/opt/lsmd/data`.
+The site runs on one free Oracle Cloud VM (`lsmd-web`, Mumbai) at
+<https://lsmd.tech>. The database is on Neon; images uploaded on the site are
+kept on the VM itself, in `/opt/lsmd/data`.
 
 What runs on the VM:
 
 | Piece | Does |
 | --- | --- |
-| **Caddy** | Serves `https://your-domain`, gets and renews the certificate on its own |
+| **Caddy** | Serves `https://lsmd.tech` (and redirects `www`), gets and renews the certificate on its own |
 | **lsmd.service** | The website (`next start`), only reachable through Caddy |
-| **lsmd-update.timer** | Every 2 minutes: if `main` has new commits, builds them and switches over. The old version keeps serving during the build, and a release that fails to start is rolled back |
-| **lsmd-loa-expiry.timer** | 08:00 UTC daily: the LOA expiry job that `vercel.json` used to schedule |
+| **lsmd-update.timer** | Every 2 minutes: pulls `main`, and when GitHub Actions has published a new build, downloads it, applies the database schema and switches over. The old version keeps serving until then, and a release that fails to start is rolled back |
+| **lsmd-loa-expiry.timer** | 08:00 UTC daily: the LOA expiry job |
 | **lsmd-bot.service** | The Discord bot (`bot/`), rebuilt by the update job whenever `bot/` changes on `main`. Switched on once its token is in `/opt/lsmd/bot.env` — see [`bot/README.md`](../../bot/README.md#hosting) |
 
-Pushing to `main` still deploys the site — it just lands on the VM within
-about 2 minutes instead of on Vercel.
+## Auto-deploy
 
-## 1. Create the VM
+Pushing to `main` is the whole deploy:
 
-**Quickest:** open **Cloud Shell** (the `>_` icon in the Oracle console) and run
-`create-vm.sh` with your SSH public key. It creates the network with ports
-22/80/443 open, retries every minute while Ampere is "Out of capacity", and
-prints the VM's public IP — then skip to step 2:
+1. `.github/workflows/oracle-build.yml` runs the unit tests and `next build`
+   (with the type check), then uploads the result to the `oracle-build`
+   release. A push that fails either never reaches the site.
+2. Within 2 minutes `lsmd-update.timer` runs `deploy.sh`, which resets
+   `/opt/lsmd/repo` to `origin/main`, rebuilds the bot if `bot/` changed, and
+   deploys the new build if its commit differs from the live one.
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/blade1walker/lsmd/main/deploy/oracle/create-vm.sh | bash -s -- "ssh-ed25519 AAAA... you"
-```
+Pushes that only touch `deploy/`, `bot/`, `fivem/` or Markdown skip the website
+build; the VM still picks up the new scripts and bot on its next pass.
 
-Or by hand:
+## Rebuilding the VM from scratch
 
-1. Sign up at <https://www.oracle.com/cloud/free/>. A card is needed for identity checks; Always Free resources are never charged.
-2. **Compute → Instances → Create instance**:
-   - **Image:** Canonical Ubuntu 24.04.
-   - **Shape:** *Ampere* → `VM.Standard.A1.Flex`, **2 OCPU / 12 GB** (free up to 4 OCPU / 24 GB).
-     If Oracle says "Out of capacity", try another availability domain, try again later, or use
-     `VM.Standard.E2.1.Micro` (1 GB — works, the setup adds swap, but builds are slow).
-   - **Networking:** keep "Assign a public IPv4 address" on.
-   - **SSH keys:** upload your public key, or download the generated private key and keep it safe.
-3. Open the ports: the instance's **Subnet → Security List → Add Ingress Rules**: source `0.0.0.0/0`, TCP, destination ports `80` and `443`.
-4. Optional but recommended: **Reserved public IP** (Networking → IP Management), so the address never changes.
-
-## 2. Point a domain at it
-
-Create an `A` record for your domain (e.g. `ems.example.com`) pointing to the VM's public IP.
-
-No domain? Use the free `sslip.io` name for the IP — for `140.238.1.2` it is `140-238-1-2.sslip.io`. HTTPS works with it too.
-
-## 3. Install
-
-SSH in (`ssh ubuntu@<ip>`) and run, with your domain:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/blade1walker/lsmd/main/deploy/oracle/setup.sh | bash -s -- ems.example.com
-```
-
-The first run installs everything and stops to ask for the settings:
-
-1. **Copy the settings from Vercel.** Vercel → Project → **Settings → Environment Variables**, and fill the same names into the file:
+1. **Create it.** In OCI **Cloud Shell**, run `create-vm.sh` with your SSH public
+   key. It creates the network with ports 22/80/443 open, retries while Ampere
+   is "Out of capacity", and prints the public IP:
    ```bash
-   sudo -u lsmd nano /opt/lsmd/.env
+   curl -fsSL https://raw.githubusercontent.com/blade1walker/lsmd/main/deploy/oracle/create-vm.sh | bash -s -- "ssh-ed25519 AAAA... you"
    ```
-   `NEXTAUTH_URL` is already set to the new address. The database URL is whichever is set on Vercel —
-   `DATABASE_URL`, or the `NEON_…` variables if the Neon integration added them (copy those as they are).
-2. **Discord sign-in:** Discord Developer Portal → your app → **OAuth2 → Redirects** → add
-   `https://ems.example.com/api/auth/callback/discord`. Without it every sign-in fails with "Invalid OAuth2 redirect_uri".
-3. Run the same command again (or `bash /opt/lsmd/repo/deploy/oracle/setup.sh ems.example.com`). It builds and starts the site.
+2. **DNS.** Point the `A` records for `@` and `www` at the IP (Cloudflare, DNS only / grey cloud, so Caddy can get its certificate).
+3. **Install.** SSH in (`ssh ubuntu@<ip>`) and run:
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/blade1walker/lsmd/main/deploy/oracle/setup.sh | bash -s -- lsmd.tech
+   ```
+   The first run stops for the settings: restore `/opt/lsmd/.env` and
+   `/opt/lsmd/bot.env` from your backup (or fill them in from `.env.example`),
+   then run the same command again. It builds, starts everything and turns on
+   auto-deploy.
 
-## 4. Switch over
-
-1. Open `https://ems.example.com`, sign in, and check the admin panel loads.
-2. Update anything that points at the old Vercel address:
-   - the Discord bot's `WEBSITE_URL` (bot/.env on wherever the bot runs),
-   - the FiveM resource's website URL in `server.cfg`,
-   - links pinned in Discord.
-3. When the new site works, stop Vercel from deploying too, so a push does not go to two places:
-   Vercel → Project → **Settings → Git → Disconnect**. Keep the project for a week as a fallback, then delete it.
+`setup.sh` is safe to run again at any time — for example after a unit file in
+this folder changes, since `deploy.sh` does not reinstall systemd units.
 
 ## Day to day
 
@@ -84,8 +56,9 @@ The first run installs everything and stops to ask for the settings:
 | Site logs | `journalctl -u lsmd -f` |
 | Deploy logs | `journalctl -u lsmd-update -f` |
 | Deploy now | `sudo -u lsmd FORCE=1 bash /opt/lsmd/repo/deploy/oracle/deploy.sh` |
-| Change a setting | `sudo -u lsmd nano /opt/lsmd/.env`, then `sudo -u lsmd FORCE=1 bash /opt/lsmd/repo/deploy/oracle/deploy.sh` (settings are read at build time too) |
-| Roll back | `ls -dt /opt/lsmd/releases/*` → `sudo ln -sfn /opt/lsmd/releases/<older> /opt/lsmd/current && sudo systemctl restart lsmd` |
+| Change a setting | `sudo -u lsmd nano /opt/lsmd/.env`, then `sudo systemctl restart lsmd` |
+| Roll back | `sudo systemctl stop lsmd-update.timer` (or it redeploys the newest build within 2 minutes), then `ls -dt /opt/lsmd/releases/*` → `sudo ln -sfn /opt/lsmd/releases/<older> /opt/lsmd/current && sudo systemctl restart lsmd`. Start the timer again once a fix is pushed |
+| Pause auto-deploy | `sudo systemctl stop lsmd-update.timer` · resume with `start` |
 | Run the LOA job now | `sudo systemctl start lsmd-loa-expiry` |
 | Bot logs / restart | `journalctl -u lsmd-bot -f` · `sudo systemctl restart lsmd-bot` (after editing `/opt/lsmd/bot.env`) |
 | Restart | `sudo systemctl restart lsmd` |

@@ -9,7 +9,7 @@
 # the repo to /opt/lsmd, and installs these systemd units:
 #   lsmd.service           the website (next start on 127.0.0.1:3000)
 #   lsmd-update.timer      every 2 minutes: deploy main if it has new commits
-#   lsmd-loa-expiry.timer  daily 08:00 UTC: the LOA expiry job (was a Vercel cron)
+#   lsmd-loa-expiry.timer  daily 08:00 UTC: the LOA expiry job
 #   lsmd-bot.service       the Discord bot — installed here, switched on once
 #                          its token is in /opt/lsmd/bot.env (see the end)
 #
@@ -106,11 +106,11 @@ if [ "$(tr -cd . <<<"$DOMAIN" | wc -c)" = 1 ]; then
 fi
 sudo systemctl reload caddy || sudo systemctl restart caddy
 
-# The database is DATABASE_URL, or Vercel's Neon connection (NEON_*) — see src/lib/database-url.ts.
+# The database is DATABASE_URL, or the NEON_* variables — see src/lib/database-url.ts.
 if [ "${NEW_ENV:-}" = 1 ] || ! sudo grep -qE '^(DATABASE_URL|NEON_URL|NEON_DATABASE_URL|NEON_POSTGRES_PRISMA_URL|NEON_POSTGRES_URL)="?postgres' "$APP/.env"; then
   say "Almost done — fill in the settings, then finish"
   cat <<EOF
-  1. Edit the settings (copy each value from Vercel -> Project -> Settings -> Environment Variables):
+  1. Fill in the settings (.env.example in the repo explains each one):
        sudo -u lsmd nano $APP/.env
      NEXTAUTH_URL is already set to https://$DOMAIN.
   2. Add  https://$DOMAIN/api/auth/callback/discord  under Discord Developer Portal -> OAuth2 -> Redirects.
