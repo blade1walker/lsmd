@@ -1,0 +1,5 @@
+# DOMAIN comes from deploy/docker/.env (see compose.yml).
+{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy app:3000
+}
