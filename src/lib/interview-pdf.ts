@@ -32,7 +32,7 @@ function lastY(pdf: Pdf): number {
   return (pdf as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
 }
 
-export function interviewPdfFileName(interview: InterviewDetail): string {
+function interviewPdfFileName(interview: InterviewDetail): string {
   return `${interview.sessionId}_${interview.memberName}`.replace(/[^\w.-]+/g, "_") + ".pdf";
 }
 

@@ -32,7 +32,6 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
-    "@radix-ui/react-tooltip": "^1.2.16",
     "clsx": "^2.1.1",
     "framer-motion": "^13.1.1",
     "jspdf": "^4.2.1",

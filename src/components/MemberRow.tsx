@@ -5,12 +5,19 @@ import RankInsignia from "@/components/RankInsignia";
 import ActivityPill from "@/components/ActivityPill";
 import { DepartmentMark } from "@/components/DepartmentMark";
 import { RANK_LIST, ACTIVITY_STATUSES } from "@/lib/constants";
-import type { DepartmentColumn } from "@/components/RosterTable";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+
+/** A department that gets its own tick column. */
+export interface DepartmentColumn {
+  id: string;
+  name: string;
+  tag?: string | null;
+  color: string;
+}
 
 interface Member {
   id: string;

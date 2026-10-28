@@ -146,7 +146,7 @@ function ownUrl(kind: WebhookKind, settings: NotificationSettings): string {
  * variable. The env vars stay as the fallback so an existing deployment keeps
  * working with nothing filled in — but the settings page is no longer decorative.
  */
-export async function resolveWebhookUrl(kind: WebhookKind, settings?: NotificationSettings): Promise<string> {
+async function resolveWebhookUrl(kind: WebhookKind, settings?: NotificationSettings): Promise<string> {
   const s = settings ?? (await getNotificationSettings());
   const own = ownUrl(kind, s);
   if (own) return own;
@@ -300,7 +300,7 @@ export interface Embed {
 }
 
 /** Posts to an explicit URL. Prefer postEmbed/postContent, which resolve the URL for a channel. */
-export async function postToWebhook(webhookUrl: string, embed: Embed, event = "webhook"): Promise<SendResult> {
+async function postToWebhook(webhookUrl: string, embed: Embed, event = "webhook"): Promise<SendResult> {
   if (!webhookUrl) {
     const result: SendResult = { ok: false, skipped: "no-url" };
     await logDelivery({ event, channel: "webhook", content: embed.description, result });
@@ -330,7 +330,7 @@ export async function postToWebhook(webhookUrl: string, embed: Embed, event = "w
 }
 
 /** Embed post to one of the configured channels. */
-export async function postEmbed(kind: WebhookKind, embed: Embed, event: string): Promise<SendResult> {
+async function postEmbed(kind: WebhookKind, embed: Embed, event: string): Promise<SendResult> {
   return postToWebhook(await resolveWebhookUrl(kind), embed, event);
 }
 
@@ -377,10 +377,6 @@ export async function postToLOAWebhook(embed: Embed, event = "loa"): Promise<Sen
 
 export async function postToEnrollWebhook(embed: Embed, event = "onboarding.approved"): Promise<SendResult> {
   return postEmbed("onboarding", embed, event);
-}
-
-export async function postToFtpWebhook(content: string, event = "ftp.enrolled"): Promise<SendResult> {
-  return postContent("ftp", content, event);
 }
 
 /**

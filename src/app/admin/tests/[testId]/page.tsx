@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { ArrowLeft, Download, FileUp, Eye, EyeOff, Lock, Plus, RotateCcw, Save } from "lucide-react";
+import { ArrowLeft, Download, FileUp, Eye, EyeOff, Lock, RotateCcw, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

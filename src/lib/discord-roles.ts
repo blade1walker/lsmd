@@ -61,12 +61,6 @@ export async function removeDepartmentDiscordRole(
   return setGuildRole(discordId, roleId, "remove");
 }
 
-export async function addFtpDiscordRole(discordId: string): Promise<boolean> {
-  const roleId = process.env.DISCORD_FTP_ROLE_ID;
-  if (!roleId) return false;
-  return setGuildRole(discordId, roleId, "add");
-}
-
 export async function removeFtpDiscordRole(discordId: string): Promise<boolean> {
   const roleId = process.env.DISCORD_FTP_ROLE_ID;
   if (!roleId) return false;

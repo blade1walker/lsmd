@@ -44,22 +44,8 @@ const AlertDialogCancel = ({ className, children, ...props }: React.ButtonHTMLAt
   <Button variant="outline" className={cn("mt-2 sm:mt-0", className)} {...props}>{children}</Button>
 );
 
-const AlertDialogTrigger = ({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
-  <button {...props}>{children}</button>
-);
-
-const AlertDialogPortal = ({ children }: { children: React.ReactNode }) => <>{children}</>;
-const AlertDialogOverlay = () => null;
-
-function buttonVariants(opts?: { variant?: string }) {
-  return "";
-}
-
 export {
   AlertDialog,
-  AlertDialogPortal,
-  AlertDialogOverlay,
-  AlertDialogTrigger,
   AlertDialogContent,
   AlertDialogHeader,
   AlertDialogFooter,
@@ -67,5 +53,4 @@ export {
   AlertDialogDescription,
   AlertDialogAction,
   AlertDialogCancel,
-  buttonVariants,
 };

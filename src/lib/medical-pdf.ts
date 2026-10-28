@@ -159,7 +159,7 @@ function drawLogo(
 }
 
 /** A filename that sorts sensibly and never carries characters a filesystem rejects. */
-export function pdfFileName(doc: PdfDocument): string {
+function pdfFileName(doc: PdfDocument): string {
   const id = doc.documentNumber ?? `DRAFT-${doc.patientName}`;
   return `${id}`.replace(/[^\w.-]+/g, "_") + ".pdf";
 }

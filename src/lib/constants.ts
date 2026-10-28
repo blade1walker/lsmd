@@ -77,7 +77,7 @@ declare global {
   // Shared by every copy of this module in one process (Next bundles it into
   // several server layers) and, in the browser, set before the app loads by
   // the /api/rank-config script in the root layout.
-  var __lsmdRanks: { ranks: RankDef[]; names: string[]; ftp?: string[] } | undefined;
+  var __lsmdRanks: { ranks: RankDef[]; names: string[] } | undefined;
   var __LSMD_RANK_OVERRIDES__: RankOverride[] | undefined;
 }
 
@@ -93,14 +93,12 @@ const rankStore: NonNullable<typeof globalThis.__lsmdRanks> = (globalThis.__lsmd
  */
 export const RANKS: readonly RankDef[] = rankStore.ranks;
 export const RANK_LIST: readonly string[] = rankStore.names;
-export const RANK_NAMES = RANK_LIST;
 
 /** Puts admin rank changes into effect in this process (server) or page (browser). */
 export function applyRankOverrides(overrides: readonly RankOverride[]) {
   const next = buildRanks(overrides);
   rankStore.ranks.splice(0, rankStore.ranks.length, ...next);
   rankStore.names.splice(0, rankStore.names.length, ...next.map((r) => r.name));
-  if (rankStore.ftp) rankStore.ftp.splice(0, rankStore.ftp.length, ...ftpEligibleRanks());
 }
 
 export const SECTION_HINTS: Record<string, string[]> = {
@@ -117,10 +115,6 @@ export const SECTION_HINTS: Record<string, string[]> = {
  * member's rank to anything else takes them off it with nothing to clean up.
  */
 export const TRAINEE_RANKS: string[] = ["Medical Intern"];
-
-export function isTraineeRank(rank: string | null | undefined): boolean {
-  return !!rank && TRAINEE_RANKS.includes(rank);
-}
 
 export const ACTIVITY_STATUSES = ["Active", "Reserve", "LOA"] as const;
 
@@ -297,12 +291,6 @@ export function isRankAtLeast(rank: string | null | undefined, minRank: string):
 /** Minimum roster rank permitted to apply for the Field Training Program. */
 export const FTP_MIN_RANK = "Paramedic";
 
-function ftpEligibleRanks(): string[] {
-  return RANKS.filter((r) => r.weight >= getRankWeight(FTP_MIN_RANK)).map((r) => r.name);
-}
-
-/** Ranks that meet FTP_MIN_RANK, highest first — for explaining the rule in the UI. */
-export const FTP_ELIGIBLE_RANKS: string[] = (rankStore.ftp ??= ftpEligibleRanks());
 
 /**
  * Department permissions, and the older permission each one still accepts.
@@ -346,7 +334,7 @@ export const SHIFT_SECTION_PERMISSIONS: string[] = [
  * name and State ID: every medic can log calls and see their own, but reading
  * the whole log is a supervisor's view.
  */
-export const CALL_PERMISSIONS = {
+const CALL_PERMISSIONS = {
   create: ["calls.create"],
   view: ["calls.view"],
   manage: ["calls.manage"],
@@ -387,7 +375,7 @@ export const EXPORT_SECTION_PERMISSIONS: string[] = [
  * candidate without ever being able to edit the roster by hand, and the roster
  * rank change on a pass is made by the finalize route on the panel's behalf.
  */
-export const INTERVIEW_PERMISSIONS = {
+const INTERVIEW_PERMISSIONS = {
   view: ["interviews.view"],
   create: ["interviews.create"],
   score: ["interviews.score"],
@@ -413,27 +401,6 @@ export const INTERVIEW_SECTION_PERMISSIONS: string[] = [
   ...INTERVIEW_PERMISSIONS.manage,
   ...INTERVIEW_PERMISSIONS.review,
 ];
-
-export function canSeeRosterPages(permissions: string[]): boolean {
-  return permissions.includes("roster.view");
-}
-
-export function canSeeHRPages(permissions: string[]): boolean {
-  return (
-    permissions.includes("hr.view") ||
-    permissions.includes("hr.loa") ||
-    permissions.includes("hr.inactivity") ||
-    permissions.includes("hr.inactivity.approve")
-  );
-}
-
-export function canSeeTrainingPages(permissions: string[]): boolean {
-  return (
-    permissions.includes("training.view") ||
-    permissions.includes("training.manage") ||
-    permissions.includes("training.signoff.manage")
-  );
-}
 
 /**
  * Discord announcements. `view` reads the schedule and history; `manage`

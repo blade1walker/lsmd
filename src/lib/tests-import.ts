@@ -125,7 +125,7 @@ function matchOptions(answer: string, options: { id: string; text: string }[]): 
  * questions. Rows without a question are skipped; the type is guessed from
  * the options and answer when no Type column says.
  */
-export function rowsToQuestions(rows: Record<string, unknown>[]): ImportResult {
+function rowsToQuestions(rows: Record<string, unknown>[]): ImportResult {
   const questions: TestQuestion[] = [];
   const warnings: string[] = [];
   if (rows.length === 0) return { questions, warnings: ["The file has no rows."] };
@@ -217,7 +217,7 @@ export function rowsToQuestions(rows: Record<string, unknown>[]): ImportResult {
  * Items in the site's own shape keep everything; anything else is read like
  * spreadsheet rows, so { "question": "…", "options": [...], "answer": "…" } works too.
  */
-export function parseJsonQuestions(text: string): ImportResult {
+function parseJsonQuestions(text: string): ImportResult {
   let data: unknown;
   try {
     data = JSON.parse(text);
@@ -237,10 +237,10 @@ export function parseJsonQuestions(text: string): ImportResult {
   return { questions: [...fromNative, ...fromLoose.questions], warnings: fromLoose.warnings };
 }
 
-export const EXPORT_COLUMNS = ["Question", "Type", "Options", "Answer", "Points", "Required", "Details", "Explanation", "Partial credit"] as const;
+const EXPORT_COLUMNS = ["Question", "Type", "Options", "Answer", "Points", "Required", "Details", "Explanation", "Partial credit"] as const;
 
 /** One row per question, in the layout rowsToQuestions reads back. */
-export function questionsToRows(questions: TestQuestion[]): Record<(typeof EXPORT_COLUMNS)[number], string | number>[] {
+function questionsToRows(questions: TestQuestion[]): Record<(typeof EXPORT_COLUMNS)[number], string | number>[] {
   return questions.map((q) => ({
     Question: q.prompt,
     Type: QUESTION_TYPE_LABELS[q.type],

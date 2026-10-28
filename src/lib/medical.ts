@@ -185,11 +185,6 @@ export function normalizeFormStatus(raw: unknown): FormStatus {
   return (FORM_STATUSES as readonly string[]).includes(value) ? (value as FormStatus) : "Draft";
 }
 
-export function normalizeDocumentStatus(raw: unknown): DocumentStatus {
-  const value = String(raw ?? "").trim();
-  return (DOCUMENT_STATUSES as readonly string[]).includes(value) ? (value as DocumentStatus) : "Draft";
-}
-
 /**
  * Parses a stored fields array back into FormField[], dropping anything
  * malformed rather than throwing. A form definition read from Json is
@@ -247,7 +242,7 @@ function asText(value: unknown): string {
  * the whole set (see visibleFields), which terminates even if someone builds
  * a cycle.
  */
-export function conditionMet(condition: FieldCondition | undefined, answers: Answers): boolean {
+function conditionMet(condition: FieldCondition | undefined, answers: Answers): boolean {
   if (!condition?.field) return true;
   const actual = answers[condition.field];
   const actualText = asText(actual).toLowerCase();

@@ -65,7 +65,7 @@ export async function lookupDiscordUser(discordId: string): Promise<DiscordUserS
  * The DM channel for a user, opening it if this is the first contact. Cached
  * on the thread, since opening costs a round trip and the id never changes.
  */
-export async function resolveDmChannel(
+async function resolveDmChannel(
   discordId: string,
   token: string
 ): Promise<{ channelId: string } | { error: string }> {

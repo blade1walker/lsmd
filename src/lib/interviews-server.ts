@@ -162,7 +162,7 @@ function parseJsonObject<T>(value: unknown, fallback: T): T {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as T) : fallback;
 }
 
-export function toDetail(
+function toDetail(
   interview: InterviewWithPanel,
   candidate: CandidateSnapshot | null,
   attempts: InterviewDetail["attempts"],
@@ -232,7 +232,7 @@ export function toDetail(
  * settled it. Letting a second session open beside a held one would let two
  * results race to promote the same person.
  */
-export const OPEN_INTERVIEW = {
+const OPEN_INTERVIEW = {
   OR: [{ status: "Ongoing" }, { status: "Finalized", result: "Review Required" }],
 } satisfies Prisma.PromotionInterviewWhereInput;
 
@@ -292,7 +292,7 @@ export async function candidateSnapshot(
   return buildSnapshot(member, now, cooldown?.cooldownUntil ?? null, open?.sessionId ?? null);
 }
 
-export function buildSnapshot(
+function buildSnapshot(
   member: CandidateRow,
   now: Date,
   cooldownUntil: Date | null,
@@ -321,7 +321,6 @@ export function buildSnapshot(
 }
 
 /** The select used by the candidate list, so the picker and the checker read the same fields. */
-export { CANDIDATE_SELECT };
 
 /**
  * Every roster member as a candidate, in three queries rather than two per
@@ -392,7 +391,7 @@ export type { EligibilityWaiver };
  * merged into the current one — a re-interview must not overwrite the attempt
  * it follows.
  */
-export async function attemptsFor(memberId: string | null, excludeId: string): Promise<InterviewDetail["attempts"]> {
+async function attemptsFor(memberId: string | null, excludeId: string): Promise<InterviewDetail["attempts"]> {
   if (!memberId) return [];
   const rows = await prisma.promotionInterview.findMany({
     where: { memberId, id: { not: excludeId } },
@@ -485,15 +484,6 @@ export function mayFinalize(access: Access, interview: { status: string; panel: 
   if (hasPermission(access, "interviews.manage")) return true;
   const seat = seatFor(access, interview);
   return seat?.role === "Lead Interviewer" && hasPermission(access, "interviews.finalize");
-}
-
-/**
- * Who may settle a held result or resend a failed announcement: holders of
- * interviews.review. Deliberately not the Lead — "Review Required" is the
- * panel handing the decision upward, so the panel cannot take it back.
- */
-export function mayReview(access: Access): boolean {
-  return hasPermission(access, "interviews.review");
 }
 
 /** Whether the panel is at capacity, so the error is a readable 400 rather than a silent truncation. */

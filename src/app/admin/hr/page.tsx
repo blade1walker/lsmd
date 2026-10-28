@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check, X, Clock, CheckCircle, XCircle } from "lucide-react";
+import { Check, X, Clock, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ErrorState } from "@/components/ui/error-state";

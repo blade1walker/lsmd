@@ -115,7 +115,7 @@ function identifierList(value: unknown): string[] {
  * every source's field names (id / serverId, ems / isEms, duty / onDuty), so
  * the same parser serves all three.
  */
-export function parsePlayer(value: unknown): RawPlayer | null {
+function parsePlayer(value: unknown): RawPlayer | null {
   if (!value || typeof value !== "object") return null;
   const p = value as Record<string, unknown>;
   const serverId = int(p.serverId ?? p.id);

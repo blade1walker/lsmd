@@ -7,7 +7,7 @@ import AddMemberDialog from "@/components/AddMemberDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Download } from "lucide-react";
-import { RANK_NAMES, SECTION_HINTS, ACTIVITY_STATUSES } from "@/lib/constants";
+import { RANK_LIST, ACTIVITY_STATUSES } from "@/lib/constants";
 import { departmentTag } from "@/lib/departments";
 import { groupByRank } from "@/lib/roster-shared";
 import { DepartmentMarkLegend } from "@/components/DepartmentMark";
@@ -107,20 +107,20 @@ export default function AdminRosterPage() {
   const handlePromote = async (id: string) => {
     const member = sections.flatMap((s) => s.members).find((m) => m.id === id);
     if (!member) return;
-    const idx = RANK_NAMES.indexOf(member.rank as typeof RANK_NAMES[number]);
-    if (idx < RANK_NAMES.length - 1) {
-      await handleUpdate(id, { rank: RANK_NAMES[idx + 1], lastPromotion: new Date().toISOString() });
-      toast.success(`Promoted to ${RANK_NAMES[idx + 1]}`);
+    const idx = RANK_LIST.indexOf(member.rank as typeof RANK_LIST[number]);
+    if (idx < RANK_LIST.length - 1) {
+      await handleUpdate(id, { rank: RANK_LIST[idx + 1], lastPromotion: new Date().toISOString() });
+      toast.success(`Promoted to ${RANK_LIST[idx + 1]}`);
     }
   };
 
   const handleDemote = async (id: string) => {
     const member = sections.flatMap((s) => s.members).find((m) => m.id === id);
     if (!member) return;
-    const idx = RANK_NAMES.indexOf(member.rank as typeof RANK_NAMES[number]);
+    const idx = RANK_LIST.indexOf(member.rank as typeof RANK_LIST[number]);
     if (idx > 0) {
-      await handleUpdate(id, { rank: RANK_NAMES[idx - 1], lastPromotion: new Date().toISOString() });
-      toast.success(`Demoted to ${RANK_NAMES[idx - 1]}`);
+      await handleUpdate(id, { rank: RANK_LIST[idx - 1], lastPromotion: new Date().toISOString() });
+      toast.success(`Demoted to ${RANK_LIST[idx - 1]}`);
     }
   };
 
@@ -191,7 +191,7 @@ export default function AdminRosterPage() {
             className="h-9 rounded-md border border-[#1e1e1e] bg-[#111111] px-3 text-sm text-white"
           >
             <option value="">All ranks</option>
-            {RANK_NAMES.map((r) => (
+            {RANK_LIST.map((r) => (
               <option key={r} value={r}>{r}</option>
             ))}
           </select>

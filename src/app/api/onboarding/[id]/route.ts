@@ -57,7 +57,7 @@ export async function PATCH(
       const callSign = await getNextCallSign();
       const memberCount = await prisma.member.count();
 
-      const member = await prisma.member.create({
+      await prisma.member.create({
         data: {
           name: request.name,
           rank: assignedRank,

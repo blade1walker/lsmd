@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Oswald, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { Providers } from "@/components/Providers";
 
 const inter = Inter({
@@ -70,9 +69,7 @@ export default function RootLayout({
           }}
         />
         <Providers>
-          <TooltipProvider>
-            {children}
-          </TooltipProvider>
+          {children}
           <Toaster />
         </Providers>
       </body>

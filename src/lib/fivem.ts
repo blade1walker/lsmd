@@ -17,7 +17,7 @@
  */
 
 /** FXServer's default port, used when an address is given without one. */
-export const DEFAULT_FIVEM_PORT = 30120;
+const DEFAULT_FIVEM_PORT = 30120;
 
 /** The resource is expected every minute; three missed beats and it is treated as gone. */
 export const HEARTBEAT_STALE_MS = 3 * 60_000;

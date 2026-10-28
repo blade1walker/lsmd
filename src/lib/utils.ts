@@ -16,25 +16,7 @@ export function formatDuration(seconds: number): string {
   return parts.join(" ");
 }
 
-export function formatDate(date: Date | string): string {
-  return new Date(date).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
-
 /** "John Doe (911)", or just the name when no call sign is set yet. */
 export function memberDisplayLabel(member: { name: string; callSign?: string | null }): string {
   return member.callSign ? `${member.name} (${member.callSign})` : member.name;
-}
-
-export function formatDateTime(date: Date | string): string {
-  return new Date(date).toLocaleString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 }

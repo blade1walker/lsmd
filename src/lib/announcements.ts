@@ -16,7 +16,7 @@ export type Repeat = (typeof REPEATS)[number];
 const REPEAT_MS: Record<Repeat, number> = { none: 0, daily: 86_400_000, weekly: 7 * 86_400_000 };
 
 /** A claim older than this is treated as a bot that died mid-send, and is re-offered. */
-export const STALE_CLAIM_MS = 5 * 60_000;
+const STALE_CLAIM_MS = 5 * 60_000;
 
 /** Embed limits: Discord rejects the whole post past these. */
 const MAX_TITLE = 256;

@@ -35,7 +35,7 @@ export const QUESTION_TYPE_HINTS: Record<QuestionType, string> = {
 /** Types answered by picking from `options`. */
 export const CHOICE_TYPES: QuestionType[] = ["single", "multiple", "truefalse", "dropdown"];
 
-export function isQuestionType(value: unknown): value is QuestionType {
+function isQuestionType(value: unknown): value is QuestionType {
   return typeof value === "string" && (QUESTION_TYPES as readonly string[]).includes(value);
 }
 
@@ -49,7 +49,7 @@ export const STATUS_STYLES: Record<string, string> = {
 };
 
 export const MAX_QUESTIONS = 200;
-export const MAX_ANSWER_LENGTH = 10_000;
+const MAX_ANSWER_LENGTH = 10_000;
 /** Seconds past the time limit a submission is still accepted, for a slow connection. */
 export const TIME_LIMIT_GRACE_SECONDS = 60;
 
@@ -506,24 +506,6 @@ export interface TestSettings {
   examMode: boolean;
   maxTabSwitches: number;
 }
-
-export const DEFAULT_SETTINGS: TestSettings = {
-  title: "",
-  description: null,
-  instructions: null,
-  status: "Draft",
-  passingScore: 70,
-  timeLimitMinutes: null,
-  maxAttempts: 1,
-  shuffleQuestions: false,
-  shuffleOptions: false,
-  showResults: true,
-  showCorrectAnswers: false,
-  showOnHomepage: false,
-  minRank: null,
-  examMode: true,
-  maxTabSwitches: 1,
-};
 
 /**
  * Whether someone may take a test with this rank requirement. A super admin

@@ -63,7 +63,7 @@ export type RoleResolution =
  * created there. `verify` re-checks a saved id against the server's roles,
  * which the full sync does and a single change does not.
  */
-export async function resolveLoaRole(settings: LoaSettings, verify = false): Promise<RoleResolution> {
+async function resolveLoaRole(settings: LoaSettings, verify = false): Promise<RoleResolution> {
   const guildId = loaGuildId(settings);
   if (!guildId) {
     return { ok: false, error: "No Discord server is set — set DISCORD_GUILD_ID, or enter the server ID on Admin → LOA" };
@@ -142,13 +142,6 @@ export async function setLoaRole(discordId: string | null | undefined, onLeave: 
     console.error("EMS LOA role change failed:", error);
     return { ok: false, error: "The role change failed unexpectedly" };
   }
-}
-
-/** Brings one member's role in line with their roster status. */
-export async function syncMemberLoaRole(memberId: string): Promise<RoleChange> {
-  const member = await prisma.member.findUnique({ where: { id: memberId }, select: { discordId: true, activity: true } });
-  if (!member) return { ok: true, skipped: "no-discord" };
-  return setLoaRole(member.discordId, member.activity === "LOA");
 }
 
 export interface LoaRoleSyncSummary {

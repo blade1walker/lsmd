@@ -15,7 +15,6 @@ import {
   Activity,
   Calendar,
   TrendingUp,
-  Clock,
   FileText,
   ClipboardCheck,
 } from "lucide-react";

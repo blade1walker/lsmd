@@ -301,8 +301,6 @@ export const DATASETS: DatasetDefinition[] = [
   },
 ];
 
-export const DATASET_KEYS = DATASETS.map((d) => d.key);
-
 /** Column order follows first appearance across the rows, so `id` stays first. */
 function columnsOf(rows: Record<string, unknown>[]): string[] {
   const seen: string[] = [];

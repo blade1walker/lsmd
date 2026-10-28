@@ -25,12 +25,12 @@ const TYPES = {
 
 export type ImageExt = keyof typeof TYPES;
 
-export function dataDir(): string {
+function dataDir(): string {
   // Runtime data, not part of the build: kept out of Turbopack's file tracing.
   return path.resolve(/* turbopackIgnore: true */ process.env.DATA_DIR?.trim() || path.join(process.cwd(), "data"));
 }
 
-export function uploadsDir(): string {
+function uploadsDir(): string {
   return path.join(dataDir(), "uploads");
 }
 
@@ -43,10 +43,6 @@ export function sniffImage(bytes: Uint8Array): ImageExt | null {
   if (bytes.length >= 6 && (ascii(0, 6) === "GIF87a" || ascii(0, 6) === "GIF89a")) return "gif";
   if (bytes.length >= 12 && ascii(0, 4) === "RIFF" && ascii(8, 12) === "WEBP") return "webp";
   return null;
-}
-
-export function mimeTypeOf(ext: ImageExt): string {
-  return TYPES[ext];
 }
 
 /** Stored names are a content hash and an extension — nothing a request can use to leave the folder. */

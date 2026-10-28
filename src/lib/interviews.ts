@@ -162,7 +162,7 @@ export function awaitingReview(interview: { status: string; result: string }): b
  * The rank directly above this one, by weight, or null at the top. What the
  * readiness board measures each member against.
  */
-export function nextRank(rank: string): string | null {
+function nextRank(rank: string): string | null {
   const weight = getRankWeight(rank);
   const above = RANKS.filter((r) => r.weight > weight).sort((a, b) => a.weight - b.weight);
   return above[0]?.name ?? null;
@@ -293,7 +293,7 @@ export interface EligibilityVerdict {
 }
 
 /** Requirements that can never be waived — waiving one would let the system contradict itself. */
-export const UNWAIVABLE_CHECKS: string[] = ["Target rank", "Open interview"];
+const UNWAIVABLE_CHECKS: string[] = ["Target rank", "Open interview"];
 
 export function isWaivable(label: string): boolean {
   return !UNWAIVABLE_CHECKS.includes(label);
@@ -570,7 +570,7 @@ function text(value: unknown, max: number): string | null {
 }
 
 /** A 0-100 integer, or null when the box is empty. Anything else is rejected, not clamped. */
-export function parseScore(value: unknown): { score: number | null } | { error: string } {
+function parseScore(value: unknown): { score: number | null } | { error: string } {
   if (value === null || value === undefined || value === "") return { score: null };
   const n = typeof value === "number" ? value : Number(value);
   if (!Number.isFinite(n) || !Number.isInteger(n)) return { error: "Scores must be whole numbers" };
@@ -629,7 +629,7 @@ export function parseEvaluationInput(body: unknown): { data: EvaluationInput } |
   };
 }
 
-export const MAX_LOCATION_LENGTH = 120;
+const MAX_LOCATION_LENGTH = 120;
 
 /**
  * When and where the panel sits. An empty value clears it; a value that is
@@ -868,8 +868,7 @@ export function parseWaivers(value: unknown): EligibilityWaiver[] {
  * - Blocked: something time will not fix — training, a department, roster status.
  * - In Progress: an interview is already open or awaiting review.
  */
-export const READINESS_STATUSES = ["Eligible", "Upcoming", "Blocked", "In Progress"] as const;
-export type ReadinessStatus = (typeof READINESS_STATUSES)[number];
+export type ReadinessStatus = "Eligible" | "Upcoming" | "Blocked" | "In Progress";
 
 export interface ReadinessEntry {
   candidate: CandidateSnapshot;
