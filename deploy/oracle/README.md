@@ -18,6 +18,17 @@ about 2 minutes instead of on Vercel.
 
 ## 1. Create the VM
 
+**Quickest:** open **Cloud Shell** (the `>_` icon in the Oracle console) and run
+`create-vm.sh` with your SSH public key. It creates the network with ports
+22/80/443 open, retries every minute while Ampere is "Out of capacity", and
+prints the VM's public IP — then skip to step 2:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/blade1walker/lsmd/main/deploy/oracle/create-vm.sh | bash -s -- "ssh-ed25519 AAAA... you"
+```
+
+Or by hand:
+
 1. Sign up at <https://www.oracle.com/cloud/free/>. A card is needed for identity checks; Always Free resources are never charged.
 2. **Compute → Instances → Create instance**:
    - **Image:** Canonical Ubuntu 24.04.
