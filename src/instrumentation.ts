@@ -4,4 +4,9 @@ export async function register() {
   // Rank order and insignia set in Admin → Ranks, so the first page already uses them.
   const { loadRankSettings } = await import("./lib/rank-settings");
   await loadRankSettings({ force: true });
+
+  // Open database connections and fill the roster cache in the background, so
+  // the first visitor after a restart is not the one who waits for them.
+  const { warmRosterCaches } = await import("./lib/roster");
+  warmRosterCaches().catch((error) => console.error("Cache warm-up failed:", error));
 }

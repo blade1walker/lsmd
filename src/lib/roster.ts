@@ -127,6 +127,31 @@ const clockTotals = () =>
     prisma.clockEntry.groupBy({ by: ["memberId"], _sum: { durationSec: true } })
   );
 
+const homeCounts = () =>
+  cached("home:counts", ROSTER_CACHE_MS, () =>
+    Promise.all([
+      prisma.member.count({ where: { sectionId: { not: null } } }),
+      prisma.departmentTemplate.count(),
+      prisma.clockEntry.groupBy({ by: ["memberId"], where: { clockOutAt: null } }),
+    ])
+  );
+
+/**
+ * Fills the shared roster and homepage reads, so the first visitor after a
+ * restart does not wait for them. Called at server start (src/instrumentation.ts).
+ */
+export async function warmRosterCaches() {
+  await Promise.all([
+    rosterSections(false),
+    rosterSections(true),
+    rosterDepartments(),
+    rosterBanner(),
+    openClockEntries(),
+    clockTotals(),
+    homeCounts(),
+  ]);
+}
+
 export async function getRosterPageData(): Promise<RosterPageData> {
   const shared = Promise.all([rosterDepartments(), rosterBanner(), openClockEntries()]);
   const viewer = await resolveViewer();
@@ -253,13 +278,7 @@ export async function getHomeSummary(): Promise<HomeSummary | null> {
   try {
     const [viewer, [personnel, departments, onDuty], banner] = await Promise.all([
       resolveViewer(),
-      cached("home:counts", ROSTER_CACHE_MS, () =>
-        Promise.all([
-          prisma.member.count({ where: { sectionId: { not: null } } }),
-          prisma.departmentTemplate.count(),
-          prisma.clockEntry.groupBy({ by: ["memberId"], where: { clockOutAt: null } }),
-        ])
-      ),
+      homeCounts(),
       rosterBanner(),
     ]);
 

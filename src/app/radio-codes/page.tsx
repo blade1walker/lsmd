@@ -1,13 +1,11 @@
-import { prisma } from "@/lib/prisma";
+import { getRadioCodes } from "@/lib/radio-codes-data";
 import { RadioCodesPageClient } from "./RadioCodesPageClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function RadioCodesPage() {
   try {
-    const codes = await prisma.radioCode.findMany({
-      orderBy: { order: "asc" },
-    });
+    const codes = await getRadioCodes();
     return <RadioCodesPageClient codes={codes as any} />;
   } catch {
     return (
