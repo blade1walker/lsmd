@@ -23,6 +23,7 @@ export default function LOARequestPage() {
   const [endDate, setEndDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [fetching, setFetching] = useState(true);
 
   useEffect(() => {
@@ -47,6 +48,7 @@ export default function LOARequestPage() {
   const handleSubmit = async () => {
     if (!selected || !reason || !startDate || !endDate) return;
     setLoading(true);
+    setSubmitError(null);
     try {
       const res = await fetch("/api/loa/apply", {
         method: "POST",
@@ -61,9 +63,17 @@ export default function LOARequestPage() {
       });
       if (res.ok) {
         setSubmitted(true);
+      } else {
+        const data = await res.json().catch(() => null);
+        setSubmitError(
+          res.status === 401
+            ? "Sign in with Discord first to request leave."
+            : data?.error ?? "The request could not be sent. Try again."
+        );
       }
     } catch (err) {
       console.error(err);
+      setSubmitError("The request could not be sent. Check your connection and try again.");
     }
     setLoading(false);
   };
@@ -197,6 +207,11 @@ export default function LOARequestPage() {
                   />
                 </div>
               </div>
+              {submitError && (
+                <p className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+                  {submitError}
+                </p>
+              )}
               <div className="flex gap-3 pt-4">
                 <Button
                   variant="outline"
