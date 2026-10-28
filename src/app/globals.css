@@ -66,3 +66,37 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #555560;
 }
+
+/* Enter animations. --fade-up-y sets where a fade-up starts (20px below by default). */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(var(--fade-up-y, 20px));
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+}
+.animate-fade-up {
+  animation: fade-up 0.35s ease-out both;
+}
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out both;
+}
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up,
+  .animate-fade-in,
+  .animate-slide-in-right {
+    animation: none;
+  }
+}

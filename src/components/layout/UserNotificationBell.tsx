@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { Bell } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 
 export function UserNotificationBell() {
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -35,13 +34,9 @@ export function UserNotificationBell() {
         )}
       </button>
 
-      <AnimatePresence>
         {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="absolute right-0 top-full mt-2 w-80 bg-[#111111] border border-[#1e1e1e] rounded-xl shadow-xl overflow-hidden z-50"
+          <div
+            className="absolute right-0 top-full mt-2 w-80 bg-[#111111] border border-[#1e1e1e] rounded-xl shadow-xl overflow-hidden z-50 animate-fade-up [--fade-up-y:-10px]"
           >
             <div className="p-4 border-b border-[#1e1e1e] flex items-center justify-between">
               <h3 className="font-semibold text-white text-sm">Notifications</h3>
@@ -80,9 +75,8 @@ export function UserNotificationBell() {
                 ))
               )}
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

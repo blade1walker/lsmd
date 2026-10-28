@@ -6,7 +6,6 @@ import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { fetchJson, errorMessage } from "@/lib/fetch-json";
-import { motion } from "framer-motion";
 import {
   ArrowLeft,
   User,
@@ -147,10 +146,8 @@ export default function MemberProfilePage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Member Info Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-[#111118] border border-[#1e1e28] rounded-xl p-6"
+        <div
+          className="bg-[#111118] border border-[#1e1e28] rounded-xl p-6 animate-fade-up"
         >
           <div className="flex items-center gap-4 mb-6">
             <div className="w-14 h-14 rounded-full bg-gradient-to-br from-red-600/80 to-red-600/40 flex items-center justify-center text-[#0a0a0a] font-bold text-lg">
@@ -185,14 +182,12 @@ export default function MemberProfilePage() {
               />
             )}
           </div>
-        </motion.div>
+        </div>
 
         {/* Training Record */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
-          className="bg-[#111118] border border-[#1e1e28] rounded-xl p-6 lg:col-span-2"
+        <div
+          style={{ animationDelay: "0.05s" }}
+          className="bg-[#111118] border border-[#1e1e28] rounded-xl p-6 lg:col-span-2 animate-fade-up"
         >
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-[family-name:var(--font-oswald)] text-lg font-bold text-white uppercase">
@@ -274,16 +269,14 @@ export default function MemberProfilePage() {
               );
             })}
           </div>
-        </motion.div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Clock History */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-[#111118] border border-[#1e1e28] rounded-xl p-6"
+        <div
+          style={{ animationDelay: "0.1s" }}
+          className="bg-[#111118] border border-[#1e1e28] rounded-xl p-6 animate-fade-up"
         >
           <h2 className="font-[family-name:var(--font-oswald)] text-lg font-bold text-white uppercase mb-4">
             Clock History
@@ -323,14 +316,12 @@ export default function MemberProfilePage() {
               ))}
             </div>
           )}
-        </motion.div>
+        </div>
 
         {/* LOA History */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className="bg-[#111118] border border-[#1e1e28] rounded-xl p-6"
+        <div
+          style={{ animationDelay: "0.15s" }}
+          className="bg-[#111118] border border-[#1e1e28] rounded-xl p-6 animate-fade-up"
         >
           <h2 className="font-[family-name:var(--font-oswald)] text-lg font-bold text-white uppercase mb-4">
             LOA History
@@ -370,7 +361,7 @@ export default function MemberProfilePage() {
               ))}
             </div>
           )}
-        </motion.div>
+        </div>
       </div>
 
     </div>

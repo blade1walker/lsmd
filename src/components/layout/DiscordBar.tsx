@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import { BrandLogo, useSiteContent } from "./SiteContentProvider";
 
 const NAV = [
@@ -69,13 +68,9 @@ export function DiscordBar() {
           </button>
         </div>
 
-        <AnimatePresence>
           {mobileOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="md:hidden pb-4 border-t border-[#1e1e1e] mt-2 pt-4"
+            <div
+              className="md:hidden pb-4 border-t border-[#1e1e1e] mt-2 pt-4 animate-fade-up [--fade-up-y:-10px]"
             >
               <div className="flex flex-col gap-2">
                 {NAV.map((item) => (
@@ -96,9 +91,8 @@ export function DiscordBar() {
                   EMS Staff Login
                 </Link>
               </div>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
       </div>
     </header>
   );

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { motion } from "framer-motion";
 import { X } from "lucide-react";
 import RankInsignia from "@/components/roster/RankInsignia";
 import ActivityPill from "@/components/roster/ActivityPill";
@@ -58,19 +57,14 @@ export function MemberDrawer({
     .slice(0, 3);
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+    <div
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm animate-fade-in"
       onClick={onClose}
     >
-      <motion.aside
-        initial={{ x: "100%" }}
-        animate={{ x: 0 }}
-        transition={{ type: "spring", damping: 26, stiffness: 220 }}
+      <aside
         role="dialog"
         aria-label={`${member.name} details`}
-        className="absolute right-0 top-0 h-full w-full max-w-md overflow-y-auto border-l border-[#1c1c24] bg-[#0e0e14]"
+        className="absolute right-0 top-0 h-full w-full max-w-md overflow-y-auto border-l border-[#1c1c24] bg-[#0e0e14] animate-slide-in-right"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6">
@@ -171,7 +165,7 @@ export function MemberDrawer({
             </>
           )}
         </div>
-      </motion.aside>
-    </motion.div>
+      </aside>
+    </div>
   );
 }

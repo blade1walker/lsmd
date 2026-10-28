@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { motion } from "framer-motion";
 import { RotateCcw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -105,14 +104,12 @@ export default function AdminRestorePage() {
             const isExpired = expiresAt < new Date();
 
             return (
-              <motion.div
+              <div
                 key={log.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
+                style={{ animationDelay: `${index * 0.05}s` }}
                 className={`bg-[#111111] border border-[#1e1e1e] rounded-xl p-4 flex items-center gap-4 ${
                   isExpired ? "opacity-50" : ""
-                }`}
+                } animate-fade-up [--fade-up-y:10px]`}
               >
                 <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center">
                   <Trash2 className="w-5 h-5 text-red-400" />
@@ -157,7 +154,7 @@ export default function AdminRestorePage() {
                     Dismiss
                   </Button>
                 </div>
-              </motion.div>
+              </div>
             );
           })}
         </div>

@@ -4,7 +4,6 @@ import { signIn } from "next-auth/react";
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { motion } from "framer-motion";
 
 const ERROR_MESSAGES: Record<string, string> = {
   NotInRoster:
@@ -41,10 +40,8 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md"
+      <div
+        className="w-full max-w-md animate-fade-up"
       >
         <div className="text-center mb-8">
           <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-[#dc2626] to-[#b91c1c] flex items-center justify-center mx-auto mb-4">
@@ -85,7 +82,7 @@ export default function AdminLoginPage() {
             Back to Website
           </Link>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }

@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { CheckCircle, XCircle, Loader2, Upload, Eye, Trash2, Plus, Pencil, Send, X, ClipboardList, Search } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { RANK_LIST } from "@/lib/constants";
-import * as XLSX from "xlsx";
 
 interface RecruitRequest {
   id: string;
@@ -105,7 +104,7 @@ export default function AdminRecruitPage() {
 
     setImporting(true);
     try {
-      const data = await file.arrayBuffer();
+      const [data, XLSX] = await Promise.all([file.arrayBuffer(), import("xlsx")]);
       const workbook = XLSX.read(data);
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData = XLSX.utils.sheet_to_json(sheet) as any[];
