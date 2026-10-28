@@ -41,8 +41,8 @@ load_env() {
   . "$APP/.env"
   set +a
   export NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
-  # No IPv6 route on the VM; Neon's IPv6 addresses would time out.
-  export NODE_OPTIONS="--dns-result-order=ipv4first"
+  # No IPv6 route on the VM; Neon's IPv6 addresses would time out (see lsmd.service).
+  export NODE_OPTIONS="--dns-result-order=ipv4first --no-network-family-autoselection"
 }
 
 if [ -z "${LOCAL_BUILD:-}" ]; then
