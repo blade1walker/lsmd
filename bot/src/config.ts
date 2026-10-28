@@ -22,23 +22,19 @@ function cleanToken(raw: string) {
 
 const token = cleanToken(read("DISCORD_TOKEN"));
 if (!token) {
-  // The upload zip leaves .env out (it holds the token), so clearing the
-  // folder before unzipping an update deletes it. Say which case this is.
   const envPath = join(process.cwd(), ".env");
   const where = existsSync(envPath)
     ? `  ${envPath} exists, but DISCORD_TOKEN in it is empty.`
-    : `  There is no .env file in ${process.cwd()} — it is not in the upload zip, so an update that replaced the folder removed it.`;
+    : `  There is no .env file in ${process.cwd()}, and DISCORD_TOKEN is not in the environment.`;
   console.error(
     [
       "",
       "  Nexus EMS Bot cannot start: DISCORD_TOKEN is not set.",
       where,
       "",
-      "  1. Copy .env.example to .env (in the same folder as package.json).",
-      "  2. Paste your bot token after DISCORD_TOKEN=",
-      "     (Developer Portal → your application → Bot → Reset Token).",
-      "  On a hosting panel, set DISCORD_TOKEN in the panel's environment/startup variables instead.",
-      "  Updating later: unzip over the old files without deleting .env.",
+      "  On the Oracle VM: sudo -u lsmd nano /opt/lsmd/bot.env, then sudo systemctl restart lsmd-bot.",
+      "  Elsewhere: copy .env.example to .env (next to package.json) and paste the token after DISCORD_TOKEN=",
+      "  (Developer Portal → your application → Bot → Reset Token).",
       "",
     ].join("\n")
   );

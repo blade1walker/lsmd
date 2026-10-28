@@ -35,6 +35,9 @@ git -C "$REPO" fetch -q origin main
 git -C "$REPO" reset -q --hard origin/main
 CURRENT=$(readlink -f "$APP/current" 2>/dev/null || true)
 
+# The Discord bot follows main on its own schedule and never holds up the site.
+bash "$REPO/deploy/oracle/deploy-bot.sh" || echo "Bot update failed — the running bot is unchanged."
+
 # Files the site writes at runtime (Boss Menu uploads) live in $APP/data, outside
 # the release folders, so deploys and release clean-up never touch them; each
 # release links ./data there.

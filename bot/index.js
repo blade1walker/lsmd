@@ -1,8 +1,9 @@
 // Nexus EMS Bot — entry point.
 //
-// Hosting panels usually run `node index.js` straight away, sometimes without
-// running the build first, so this builds the TypeScript source when there is
-// no compiled copy yet (or the source is newer), then starts the bot.
+// Builds the TypeScript source when there is no compiled copy yet (or the
+// source is newer), then starts the bot — so `npm start` works straight after
+// `npm install`. On the Oracle VM the build is made in advance
+// (deploy/oracle/deploy-bot.sh) and this only starts it.
 import { existsSync, readdirSync, statSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { dirname, join } from "node:path";
@@ -31,7 +32,7 @@ if (!existsSync(join(here, "node_modules", "discord.js"))) {
 }
 
 if (stale && !canBuild && existsSync(entry)) {
-  // A host install without the compiler — the upload zip ships the bot pre-built.
+  // An install without the compiler (production dependencies only) runs the built copy.
   console.warn("[start] src/ looks newer than dist/, but TypeScript is not installed here — running the built copy.");
 } else if (stale) {
   if (!canBuild) {
@@ -48,6 +49,6 @@ if (stale && !canBuild && existsSync(entry)) {
 }
 
 // dotenv reads .env from the working directory; start from the bot's folder
-// so it is found even when a panel launches us from somewhere else.
+// so it is found even when started from somewhere else.
 process.chdir(here);
 await import("./dist/index.js");

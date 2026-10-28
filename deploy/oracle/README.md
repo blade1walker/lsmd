@@ -12,6 +12,7 @@ What runs on the VM:
 | **lsmd.service** | The website (`next start`), only reachable through Caddy |
 | **lsmd-update.timer** | Every 2 minutes: if `main` has new commits, builds them and switches over. The old version keeps serving during the build, and a release that fails to start is rolled back |
 | **lsmd-loa-expiry.timer** | 08:00 UTC daily: the LOA expiry job that `vercel.json` used to schedule |
+| **lsmd-bot.service** | The Discord bot (`bot/`), rebuilt by the update job whenever `bot/` changes on `main`. Switched on once its token is in `/opt/lsmd/bot.env` — see [`bot/README.md`](../../bot/README.md#hosting) |
 
 Pushing to `main` still deploys the site — it just lands on the VM within
 about 2 minutes instead of on Vercel.
@@ -86,12 +87,13 @@ The first run installs everything and stops to ask for the settings:
 | Change a setting | `sudo -u lsmd nano /opt/lsmd/.env`, then `sudo -u lsmd FORCE=1 bash /opt/lsmd/repo/deploy/oracle/deploy.sh` (settings are read at build time too) |
 | Roll back | `ls -dt /opt/lsmd/releases/*` → `sudo ln -sfn /opt/lsmd/releases/<older> /opt/lsmd/current && sudo systemctl restart lsmd` |
 | Run the LOA job now | `sudo systemctl start lsmd-loa-expiry` |
+| Bot logs / restart | `journalctl -u lsmd-bot -f` · `sudo systemctl restart lsmd-bot` (after editing `/opt/lsmd/bot.env`) |
 | Restart | `sudo systemctl restart lsmd` |
 
 The Oracle Always Free VM has no automatic backups. Two things on it can't be
 rebuilt from this repo — keep a copy of both somewhere safe:
 
-- `/opt/lsmd/.env`, the settings;
+- `/opt/lsmd/.env` and `/opt/lsmd/bot.env`, the settings;
 - `/opt/lsmd/data/uploads`, the images uploaded in the Boss Menu
   (`sudo tar -czf lsmd-uploads.tgz -C /opt/lsmd data`).
 

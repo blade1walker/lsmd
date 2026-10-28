@@ -50,6 +50,17 @@ services:
       - app
     restart: unless-stopped
 
+  # The Discord bot (bot/). Off unless asked for: copy bot/.env.example to
+  # deploy/docker/bot.env, set WEBSITE_URL=http://app:3000 and the token, then
+  #   docker compose -f deploy/docker/compose.yml --profile bot up -d --build
+  bot:
+    profiles: [bot]
+    build: ../../bot
+    env_file: bot.env
+    depends_on:
+      - app
+    restart: unless-stopped
+
 volumes:
   app_data:
   caddy_data:

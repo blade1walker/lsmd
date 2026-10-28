@@ -1,5 +1,5 @@
 # Nexus EMS Bot — container image for any Docker host (Railway, Fly.io, a VPS…).
-FROM node:20-alpine
+FROM node:22-alpine
 WORKDIR /app
 COPY package.json package-lock.json tsconfig.json index.js ./
 COPY src ./src

@@ -30,6 +30,8 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     date: "2026-10-28",
     changes: [
+      { type: "improvement", text: "The Discord bot can now run on the website's own server, where it updates itself within two minutes of each change — no hosting panel, zip files or Python launcher. See bot/README.md → Hosting to move it" },
+      { type: "improvement", text: "FiveM resource nexus-ems-sync 1.1 is written in JavaScript instead of Lua, with the same commands, settings and behaviour. Replace the folder on the game server and copy any changed settings into config.js" },
       { type: "feature", text: "Admin → Boss Menu: change the public website without a code change or redeploy — the department and community name, the logo, the Discord, FiveM and email contact links, every heading and paragraph on the home page, the home page's background picture, and the footer. Switch any home page section (and the stats, server and training cards) on or off. Edits are saved as drafts, checked on the real site with Preview (only you see them), then published, which puts them live on the next page load. Every field can be put back to its original text" },
       { type: "feature", text: "Boss Menu → Notices: announcements at the top of the home page, in four styles with an optional link. Create them as drafts, publish, unpublish, reorder or delete them" },
       { type: "feature", text: "Boss Menu → Media library: upload logos, banners and pictures (PNG, JPEG, WebP or GIF, up to 5 MB), stored on the site's own server. An image the website is using cannot be deleted" },
