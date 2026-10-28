@@ -1,14 +1,14 @@
 # Moving the website off Vercel
 
-Everything needed to run the site somewhere other than Vercel. The database
-(Neon) is a separate service that works from any host, so **no data moves** —
-only the website itself does. Uploaded images are stored by the site itself,
-in `DATA_DIR` (see `.env.example`).
+Everything needed to run the site somewhere other than Vercel. The site keeps
+its own data — the SQLite database, its backups and uploaded images — in
+`DATA_DIR` on the server (see [`../docs/DATABASE.md`](../docs/DATABASE.md)).
+On its first start it copies the old Neon database in, if one is configured.
 
 | File | What it is |
 | --- | --- |
 | [`../Dockerfile`](../Dockerfile) | The site as one container. Any host that builds a Dockerfile can run it |
-| [`start.sh`](start.sh) | What the container runs: check settings → apply the database schema → serve on `$PORT` |
+| [`start.sh`](start.sh) | What the container runs: check settings → get the database ready (backup, migrations) → serve on `$PORT` |
 | [`check-env.mjs`](check-env.mjs) | Checks a settings file or environment without printing values |
 | [`docker/`](docker/) | `compose.yml` + `Caddyfile`: site + automatic HTTPS + nightly LOA job on any server with Docker |
 | [`oracle/`](oracle/) | The same on an Oracle Cloud free VM without Docker, with auto-deploy on every push to `main` |
@@ -23,8 +23,7 @@ them from where they come from instead, into a `.env` file (start from
 
 | Setting | Where it comes from | Needed? |
 | --- | --- | --- |
-| `DATABASE_URL` | console.neon.tech → project → **Connect** (pooled string). On Vercel this is `NEON_DATABASE_URL`; either name works | Yes |
-| `DIRECT_URL` | Same, with *Connection pooling* off. Used for schema changes | Recommended |
+| `DATABASE_URL` | Only to bring the old Neon data across: console.neon.tech → project → **Connect**. On Vercel this is `NEON_DATABASE_URL`; either name works | For the move |
 | `NEXTAUTH_URL` | The new address, e.g. `https://lsmd.tech` | Yes |
 | `NEXTAUTH_SECRET` | Make a new one: `openssl rand -base64 32`. Everyone signs in again once | Yes |
 | `DISCORD_CLIENT_ID` / `DISCORD_CLIENT_SECRET` | Discord Developer Portal → *Nexus EMS bot* → **OAuth2** | Yes |

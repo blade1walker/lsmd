@@ -2,6 +2,7 @@ import { prisma } from "./prisma";
 import { hasPermission, type Access } from "./access";
 import { overallProgress, parseEmsProgress } from "./training";
 import type { Prisma } from "@/generated/prisma/client";
+import { stringList } from "./json-fields";
 import {
   CATEGORY_KEYS,
   DEFAULT_PROMOTION_SETTINGS,
@@ -54,7 +55,7 @@ export async function getPromotionSettings(): Promise<PromotionSettingsValues> {
       minDaysInRank: row.minDaysInRank,
       minDaysInDepartment: row.minDaysInDepartment,
       minTrainingPercent: row.minTrainingPercent,
-      requiredDepartments: row.requiredDepartments,
+      requiredDepartments: stringList(row.requiredDepartments),
       requireActive: row.requireActive,
       cooldownDays: row.cooldownDays,
       requireTrainingCheck: row.requireTrainingCheck,
@@ -65,8 +66,8 @@ export async function getPromotionSettings(): Promise<PromotionSettingsValues> {
       announcementTemplate: row.announcementTemplate,
     };
   } catch {
-    // A deployment that has not run `db:push` yet still gets a working section
-    // on the documented defaults, rather than a 500 on every page.
+    // If the settings cannot be read, the section still works on the
+    // documented defaults, rather than a 500 on every page.
     return { ...DEFAULT_PROMOTION_SETTINGS };
   }
 }

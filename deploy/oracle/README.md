@@ -1,8 +1,8 @@
 # Hosting the website on Oracle Cloud (Always Free)
 
-This runs the site on one free Oracle Cloud VM instead of Vercel. The
-database stays on Neon, which works from any server, so no data moves. Images
-uploaded on the site are kept on the VM itself, in `/opt/lsmd/data`.
+This runs the site on one free Oracle Cloud VM instead of Vercel. Its data —
+the SQLite database, its backups and uploaded images — is kept on the VM itself,
+in `/opt/lsmd/data` (see [`../../docs/DATABASE.md`](../../docs/DATABASE.md)).
 
 What runs on the VM:
 
@@ -60,8 +60,9 @@ The first run installs everything and stops to ask for the settings:
    ```bash
    sudo -u lsmd nano /opt/lsmd/.env
    ```
-   `NEXTAUTH_URL` is already set to the new address. The database URL is whichever is set on Vercel —
-   `DATABASE_URL`, or the `NEON_…` variables if the Neon integration added them (copy those as they are).
+   `NEXTAUTH_URL` is already set to the new address. To bring the existing data across, copy the database
+   URL that is set on Vercel — `DATABASE_URL`, or the `NEON_…` variables if the Neon integration added them
+   (copy those as they are). The first start copies it into SQLite.
 2. **Discord sign-in:** Discord Developer Portal → your app → **OAuth2 → Redirects** → add
    `https://ems.example.com/api/auth/callback/discord`. Without it every sign-in fails with "Invalid OAuth2 redirect_uri".
 3. Run the same command again (or `bash /opt/lsmd/repo/deploy/oracle/setup.sh ems.example.com`). It builds and starts the site.
@@ -84,15 +85,17 @@ The first run installs everything and stops to ask for the settings:
 | Deploy logs | `journalctl -u lsmd-update -f` |
 | Deploy now | `sudo -u lsmd FORCE=1 bash /opt/lsmd/repo/deploy/oracle/deploy.sh` |
 | Change a setting | `sudo -u lsmd nano /opt/lsmd/.env`, then `sudo -u lsmd FORCE=1 bash /opt/lsmd/repo/deploy/oracle/deploy.sh` (settings are read at build time too) |
-| Roll back | `ls -dt /opt/lsmd/releases/*` → `sudo ln -sfn /opt/lsmd/releases/<older> /opt/lsmd/current && sudo systemctl restart lsmd` |
+| Roll back | `ls -dt /opt/lsmd/releases/*` → `sudo ln -sfn /opt/lsmd/releases/<older> /opt/lsmd/current && sudo systemctl restart lsmd` (a schema change may also need its pre-deploy backup restored — see docs/DATABASE.md) |
+| Database health / backups | `cd /opt/lsmd/current && sudo -u lsmd npm run db:check` · `npm run db:backup -- --list` |
 | Run the LOA job now | `sudo systemctl start lsmd-loa-expiry` |
 | Restart | `sudo systemctl restart lsmd` |
 
-The Oracle Always Free VM has no automatic backups. Two things on it can't be
-rebuilt from this repo — keep a copy of both somewhere safe:
+The site backs its database up before every deploy and once a day, into
+`/opt/lsmd/data/backups` — but the VM itself has no automatic backups, so those
+copies go if the VM does. Keep a copy of these somewhere else:
 
 - `/opt/lsmd/.env`, the settings;
-- `/opt/lsmd/data/uploads`, the images uploaded in the Boss Menu
-  (`sudo tar -czf lsmd-uploads.tgz -C /opt/lsmd data`).
+- `/opt/lsmd/data`, the database, its backups and uploaded images
+  (`sudo tar -czf lsmd-data.tgz -C /opt/lsmd data`).
 
-The rest of the data lives in Neon.
+Restoring a backup: [`docs/DATABASE.md`](../../docs/DATABASE.md#restoring).

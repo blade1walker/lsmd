@@ -1,6 +1,5 @@
 import "dotenv/config";
-import { PrismaClient } from "../src/generated/prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { createPrismaClient } from "../src/lib/prisma";
 import { RADIO_CODES } from "../src/lib/radio-codes";
 
 /**
@@ -12,14 +11,7 @@ import { RADIO_CODES } from "../src/lib/radio-codes";
  * edits to the list get applied.
  */
 
-if (!process.env.DATABASE_URL) {
-  console.error("DATABASE_URL is not set. Add it to .env or export it, then re-run.");
-  process.exit(1);
-}
-
-const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
-});
+const prisma = createPrismaClient();
 
 const label = (c: { code: string; description: string }) => `${c.code} — ${c.description}`;
 

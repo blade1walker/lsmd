@@ -1,6 +1,6 @@
 import "dotenv/config";
-import { PrismaClient } from "../src/generated/prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { createPrismaClient } from "../src/lib/prisma";
+import { stringList } from "../src/lib/json-fields";
 
 /**
  * Hands permissions added in a release to the roles that already exist.
@@ -119,10 +119,7 @@ const GRANTS: { id: string; roles: Record<string, string[]> }[] = [
   },
 ];
 
-const prisma = (() => {
-  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
-  return new PrismaClient({ adapter });
-})();
+const prisma = createPrismaClient();
 
 async function main() {
   for (const grant of GRANTS) {
@@ -139,11 +136,12 @@ async function main() {
     for (const [roleName, permissions] of Object.entries(grant.roles)) {
       const role = await prisma.adminRole.findUnique({ where: { name: roleName } });
       if (!role) continue;
-      const missing = permissions.filter((p) => !role.permissions.includes(p));
+      const held = stringList(role.permissions);
+      const missing = permissions.filter((p) => !held.includes(p));
       if (missing.length === 0) continue;
       await prisma.adminRole.update({
         where: { id: role.id },
-        data: { permissions: [...role.permissions, ...missing] },
+        data: { permissions: [...held, ...missing] },
       });
       changes[roleName] = missing;
       console.log(`[grant-permissions] ${roleName}: + ${missing.join(", ")}`);

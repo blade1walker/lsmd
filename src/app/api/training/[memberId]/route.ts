@@ -79,12 +79,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ me
     const record = await prisma.$transaction(async (tx) => {
       await tx.trainingRecord.upsert({ where: { memberId }, create: { memberId }, update: {} });
 
-      // Progress is a single Json value, so this is read-modify-write. Locking
-      // the row first means two trainers signing off different skills at the
-      // same moment each build on the other's write, rather than the second
-      // write quietly erasing the first tick.
-      await tx.$queryRaw`SELECT "id" FROM "TrainingRecord" WHERE "memberId" = ${memberId} FOR UPDATE`;
-
+      // Progress is a single Json value, so this is read-modify-write. The
+      // database runs one transaction at a time (src/lib/sqlite.ts), so two
+      // trainers signing off different skills at the same moment each build on
+      // the other's write rather than the second quietly erasing the first.
       const current = await tx.trainingRecord.findUniqueOrThrow({
         where: { memberId },
         select: { emsProgress: true },

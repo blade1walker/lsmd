@@ -23,8 +23,8 @@ export async function GET(req: NextRequest) {
       where: query
         ? {
             OR: [
-              { username: { contains: query, mode: "insensitive" } },
-              { memberName: { contains: query, mode: "insensitive" } },
+              { username: { contains: query } },
+              { memberName: { contains: query } },
               { discordId: { contains: query } },
             ],
           }

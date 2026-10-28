@@ -53,10 +53,10 @@ export async function GET(req: NextRequest) {
     const q = sp.get("q")?.trim();
     if (q) {
       where.OR = [
-        { patientName: { contains: q, mode: "insensitive" } },
-        { patientStateId: { contains: q, mode: "insensitive" } },
-        { documentNumber: { contains: q, mode: "insensitive" } },
-        { authorName: { contains: q, mode: "insensitive" } },
+        { patientName: { contains: q } },
+        { patientStateId: { contains: q } },
+        { documentNumber: { contains: q } },
+        { authorName: { contains: q } },
       ];
     }
 

@@ -98,13 +98,14 @@ if [ "$(tr -cd . <<<"$DOMAIN" | wc -c)" = 1 ]; then
 fi
 sudo systemctl reload caddy || sudo systemctl restart caddy
 
-# The database is DATABASE_URL, or Vercel's Neon connection (NEON_*) — see src/lib/database-url.ts.
-if [ "${NEW_ENV:-}" = 1 ] || ! sudo grep -qE '^(DATABASE_URL|NEON_URL|NEON_DATABASE_URL|NEON_POSTGRES_PRISMA_URL|NEON_POSTGRES_URL)="?postgres' "$APP/.env"; then
+# Until the required settings are filled in (deploy/check-env.mjs says which), stop here.
+if [ "${NEW_ENV:-}" = 1 ] || ! sudo -u lsmd node "$APP/repo/deploy/check-env.mjs" "$APP/.env" >/dev/null 2>&1; then
   say "Almost done — fill in the settings, then finish"
   cat <<EOF
   1. Edit the settings (copy each value from Vercel -> Project -> Settings -> Environment Variables):
        sudo -u lsmd nano $APP/.env
-     NEXTAUTH_URL is already set to https://$DOMAIN.
+     NEXTAUTH_URL is already set to https://$DOMAIN. To bring existing data across, copy the
+     database URL too (DATABASE_URL or the NEON_... ones): the first start copies it into SQLite.
   2. Add  https://$DOMAIN/api/auth/callback/discord  under Discord Developer Portal -> OAuth2 -> Redirects.
   3. Run this script again to build and start the site:
        bash $APP/repo/deploy/oracle/setup.sh $DOMAIN

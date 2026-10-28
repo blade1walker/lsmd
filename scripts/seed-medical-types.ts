@@ -1,5 +1,4 @@
-import { PrismaClient } from "../src/generated/prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { createPrismaClient } from "../src/lib/prisma";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -46,10 +45,7 @@ const TYPES: { name: string; category: string; numberPrefix: string; description
 ];
 
 async function main() {
-  const url = process.env.DATABASE_URL;
-  if (!url) throw new Error("DATABASE_URL is not set.");
-
-  const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: url }) });
+  const prisma = createPrismaClient();
 
   let created = 0;
   let skipped = 0;

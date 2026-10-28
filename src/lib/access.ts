@@ -4,6 +4,7 @@ import { SUPER_ADMIN_IDS, ALL_PERMISSIONS } from "./constants";
 import { DEFAULT_MEMBER_ROLE, defaultMemberPermissions } from "./role-presets";
 import { memberDisplayLabel } from "./utils";
 import { effectiveRolePermissions, type RoleWithHierarchy } from "./role-hierarchy";
+import { stringList } from "./json-fields";
 
 export type DenialReason = "not-in-roster" | "no-discord-id";
 
@@ -43,14 +44,17 @@ function denied(discordId: string, denialReason: DenialReason): Access {
 }
 
 /** Every role assigned via either the legacy single-role field or the multi-role relation, deduplicated by id. */
-function combinedRoles(adminUser: {
-  role: RoleWithHierarchy & { name: string } | null;
-  roles: (RoleWithHierarchy & { name: string })[];
-} | null) {
+type StoredRole = { id: string; name: string; order: number; permissions: unknown };
+
+function withPermissionList(role: StoredRole): RoleWithHierarchy & { name: string } {
+  return { ...role, permissions: stringList(role.permissions) };
+}
+
+function combinedRoles(adminUser: { role: StoredRole | null; roles: StoredRole[] } | null) {
   if (!adminUser) return [];
   const byId = new Map<string, RoleWithHierarchy & { name: string }>();
-  if (adminUser.role) byId.set(adminUser.role.id, adminUser.role);
-  for (const r of adminUser.roles) byId.set(r.id, r);
+  if (adminUser.role) byId.set(adminUser.role.id, withPermissionList(adminUser.role));
+  for (const r of adminUser.roles) byId.set(r.id, withPermissionList(r));
   return [...byId.values()];
 }
 
@@ -95,7 +99,7 @@ async function loadAccess(discordId: string): Promise<Access> {
 
   const roles = combinedRoles(adminUser);
   const roleNames = roles.map((r) => r.name);
-  const extraPermissions = adminUser?.extraPermissions ?? [];
+  const extraPermissions = stringList(adminUser?.extraPermissions);
 
   if (isSuperAdmin) {
     return {
@@ -119,7 +123,7 @@ async function loadAccess(discordId: string): Promise<Access> {
   // individually granted extras. Never a subtraction — extraPermissions
   // cannot revoke something a role already grants, only add beyond it.
   const permissions = roles.length
-    ? [...new Set([...effectiveRolePermissions(roles, allRoles), ...extraPermissions])]
+    ? [...new Set([...effectiveRolePermissions(roles, allRoles.map((r) => ({ ...r, permissions: stringList(r.permissions) }))), ...extraPermissions])]
     : [...new Set([...defaultMemberPermissions(), ...extraPermissions])];
 
   return {

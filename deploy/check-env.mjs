@@ -20,11 +20,7 @@ if (file) {
   process.loadEnvFile(file);
 }
 
-/** The names the app accepts for its database — keep in step with src/lib/database-url.ts. */
-const DATABASE = ["DATABASE_URL", "NEON_URL", "NEON_DATABASE_URL", "NEON_POSTGRES_PRISMA_URL", "NEON_POSTGRES_URL"];
-
 const REQUIRED = [
-  { names: DATABASE, what: "PostgreSQL connection string", test: (v) => /^postgres(ql)?:\/\//.test(v) },
   { names: ["NEXTAUTH_SECRET"], what: "session signing secret (openssl rand -base64 32)" },
   { names: ["NEXTAUTH_URL"], what: "the site's public address, e.g. https://lsmd.tech", test: (v) => /^https?:\/\/[^/]+/.test(v) },
   { names: ["DISCORD_CLIENT_ID"], what: "Discord app -> OAuth2 -> Client ID" },
@@ -33,6 +29,8 @@ const REQUIRED = [
 
 /** Optional: each one only switches a feature off when unset. */
 const OPTIONAL = {
+  DATABASE_URL:
+    "copying an old Postgres (Neon) database into SQLite on first start — the database itself is DATA_DIR/lsmd.db",
   DISCORD_BOT_TOKEN: "DMs, Discord usernames and role sync",
   NEXUS_BOT_API_KEY: "the Nexus EMS Discord bot's API access",
   FIVEM_API_KEY: "the FiveM sync resource",

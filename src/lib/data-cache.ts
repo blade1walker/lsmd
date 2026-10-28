@@ -1,8 +1,9 @@
 /**
  * A small in-process read cache for data every visitor asks for (the roster,
- * homepage counts, who is signed in). The database is far from the server —
- * one round trip is ~300 ms from the Oracle VM to Neon — so serving repeat
- * reads from memory is the biggest speed-up the site can get.
+ * homepage counts, who is signed in, the FiveM server's status). The database
+ * is a local SQLite file now, so this no longer hides a slow network: it
+ * saves building the same large answers again — the roster page renders in
+ * about half the time from here — on a 1 GB server.
  *
  * Freshness: every write made through Prisma bumps a generation counter
  * (src/lib/prisma.ts), and an entry from an older generation is never served.

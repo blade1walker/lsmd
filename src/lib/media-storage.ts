@@ -1,13 +1,12 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { uploadsDir } from "./paths";
 
 /**
  * Images uploaded through the Boss Menu, kept on the server's own disk.
  *
- * DATA_DIR (default ./data) is the folder for everything the site writes at
- * runtime. On the Oracle VM each release folder links ./data to
- * /opt/lsmd/data, so uploads survive deploys; with Docker it is a volume.
+ * They live in DATA_DIR/uploads (see ./paths), which survives deploys.
  *
  * Only PNG, JPEG, WebP and GIF are accepted, recognised by their first bytes
  * rather than by the name or type the browser claims — and never SVG, which
@@ -24,15 +23,6 @@ const TYPES = {
 } as const;
 
 export type ImageExt = keyof typeof TYPES;
-
-export function dataDir(): string {
-  // Runtime data, not part of the build: kept out of Turbopack's file tracing.
-  return path.resolve(/* turbopackIgnore: true */ process.env.DATA_DIR?.trim() || path.join(process.cwd(), "data"));
-}
-
-export function uploadsDir(): string {
-  return path.join(dataDir(), "uploads");
-}
 
 /** The image type from the file's first bytes, or null when it is not one we accept. */
 export function sniffImage(bytes: Uint8Array): ImageExt | null {

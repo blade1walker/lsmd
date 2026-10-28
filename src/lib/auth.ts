@@ -26,7 +26,7 @@ function dropInvalidNextAuthUrl() {
 
   console.error(
     `NEXTAUTH_URL is ignored because ${reason}. Set it to this site's own address ` +
-      `(e.g. https://nexis-ems.vercel.app) in Vercel -> Settings -> Environment Variables.`
+      `(e.g. https://lsmd.tech) in the site's settings (.env), then restart it.`
   );
   delete process.env.NEXTAUTH_URL;
 }

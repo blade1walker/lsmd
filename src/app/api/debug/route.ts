@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuth, isDenied } from "@/lib/api-auth";
-import { databaseUrl } from "@/lib/database-url";
+import { existsSync } from "node:fs";
+import { databaseFile } from "@/lib/paths";
 
 export async function GET() {
   // Reports which env vars are set, the NEXTAUTH_URL value, and raw database
@@ -9,14 +10,14 @@ export async function GET() {
   const auth = await requireAuth("roles.manage");
   if (isDenied(auth)) return auth.error;
 
-  const hasDbUrl = !!databaseUrl();
+  const hasDatabase = existsSync(databaseFile());
   const hasNextauthSecret = !!process.env.NEXTAUTH_SECRET;
   const hasNextauthUrl = !!process.env.NEXTAUTH_URL;
   const hasDiscordId = !!process.env.DISCORD_CLIENT_ID;
   const hasDiscordSecret = !!process.env.DISCORD_CLIENT_SECRET;
 
   const envStatus = {
-    DATABASE_URL: hasDbUrl ? "set" : "MISSING",
+    DATABASE: hasDatabase ? "present" : "MISSING",
     NEXTAUTH_SECRET: hasNextauthSecret ? "set" : "MISSING",
     NEXTAUTH_URL: hasNextauthUrl ? process.env.NEXTAUTH_URL : "MISSING",
     DISCORD_CLIENT_ID: hasDiscordId ? "set" : "MISSING",
@@ -24,7 +25,7 @@ export async function GET() {
   };
 
   let dbStatus = "not tested";
-  if (hasDbUrl) {
+  if (hasDatabase) {
     try {
       const { prisma } = await import("@/lib/prisma");
       await prisma.$queryRaw`SELECT 1`;

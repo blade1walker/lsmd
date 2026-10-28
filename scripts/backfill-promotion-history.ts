@@ -1,6 +1,5 @@
 import "dotenv/config";
-import { PrismaClient } from "../src/generated/prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { createPrismaClient } from "../src/lib/prisma";
 import { getRankWeight } from "../src/lib/constants";
 
 /**
@@ -11,10 +10,7 @@ import { getRankWeight } from "../src/lib/constants";
  * carries the notification's id in legacyNotificationId, so re-running this
  * skips rows it already copied instead of duplicating them.
  */
-const prisma = (() => {
-  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
-  return new PrismaClient({ adapter });
-})();
+const prisma = createPrismaClient();
 
 async function main() {
   const [notifications, copied] = await Promise.all([

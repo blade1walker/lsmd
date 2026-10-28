@@ -30,6 +30,10 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     date: "2026-10-28",
     changes: [
+      { type: "improvement", text: "The site's data now lives in a database on the site's own server instead of a database service on another continent. Pages and actions that go to the database answer in a few milliseconds instead of up to a second and a half, and nothing is lost in the move: the first start copies everything across and checks every row" },
+      { type: "feature", text: "Automatic backups: a checked copy of the whole database before every site update and once a day, with the last two weeks kept on the server. Admin → Export → Download database now downloads such a copy as one file that can be restored as it is" },
+      { type: "fix", text: "Trainers signing off skills for a new trainee at the same moment no longer get an error, and no sign-off is lost" },
+      { type: "improvement", text: "The roster, radio codes and training progress pages show a plain \"try again in a minute\" message if they cannot load, instead of setup instructions meant for the site's developers" },
       { type: "feature", text: "Admin → Boss Menu: change the public website without a code change or redeploy — the department and community name, the logo, the Discord, FiveM and email contact links, every heading and paragraph on the home page, the home page's background picture, and the footer. Switch any home page section (and the stats, server and training cards) on or off. Edits are saved as drafts, checked on the real site with Preview (only you see them), then published, which puts them live on the next page load. Every field can be put back to its original text" },
       { type: "feature", text: "Boss Menu → Notices: announcements at the top of the home page, in four styles with an optional link. Create them as drafts, publish, unpublish, reorder or delete them" },
       { type: "feature", text: "Boss Menu → Media library: upload logos, banners and pictures (PNG, JPEG, WebP or GIF, up to 5 MB), stored on the site's own server. An image the website is using cannot be deleted" },

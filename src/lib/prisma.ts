@@ -1,7 +1,7 @@
 import { PrismaClient } from "@/generated/prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { databaseUrl } from "./database-url";
 import { bumpDataGeneration } from "./data-cache";
+import { databaseFile } from "./paths";
+import { SqliteAdapter } from "./sqlite";
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
 
@@ -22,24 +22,9 @@ const WRITES = new Set([
   "$executeRawUnsafe",
 ]);
 
-function createPrismaClient() {
-  const url = databaseUrl();
-  if (!url) {
-    throw new Error(
-      "DATABASE_URL is not set. Go to Vercel → Settings → Environment Variables and add it."
-    );
-  }
-  const adapter = new PrismaPg({
-    connectionString: url,
-    // Opening a connection to the database costs ~1.7 s from the Oracle VM
-    // (TLS to another continent), so keep idle ones for 10 minutes instead of
-    // pg's default 10 seconds — otherwise the first visitor after a quiet
-    // spell waits for a fresh one.
-    idleTimeoutMillis: 10 * 60_000,
-    keepAlive: true,
-    connectionTimeoutMillis: 15_000,
-  });
-  const client = new PrismaClient({ adapter }).$extends({
+/** A client for the SQLite database at `file` (the site's own by default). Scripts use this too. */
+export function createPrismaClient(file = databaseFile()): PrismaClient {
+  const client = new PrismaClient({ adapter: new SqliteAdapter(file) }).$extends({
     query: {
       async $allOperations({ operation, args, query }) {
         try {
@@ -63,9 +48,8 @@ function getClient(): PrismaClient {
 
 // The client is built on first property access rather than at import time.
 // Next.js imports every route module while collecting page data during
-// `next build`, and that step runs without the runtime environment, so
-// constructing eagerly here fails the whole build when DATABASE_URL is only
-// present at runtime.
+// `next build`, which has no database, so opening it eagerly here would fail
+// the build.
 export const prisma = new Proxy({} as PrismaClient, {
   get(_target, prop) {
     const client = getClient();

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
+import { stringList } from "@/lib/json-fields";
 
 const include = { role: true, roles: true } as const;
 
@@ -83,8 +84,8 @@ export async function PATCH(request: Request) {
 
     const beforeRoles = roleNames(before);
     const afterRoles = roleNames(user);
-    const beforeExtra = [...before.extraPermissions].sort().join(",");
-    const afterExtra = [...user.extraPermissions].sort().join(",");
+    const beforeExtra = stringList(before.extraPermissions).sort().join(",");
+    const afterExtra = stringList(user.extraPermissions).sort().join(",");
 
     if (beforeRoles !== afterRoles || beforeExtra !== afterExtra) {
       await logAudit({

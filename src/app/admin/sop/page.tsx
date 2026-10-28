@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ErrorState } from "@/components/ui/error-state";
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
-import { LEGACY_DOC_ID, type RelatedLink } from "@/lib/sop";
+import type { RelatedLink } from "@/lib/sop";
 import { Save, Plus, Trash2, Image as ImageIcon, Link as LinkIcon } from "lucide-react";
 import { toast } from "sonner";
 
@@ -69,9 +69,6 @@ export default function AdminSopPage() {
     !!selectedDoc &&
     drafts[selectedDoc.id] !== undefined &&
     !draftEquals(drafts[selectedDoc.id], { content: selectedDoc.content, relatedLinks: selectedDoc.relatedLinks });
-  // Served from the legacy SopContent row because SopDocument does not exist
-  // yet; it is synthetic, so it cannot be edited, renamed or deleted.
-  const isLegacy = selectedDoc?.id === LEGACY_DOC_ID;
 
   const setDraft = (updater: (prev: Draft) => Draft) => {
     if (!selectedDoc) return;
@@ -241,7 +238,7 @@ export default function AdminSopPage() {
               ))}
             </select>
 
-            {selectedDoc && !isLegacy && (
+            {selectedDoc && (
               <Input
                 key={selectedDoc.id}
                 defaultValue={selectedDoc.title}
@@ -259,14 +256,14 @@ export default function AdminSopPage() {
               variant="ghost"
               className="text-red-400 ml-auto"
               onClick={handleDelete}
-              disabled={!selectedDoc || isLegacy}
+              disabled={!selectedDoc}
             >
               <Trash2 className="w-4 h-4 mr-1" />
               Delete
             </Button>
             <Button
               onClick={handleSave}
-              disabled={saving || !selectedDoc || !isDirty || isLegacy}
+              disabled={saving || !selectedDoc || !isDirty}
               className="bg-[#dc2626] text-black hover:bg-[#b91c1c]"
             >
               <Save className="w-4 h-4 mr-2" />
@@ -274,17 +271,6 @@ export default function AdminSopPage() {
             </Button>
           </div>
 
-          {isLegacy && (
-            <div className="mb-4 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-sm text-yellow-200">
-              <p className="font-medium">Read-only — the SopDocument table does not exist yet.</p>
-              <p className="text-yellow-200/80 mt-1">
-                Your existing SOP is shown below from the old storage. Run{" "}
-                <code className="bg-black/30 px-1 rounded">npm run db:push</code> then{" "}
-                <code className="bg-black/30 px-1 rounded">npm run db:migrate-sop</code> against the
-                database to enable editing and multiple documents.
-              </p>
-            </div>
-          )}
 
           <div className="bg-[#111111] border border-[#1e1e1e] rounded-xl overflow-hidden">
             <div className="px-4 py-3 border-b border-[#1e1e1e] flex items-center justify-between">
@@ -306,7 +292,7 @@ export default function AdminSopPage() {
                   size="sm"
                   variant="ghost"
                   className="h-7 text-xs text-gray-400"
-                  disabled={isLegacy || uploading}
+                  disabled={uploading}
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <ImageIcon className="w-3.5 h-3.5 mr-1.5" />
@@ -317,7 +303,6 @@ export default function AdminSopPage() {
             <textarea
               ref={textareaRef}
               value={draft.content}
-              readOnly={isLegacy}
               onChange={(e) => setDraft((prev) => ({ ...prev, content: e.target.value }))}
               className="w-full h-[500px] bg-transparent text-gray-300 text-sm p-4 focus:outline-none resize-none font-[family-name:var(--font-mono)]"
               placeholder="Write this SOP's content using Markdown..."
@@ -328,47 +313,45 @@ export default function AdminSopPage() {
             Supports Markdown formatting. Use headings (#, ##, ###), lists (-, *), bold (**text**), tables, and more.
           </div>
 
-          {!isLegacy && (
-            <div className="mt-6 bg-[#111111] border border-[#1e1e1e] rounded-xl p-4">
-              <div className="flex items-center justify-between mb-3">
-                <Label className="flex items-center gap-1.5">
-                  <LinkIcon className="w-3.5 h-3.5" />
-                  Related Links
-                </Label>
-                <Button type="button" size="sm" variant="ghost" className="h-7 text-xs" onClick={addLink}>
-                  <Plus className="w-3.5 h-3.5 mr-1" />
-                  Add Link
-                </Button>
-              </div>
-              {draft.relatedLinks.length === 0 ? (
-                <p className="text-xs text-gray-600">
-                  No related links. Add one for a reference this document points to.
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {draft.relatedLinks.map((link, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <Input
-                        value={link.label}
-                        onChange={(e) => updateLink(i, "label", e.target.value)}
-                        placeholder="Label"
-                        className="max-w-[180px]"
-                      />
-                      <Input
-                        value={link.url}
-                        onChange={(e) => updateLink(i, "url", e.target.value)}
-                        placeholder="https://..."
-                        className="flex-1"
-                      />
-                      <Button type="button" size="sm" variant="ghost" className="text-red-400 h-9 w-9 p-0" onClick={() => removeLink(i)}>
-                        ×
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
+          <div className="mt-6 bg-[#111111] border border-[#1e1e1e] rounded-xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <Label className="flex items-center gap-1.5">
+                <LinkIcon className="w-3.5 h-3.5" />
+                Related Links
+              </Label>
+              <Button type="button" size="sm" variant="ghost" className="h-7 text-xs" onClick={addLink}>
+                <Plus className="w-3.5 h-3.5 mr-1" />
+                Add Link
+              </Button>
             </div>
-          )}
+            {draft.relatedLinks.length === 0 ? (
+              <p className="text-xs text-gray-600">
+                No related links. Add one for a reference this document points to.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {draft.relatedLinks.map((link, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Input
+                      value={link.label}
+                      onChange={(e) => updateLink(i, "label", e.target.value)}
+                      placeholder="Label"
+                      className="max-w-[180px]"
+                    />
+                    <Input
+                      value={link.url}
+                      onChange={(e) => updateLink(i, "url", e.target.value)}
+                      placeholder="https://..."
+                      className="flex-1"
+                    />
+                    <Button type="button" size="sm" variant="ghost" className="text-red-400 h-9 w-9 p-0" onClick={() => removeLink(i)}>
+                      ×
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </>
       )}
 

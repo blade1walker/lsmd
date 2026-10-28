@@ -1,59 +1,55 @@
 import "dotenv/config";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import { PrismaClient } from "../src/generated/prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { existsSync, statSync } from "node:fs";
+import Database from "better-sqlite3";
+import { checkIntegrity, listBackups } from "../src/lib/backup";
+import { migrationNames } from "../src/lib/migrations";
+import { databaseFile } from "../src/lib/paths";
 
 /**
- * Read-only comparison of prisma/schema.prisma against what the database
- * actually has. Nothing in this project applies schema automatically — there
- * are no migrations, only `prisma db push` — so a model can exist in the
- * schema and typecheck fine while every query against it fails at runtime.
+ * A read-only health report on the database: is it there, is every page
+ * sound, which migrations are applied or waiting, how big each table is and
+ * how fresh the newest backup is.
+ *
+ *   npm run db:check
  */
 
-if (!process.env.DATABASE_URL) {
-  console.error("DATABASE_URL is not set. Add it to .env or export it, then re-run.");
-  process.exit(1);
-}
-
-const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
-});
-
-function modelsInSchema(): string[] {
-  const schema = readFileSync(join(process.cwd(), "prisma", "schema.prisma"), "utf8");
-  return [...schema.matchAll(/^model\s+(\w+)\s*\{/gm)].map((m) => m[1]);
-}
-
-async function main() {
-  const expected = modelsInSchema();
-
-  const rows = await prisma.$queryRaw<{ table_name: string }[]>`
-    SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'
-  `;
-  const present = new Set(rows.map((r) => r.table_name));
-
-  const missing = expected.filter((m) => !present.has(m));
-
-  console.log(`Schema defines ${expected.length} models; database has ${present.size} tables.\n`);
-
-  for (const model of expected) {
-    console.log(`  ${present.has(model) ? "ok     " : "MISSING"}  ${model}`);
-  }
-
-  if (missing.length === 0) {
-    console.log("\nAll tables present.");
-    return;
-  }
-
-  console.log(`\n${missing.length} table(s) missing: ${missing.join(", ")}`);
-  console.log("Run `npm run db:push` against this database to create them.");
-  process.exitCode = 1;
-}
-
-main()
-  .catch((e) => {
-    console.error(e);
+function main() {
+  const file = databaseFile();
+  if (!existsSync(file)) {
+    console.log(`No database at ${file} yet. npm run db:migrate creates it.`);
     process.exit(1);
-  })
-  .finally(() => prisma.$disconnect());
+  }
+  console.log(`Database: ${file} (${Math.round(statSync(file).size / 1024)} KB)`);
+
+  const problem = checkIntegrity(file);
+  console.log(problem ? `Integrity: FAILED — ${problem}` : "Integrity: ok");
+
+  const db = new Database(file, { readonly: true });
+  try {
+    console.log(`Journal mode: ${db.pragma("journal_mode", { simple: true })}`);
+    const applied = new Set(
+      db.prepare(`SELECT migration_name FROM "_prisma_migrations" WHERE finished_at IS NOT NULL AND rolled_back_at IS NULL`).pluck().all() as string[]
+    );
+    const waiting = migrationNames().filter((m) => !applied.has(m));
+    console.log(`Migrations: ${applied.size} applied${waiting.length ? `, waiting: ${waiting.join(", ")}` : ", none waiting"}`);
+
+    const tables = db
+      .prepare(`SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite\\_%' ESCAPE '\\' ORDER BY name`)
+      .pluck()
+      .all() as string[];
+    for (const t of tables) {
+      const n = db.prepare(`SELECT COUNT(*) FROM "${t.replace(/"/g, '""')}"`).pluck().get();
+      console.log(`  ${t.padEnd(32)} ${n}`);
+    }
+  } finally {
+    db.close();
+  }
+
+  return listBackups().then((backups) => {
+    const newest = backups[0];
+    console.log(newest ? `Newest backup: ${newest.name}` : "No backups yet — npm run db:backup takes one.");
+    if (problem) process.exit(1);
+  });
+}
+
+main();

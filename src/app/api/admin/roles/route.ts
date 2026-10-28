@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
+import { stringList } from "@/lib/json-fields";
+import { nextRoleOrder } from "@/lib/role-order";
 
 export async function GET() {
   const auth = await requireAuth("roles.manage");
@@ -27,19 +29,16 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { name, permissions } = body;
 
-    const role = await prisma.adminRole.create({
-      data: {
-        name,
-        permissions,
-      },
-    });
+    const role = await prisma.$transaction(async (tx) =>
+      tx.adminRole.create({ data: { name, permissions, order: await nextRoleOrder(tx) } })
+    );
 
     await logAudit({
       action: "create",
       entityType: "AdminRole",
       entityId: role.id,
       entityLabel: role.name,
-      details: { permissionCount: role.permissions.length },
+      details: { permissionCount: stringList(role.permissions).length },
       performedBy: actorLabel(auth.access),
     });
 
@@ -63,8 +62,10 @@ export async function PATCH(request: Request) {
       data,
     });
 
-    const added = role.permissions.filter((p) => !before?.permissions.includes(p));
-    const removed = (before?.permissions ?? []).filter((p) => !role.permissions.includes(p));
+    const now = stringList(role.permissions);
+    const was = stringList(before?.permissions);
+    const added = now.filter((p) => !was.includes(p));
+    const removed = was.filter((p) => !now.includes(p));
 
     await logAudit({
       action: "update",

@@ -1,13 +1,9 @@
 import "dotenv/config";
-import { PrismaClient } from "../src/generated/prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { createPrismaClient } from "../src/lib/prisma";
 import { ROLE_PRESETS } from "../src/lib/role-presets";
 import { RADIO_CODES } from "../src/lib/radio-codes";
 
-const prisma = (() => {
-  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
-  return new PrismaClient({ adapter });
-})();
+const prisma = createPrismaClient();
 
 async function main() {
   console.log("Seeding database...");
@@ -69,7 +65,8 @@ async function main() {
           permissions: ["roster.view"],
         },
         ...ROLE_PRESETS.map((r) => ({ name: r.name, permissions: [...r.permissions] })),
-      ],
+        // In listed order, each ranked below the one before (see AdminRole.order).
+      ].map((role, i) => ({ ...role, order: i + 1 })),
     });
     console.log("  Created " + (4 + ROLE_PRESETS.length) + " admin roles");
   }

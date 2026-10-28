@@ -1,6 +1,5 @@
 import "dotenv/config";
-import { PrismaClient } from "../src/generated/prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { createPrismaClient } from "../src/lib/prisma";
 
 /**
  * Creates (or updates, if it already exists) the "Emergency Medical Services
@@ -9,14 +8,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
  * blindly creating a duplicate every time.
  */
 
-if (!process.env.DATABASE_URL) {
-  console.error("DATABASE_URL is not set. Add it to .env or export it, then re-run.");
-  process.exit(1);
-}
-
-const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
-});
+const prisma = createPrismaClient();
 
 const TITLE = "Emergency Medical Services SOP (Standard Operating Protocol)";
 

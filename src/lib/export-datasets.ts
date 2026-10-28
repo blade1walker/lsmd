@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import { shiftSlotLabel } from "./shifts";
+import { stringList } from "./json-fields";
 
 /**
  * Every table behind an admin page, in one place, so "export everything" is a
@@ -244,7 +245,7 @@ export const DATASETS: DatasetDefinition[] = [
     fetch: async () =>
       (await prisma.adminRole.findMany({ orderBy: { order: "asc" } })).map((r) => ({
         ...r,
-        permissions: r.permissions.join(", "),
+        permissions: stringList(r.permissions).join(", "),
       })),
   },
   {

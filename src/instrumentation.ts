@@ -9,4 +9,8 @@ export async function register() {
   // the first visitor after a restart is not the one who waits for them.
   const { warmRosterCaches } = await import("./lib/roster");
   warmRosterCaches().catch((error) => console.error("Cache warm-up failed:", error));
+
+  // A verified database backup every day (DATA_DIR/backups).
+  const { scheduleDailyBackups } = await import("./lib/backup");
+  scheduleDailyBackups();
 }

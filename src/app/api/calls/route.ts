@@ -54,11 +54,11 @@ export async function GET(req: NextRequest) {
     if (q) {
       conditions.push({
         OR: [
-          { callNumber: { contains: q, mode: "insensitive" } },
-          { location: { contains: q, mode: "insensitive" } },
-          { patientName: { contains: q, mode: "insensitive" } },
-          { patientStateId: { contains: q, mode: "insensitive" } },
-          { medicalDocumentNumber: { contains: q, mode: "insensitive" } },
+          { callNumber: { contains: q } },
+          { location: { contains: q } },
+          { patientName: { contains: q } },
+          { patientStateId: { contains: q } },
+          { medicalDocumentNumber: { contains: q } },
         ],
       });
     }
