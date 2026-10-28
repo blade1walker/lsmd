@@ -28,6 +28,12 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: "2026-10-28",
+    changes: [
+      { type: "improvement", text: "New top rank Medical Director (five stars), above the top rank, which is renamed from Director of Medicine to Director of EMS. Members, test and department rank gates, and open requests on Director of Medicine move to Director of EMS on their own" },
+    ],
+  },
+  {
     date: "2026-10-24",
     title: "Tests & Quizzes",
     changes: [

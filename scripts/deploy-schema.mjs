@@ -100,6 +100,7 @@ try {
   run("npx prisma db push", 3 * 60 * 1000);
   console.log("[deploy-schema] Schema is up to date.");
   grantNewPermissions();
+  renameRanks();
   backfillPromotionHistory();
 } catch {
   // `db push` without --accept-data-loss refuses destructive changes rather
@@ -134,6 +135,19 @@ function grantNewPermissions() {
     run("npx tsx scripts/grant-permissions.ts", 60 * 1000);
   } catch {
     console.warn("[deploy-schema] Permission grant failed — run `npm run db:grant-permissions` by hand.");
+  }
+}
+
+/**
+ * Moves members and settings off rank names retired in RANKS onto their new
+ * names (scripts/rename-ranks.ts). Never fails the deploy; re-run by hand with
+ * `npm run db:rename-ranks`.
+ */
+function renameRanks() {
+  try {
+    run("npx tsx scripts/rename-ranks.ts", 60 * 1000);
+  } catch {
+    console.warn("[deploy-schema] Rank rename failed — run `npm run db:rename-ranks` by hand.");
   }
 }
 

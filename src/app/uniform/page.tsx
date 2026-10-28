@@ -109,7 +109,7 @@ EMS
                   </td>
                 </tr>
                 <tr>
-                  <td className="px-6 py-3 text-white">Director of Medicine (High Command)</td>
+                  <td className="px-6 py-3 text-white">Medical Director &amp; Director of EMS (High Command)</td>
                   <td className="px-6 py-3 text-center text-white font-mono">06</td>
                   <td className="px-6 py-3">
                     <span className="flex items-center gap-2">

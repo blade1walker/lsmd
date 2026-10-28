@@ -6,7 +6,8 @@ import { api, type Actor } from "./api.js";
  * the rank itself.
  */
 export const RANKS = [
-  "Director of Medicine",
+  "Medical Director",
+  "Director of EMS",
   "Chief of EMS",
   "Deputy Chief of EMS",
   "Assistant Chief",

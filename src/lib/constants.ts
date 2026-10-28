@@ -7,7 +7,8 @@ export const SUPER_ADMIN_IDS = [
 ];
 
 export const RANKS = [
-  { name: "Director of Medicine", tier: "High Command", shape: "star", count: 4, weight: 12 },
+  { name: "Medical Director", tier: "High Command", shape: "star", count: 5, weight: 13 },
+  { name: "Director of EMS", tier: "High Command", shape: "star", count: 4, weight: 12 },
   { name: "Chief of EMS", tier: "High Command", shape: "star", count: 3, weight: 11 },
   { name: "Deputy Chief of EMS", tier: "High Command", shape: "star", count: 2, weight: 10 },
   { name: "Assistant Chief", tier: "High Command", shape: "star", count: 1, weight: 9 },
@@ -25,7 +26,7 @@ export const RANK_LIST = RANKS.map((r) => r.name);
 export const RANK_NAMES = RANK_LIST;
 
 export const SECTION_HINTS: Record<string, string[]> = {
-  "High Command": ["Director of Medicine", "Chief of EMS", "Deputy Chief of EMS", "Assistant Chief"],
+  "High Command": ["Medical Director", "Director of EMS", "Chief of EMS", "Deputy Chief of EMS", "Assistant Chief"],
   Command: ["Division Chief", "EMS Captain", "Lieutenant"],
   Lead: ["Senior Paramedic"],
   "Medical Patrol": ["Paramedic", "EMT", "EMR"],

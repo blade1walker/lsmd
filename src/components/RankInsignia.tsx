@@ -11,7 +11,8 @@ interface RankInsigniaProps {
 
 function getRankFromName(rank: string): { shape: string; count: number } {
   const map: Record<string, { shape: string; count: number }> = {
-    "Director of Medicine": { shape: "star", count: 4 },
+    "Medical Director": { shape: "star", count: 5 },
+    "Director of EMS": { shape: "star", count: 4 },
     "Chief of EMS": { shape: "star", count: 3 },
     "Deputy Chief of EMS": { shape: "star", count: 2 },
     "Assistant Chief": { shape: "star", count: 1 },

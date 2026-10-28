@@ -8,7 +8,7 @@ const prisma = (() => {
 })();
 
 const RANK_CALLSIGN: Record<string, { fixed?: number; start?: number; end?: number }> = {
-  "Director of Medicine": { fixed: 999 },
+  "Medical Director": { fixed: 999 },
   "Director of EMS": { fixed: 900 },
   "Chief of EMS": { fixed: 911 },
   "Deputy Chief of EMS": { fixed: 912 },
