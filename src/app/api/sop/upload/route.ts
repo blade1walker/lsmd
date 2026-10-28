@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
-import { maxRequestBytes, storeUpload, type UploadRules } from "@/lib/media-server";
+import { maxRequestBytes, storeUpload, type UploadRules } from "@/lib/media/server";
 
 const RULES: UploadRules = { types: ["png", "jpg", "gif", "webp"] };
 

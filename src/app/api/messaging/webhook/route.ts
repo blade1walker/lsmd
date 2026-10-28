@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import {
@@ -9,7 +9,7 @@ import {
   postToWebhookContent,
   resolveWebhookSource,
   type WebhookKind,
-} from "@/lib/discord-webhook";
+} from "@/lib/discord/webhook";
 
 /** Discord refuses a message body over 2000 characters. */
 const MAX_LENGTH = 2000;

@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Oswald, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
-import { Providers } from "@/components/Providers";
+import { Providers } from "@/components/layout/Providers";
 
 const inter = Inter({
   variable: "--font-inter",

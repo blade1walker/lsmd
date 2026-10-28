@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db/prisma";
 import { apiError } from "@/lib/api-error";
-import { getNotificationSettings, sendDiscordDM, renderTemplate } from "@/lib/discord-webhook";
+import { getNotificationSettings, sendDiscordDM, renderTemplate } from "@/lib/discord/webhook";
 import { logAudit } from "@/lib/audit";
-import { endLeave } from "@/lib/loa-server";
-import { syncAllLoaRoles } from "@/lib/loa-role";
+import { endLeave } from "@/lib/loa/server";
+import { syncAllLoaRoles } from "@/lib/loa/role";
 
 export const dynamic = "force-dynamic";
 

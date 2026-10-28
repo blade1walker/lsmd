@@ -2,8 +2,8 @@
 
 import { signIn, signOut } from "next-auth/react";
 import { LogOut } from "lucide-react";
-import { UserNotificationBell } from "@/components/UserNotificationBell";
-import type { RosterViewer } from "@/lib/roster-shared";
+import { UserNotificationBell } from "@/components/layout/UserNotificationBell";
+import type { RosterViewer } from "@/lib/roster";
 
 /**
  * Sign-in in the corner of the roster. Signing in is what unlocks the

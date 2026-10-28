@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { FIVEM_PERMISSIONS } from "@/lib/constants";
 import { parseJoinCode, parseServerAddress } from "@/lib/fivem";
-import { ensureFiveMSettings, getCitySnapshot, toFullStatus, toSettingsView } from "@/lib/fivem-server";
+import { ensureFiveMSettings, getCitySnapshot, toFullStatus, toSettingsView } from "@/lib/fivem/server";
 
 /** The City Link page: settings, and the city as the link sees it right now. */
 export async function GET(req: NextRequest) {

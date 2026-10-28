@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { optionalAccess, hasPermission } from "@/lib/api-auth";
+import { optionalAccess, hasPermission } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
-import { cached } from "@/lib/data-cache";
-import { getCitySnapshot, readFiveMSettings, toPublicStatus } from "@/lib/fivem-server";
+import { cached } from "@/lib/db/cache";
+import { getCitySnapshot, readFiveMSettings, toPublicStatus } from "@/lib/fivem/server";
 import type { CityStatusPublic } from "@/lib/fivem";
 
 const NO_STORE = { "Cache-Control": "private, no-store" };

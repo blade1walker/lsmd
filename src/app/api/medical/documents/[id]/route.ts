@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied, actorLabel, hasPermission } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied, actorLabel, hasPermission } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { MEDICAL_SECTION_PERMISSIONS } from "@/lib/constants";
 import { isLocked, type Answers } from "@/lib/medical";
 import type { Prisma } from "@/generated/prisma/client";
-import type { Access } from "@/lib/access";
+import type { Access } from "@/lib/auth/access";
 
 const FULL_DOCUMENT = {
   documentType: true,

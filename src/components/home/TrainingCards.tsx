@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { ArrowRight, CheckCircle, ClipboardList, GraduationCap, Lock } from "lucide-react";
-import { prisma } from "@/lib/prisma";
-import { cached } from "@/lib/data-cache";
-import { optionalAccess } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { cached } from "@/lib/db/cache";
+import { optionalAccess } from "@/lib/auth/api";
 import { meetsMinRank, minRankMessage, parseQuestions } from "@/lib/tests";
 
 interface Card {

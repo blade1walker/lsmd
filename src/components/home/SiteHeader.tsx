@@ -4,9 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { signIn, signOut } from "next-auth/react";
 import { LayoutDashboard, LogOut, Menu, X } from "lucide-react";
-import { BrandLogo, useSiteContent } from "@/components/SiteContentProvider";
-import { UserNotificationBell } from "@/components/UserNotificationBell";
-import type { RosterViewer } from "@/lib/roster-shared";
+import { BrandLogo, useSiteContent } from "@/components/layout/SiteContentProvider";
+import { UserNotificationBell } from "@/components/layout/UserNotificationBell";
+import type { RosterViewer } from "@/lib/roster";
 
 /** In-page links name the Boss Menu switch that shows their section. */
 const NAV = [

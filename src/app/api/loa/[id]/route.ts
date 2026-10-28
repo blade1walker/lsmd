@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { LOA_PERMISSIONS } from "@/lib/constants";
-import { postToLOAWebhook, sendDiscordDM, getNotificationSettings } from "@/lib/discord-webhook";
-import { announceLoaApproved, beginLeave, endLeave, fillLoaTemplate, isLoaEnding, returnFromLeave, roleNotice, RUNNING_LOA } from "@/lib/loa-server";
-import type { RoleChange } from "@/lib/loa-role";
+import { postToLOAWebhook, sendDiscordDM, getNotificationSettings } from "@/lib/discord/webhook";
+import { announceLoaApproved, beginLeave, endLeave, fillLoaTemplate, isLoaEnding, returnFromLeave, roleNotice, RUNNING_LOA } from "@/lib/loa/server";
+import type { RoleChange } from "@/lib/loa/role";
 
 /**
  * Moves a leave through its life — Approved or Declined, then Ended early,

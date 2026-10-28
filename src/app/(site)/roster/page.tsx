@@ -1,6 +1,6 @@
-import { PublicPageClient } from "@/components/PublicPageClient";
-import { getRosterPageData } from "@/lib/roster";
-import { parseRosterFilters } from "@/lib/roster-shared";
+import { RosterPageClient } from "@/components/roster/RosterPageClient";
+import { getRosterPageData } from "@/lib/roster/server";
+import { parseRosterFilters } from "@/lib/roster";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Personnel Roster" };
@@ -49,5 +49,5 @@ export default async function RosterPage({
     return <DatabaseError />;
   }
 
-  return <PublicPageClient data={data} initialFilters={initialFilters} />;
+  return <RosterPageClient data={data} initialFilters={initialFilters} />;
 }

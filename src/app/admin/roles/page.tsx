@@ -9,8 +9,8 @@ import { ALL_PERMISSIONS } from "@/lib/constants";
 import { ErrorState } from "@/components/ui/error-state";
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
 import { memberDisplayLabel } from "@/lib/utils";
-import { inheritedPermissions, effectiveRolePermissions } from "@/lib/role-hierarchy";
-import { defaultMemberPermissions } from "@/lib/role-presets";
+import { inheritedPermissions, effectiveRolePermissions } from "@/lib/auth/role-hierarchy";
+import { defaultMemberPermissions } from "@/lib/auth/role-presets";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
 

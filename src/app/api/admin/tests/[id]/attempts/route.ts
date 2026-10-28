@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { TEST_PERMISSIONS } from "@/lib/constants";
-import { attemptSummary } from "@/lib/tests-server";
+import { attemptSummary } from "@/lib/tests/server";
 
 /** Every attempt at one test, newest first — the Results tab. */
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

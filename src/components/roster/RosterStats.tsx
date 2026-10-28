@@ -1,6 +1,6 @@
 "use client";
 
-import type { RosterStats as Stats } from "@/lib/roster-shared";
+import type { RosterStats as Stats } from "@/lib/roster";
 
 export function RosterStats({ stats }: { stats: Stats }) {
   const tiles = [

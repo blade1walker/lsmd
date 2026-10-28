@@ -1,0 +1,103 @@
+import { getServerSession } from "next-auth";
+import { NextResponse } from "next/server";
+import { authOptions } from "./";
+import { resolveAccess, hasPermission, type Access } from "./access";
+import { resolveBotAccess } from "./bot";
+import { apiError } from "../api-error";
+
+export type AuthResult = { access: Access } | { error: NextResponse };
+
+export function isDenied(result: AuthResult): result is { error: NextResponse } {
+  return "error" in result;
+}
+
+/**
+ * The authorization check for route handlers. Enforced here rather than in the
+ * UI or in proxy.ts because this is the closest point to the data — the admin
+ * pages are static shells that fetch everything through these endpoints, so a
+ * check that only guards the UI guards nothing.
+ *
+ * Re-resolves access from the database rather than trusting the JWT claims, so
+ * a revoked role or a roster removal takes effect on the next request.
+ */
+export async function requireAuth(permission?: string | readonly string[]): Promise<AuthResult> {
+  // The checks read the database. Uncaught, a database outage became a bare
+  // 500 with no body, which the bot can only report as "answered 500".
+  try {
+    return await checkAuth(permission);
+  } catch (error) {
+    return { error: apiError("Could not check access", error) };
+  }
+}
+
+async function checkAuth(permission?: string | readonly string[]): Promise<AuthResult> {
+  // The Discord bot. Its commands are permissioned in Discord's Integrations
+  // settings, so it passes every check here — see bot-auth.ts.
+  const bot = await resolveBotAccess();
+  if (bot && "access" in bot) return { access: bot.access };
+  if (bot) {
+    // A bot request that failed to prove itself says why, so the bot's log
+    // names the fix instead of a bare 401.
+    return { error: NextResponse.json({ error: "Unauthorized", detail: bot.denied, bot: true }, { status: 401 }) };
+  }
+
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.discordId) {
+    return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
+  }
+
+  const access = await resolveAccess(session.user.discordId);
+
+  if (!access.allowed) {
+    return {
+      error: NextResponse.json(
+        { error: "Forbidden", detail: "This account is not on the roster." },
+        { status: 403 }
+      ),
+    };
+  }
+
+  const required = permission === undefined ? [] : typeof permission === "string" ? [permission] : permission;
+
+  // A list is any-of, not all-of: it is how a route accepts either its own
+  // dedicated permission or the older, broader one it used to be guarded by.
+  if (required.length > 0 && !required.some((p) => hasPermission(access, p))) {
+    return {
+      error: NextResponse.json(
+        {
+          error: "Forbidden",
+          detail:
+            required.length === 1
+              ? `Requires the "${required[0]}" permission.`
+              : `Requires one of these permissions: ${required.map((p) => `"${p}"`).join(", ")}.`,
+        },
+        { status: 403 }
+      ),
+    };
+  }
+
+  return { access };
+}
+
+export { hasPermission };
+
+/**
+ * The caller's access when they are signed in on the roster (or are the
+ * bot); null for an anonymous visitor. Never an error — for public routes
+ * that show more to members than to everyone else.
+ */
+export async function optionalAccess(): Promise<Access | null> {
+  const bot = await resolveBotAccess();
+  if (bot) return "access" in bot ? bot.access : null;
+
+  const session = await getServerSession(authOptions).catch(() => null);
+  if (!session?.user?.discordId) return null;
+  const access = await resolveAccess(session.user.discordId);
+  return access.allowed ? access : null;
+}
+
+/** Human-readable actor for audit entries — the roster name/callsign, falling back to the raw Discord ID for a super admin with no roster entry. */
+export function actorLabel(access: Access): string {
+  return access.memberName ?? access.discordId;
+}

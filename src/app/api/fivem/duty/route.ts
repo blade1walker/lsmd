@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db/prisma";
 import { apiError } from "@/lib/api-error";
-import { rejectUnlessFiveM } from "@/lib/fivem-auth";
-import { clockOff, clockOn, matchOnePlayer, notOnRosterBody, parseActor, readFiveMSettings } from "@/lib/fivem-server";
+import { rejectUnlessFiveM } from "@/lib/fivem/auth";
+import { clockOff, clockOn, matchOnePlayer, notOnRosterBody, parseActor, readFiveMSettings } from "@/lib/fivem/server";
 import { memberDisplayLabel } from "@/lib/utils";
 
 /**

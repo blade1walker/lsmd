@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { cleanServerName, identifierMap, parseJoinCode, parseServerAddress, steamHex } from "@/lib/fivem";
-import { buildMatcher, parseHeartbeat, parsePlayers } from "@/lib/fivem-server";
+import { buildMatcher, parseHeartbeat, parsePlayers } from "@/lib/fivem/server";
 
 test("server addresses get a default port and lose any path", () => {
   assert.deepEqual(parseServerAddress("203.0.113.10"), { base: "http://203.0.113.10:30120" });

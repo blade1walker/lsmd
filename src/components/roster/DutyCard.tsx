@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Timer } from "lucide-react";
-import { formatHours, type ViewerDuty } from "@/lib/roster-shared";
+import { formatHours, type ViewerDuty } from "@/lib/roster";
 import { useNow, elapsedSeconds } from "./DutyStatus";
 
 /**

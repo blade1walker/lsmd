@@ -1,7 +1,7 @@
 "use client";
 
 import { Megaphone } from "lucide-react";
-import type { RosterBannerData } from "@/lib/roster-shared";
+import type { RosterBannerData } from "@/lib/roster";
 
 /** The spotlight strip under the hero, set from Admin → Roster Banner. */
 export function RosterBannerStrip({ banner }: { banner: RosterBannerData }) {

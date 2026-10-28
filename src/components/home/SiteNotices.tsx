@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { useSiteContent } from "@/components/SiteContentProvider";
+import { useSiteContent } from "@/components/layout/SiteContentProvider";
 import { NOTICE_TONES } from "@/lib/site-content";
 
 /** Notices published from the Boss Menu, at the top of the home page. Drafts show only in preview. */

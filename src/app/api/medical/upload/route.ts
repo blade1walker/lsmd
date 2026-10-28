@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
-import { maxRequestBytes, storeUpload, type UploadRules } from "@/lib/media-server";
+import { maxRequestBytes, storeUpload, type UploadRules } from "@/lib/media/server";
 
 /**
  * A letterhead mark is a small image. SVG and GIF are deliberately absent:

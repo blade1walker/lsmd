@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { apiError } from "@/lib/api-error";
-import { getRadioCodes } from "@/lib/radio-codes-data";
+import { getRadioCodes } from "@/lib/radio-codes/server";
 
 export async function GET() {
   try {

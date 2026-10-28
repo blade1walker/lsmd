@@ -17,7 +17,7 @@ import {
   validateValue,
   type ContentField,
 } from "@/lib/site-content";
-import { isStoredFileName, readImage, saveImage, sniffImage } from "@/lib/media-storage";
+import { isStoredFileName, readImage, saveImage, sniffImage } from "@/lib/media/storage";
 
 const field = (key: string): ContentField => {
   const f = CONTENT_FIELD_MAP.get(key);

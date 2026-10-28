@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { CONTENT_PERMISSIONS } from "@/lib/constants";
-import { saveDrafts } from "@/lib/site-content-server";
+import { saveDrafts } from "@/lib/site-content/server";
 
 /** Saves edits as drafts. Nothing changes on the public site until they are published. */
 export async function PATCH(req: NextRequest) {

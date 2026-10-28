@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiError } from "@/lib/api-error";
-import { rejectUnlessFiveM } from "@/lib/fivem-auth";
-import { readFiveMSettings, toSettingsView } from "@/lib/fivem-server";
+import { rejectUnlessFiveM } from "@/lib/fivem/auth";
+import { readFiveMSettings, toSettingsView } from "@/lib/fivem/server";
 import { UNIT_STATUSES } from "@/lib/duty-board";
 import { CALL_NATURES, CALL_OUTCOMES, HOSPITALS } from "@/lib/calls";
 

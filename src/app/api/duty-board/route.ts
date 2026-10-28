@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { requireAuth, isDenied } from "@/lib/api-auth";
+import { requireAuth, isDenied } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { DUTY_BOARD_PERMISSIONS } from "@/lib/constants";
-import { getDutyBoard } from "@/lib/duty-board-server";
+import { getDutyBoard } from "@/lib/duty-board/server";
 
 /** Everyone on duty, where they are, and whether they are in the city. */
 export async function GET() {

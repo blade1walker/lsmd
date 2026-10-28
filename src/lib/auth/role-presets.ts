@@ -1,0 +1,141 @@
+import type { Permission } from "../constants";
+
+export interface RolePreset {
+  name: string;
+  /** What the role is for, shown when seeding. */
+  description: string;
+  /** Admin panel areas this role is meant to cover. Documents intent behind `permissions`. */
+  sections: string[];
+  permissions: Permission[];
+  /** Earlier names for the same role. The seeder renames these in place so admin users keep their assignment. */
+  aliases?: string[];
+}
+
+/**
+ * Role every roster member resolves to when no AdminUser row assigns them
+ * something else. Nothing is written on login — the default is applied at
+ * session time, so "reset to default" is just deleting the AdminUser row.
+ */
+export const DEFAULT_MEMBER_ROLE = "EMS Member";
+
+/**
+ * Declared here rather than inline in a script so the permission strings are
+ * checked against `Permission` at compile time — a typo in a permission is
+ * otherwise silent, since nothing validates the string array on write.
+ */
+export const ROLE_PRESETS: RolePreset[] = [
+  {
+    name: "EMS Member",
+    description:
+      "Baseline member access. Read-only, plus shift signup, clocking on duty, logging their own EMS calls and the changelog.",
+    sections: ["Roster", "SOP", "Shifts", "Call Log", "Changelog"],
+    // calls.create, not calls.view: every medic logs the calls they run, but
+    // the full log carries other medics' patients' names and State IDs.
+    permissions: ["roster.view", "sop.view", "shifts.view", "changelog.view", "clock.self", "calls.create"],
+  },
+  {
+    name: "Assistant HR",
+    description: "Handles LOA, inactivity, onboarding and department join review.",
+    sections: ["Roster", "HR", "Onboarding", "Departments", "SOP"],
+    permissions: [
+      "roster.view",
+      "hr.view",
+      "hr.loa",
+      "hr.inactivity",
+      "hr.inactivity.approve",
+      "removal.request",
+      "onboarding.view",
+      "onboarding.approve",
+      "departments.view",
+      "departments.approve",
+      "sop.view",
+      "sop.edit",
+      "trainees.view",
+      "promotions.view",
+      // Assistant HR sits on promotion panels and reads the examinations, but
+      // does not open sessions or settle results.
+      "interviews.view",
+      "interviews.score",
+      "interviews.readiness",
+      // Reads who is meeting the weekly activity requirement.
+      "activity.view",
+      // The LOA section: who is on leave, placing members on leave by hand.
+      "loa.view",
+      "loa.manage",
+    ],
+    aliases: ["HR Assistant"],
+  },
+  {
+    name: "HR Admin",
+    description: "Full HR review authority, including removal approval.",
+    sections: ["Roster", "HR", "SOP"],
+    permissions: [
+      "roster.view",
+      "hr.view",
+      "hr.loa",
+      "hr.inactivity",
+      "hr.inactivity.approve",
+      "removal.request",
+      "sop.view",
+      "sop.edit",
+      "trainees.view",
+      "promotions.view",
+      // HR runs promotion examinations end to end: open a session, sit on the
+      // panel and settle the result. The thresholds stay with interviews.manage.
+      "interviews.view",
+      "interviews.create",
+      "interviews.score",
+      "interviews.finalize",
+      // And follows them through: settling a held result, the readiness board,
+      // the analytics and the printed report.
+      "interviews.review",
+      "interviews.readiness",
+      "interviews.analytics",
+      "interviews.export",
+      // Activity follow-up: the weekly requirement, and whether a member was
+      // really in the city.
+      "activity.view",
+      "activity.manage",
+      "fivem.view",
+      // Reads and marks test results, e.g. a written exam before promotion.
+      "tests.grade",
+      "loa.view",
+      "loa.manage",
+    ],
+  },
+  {
+    name: "FTP",
+    description:
+      "Field Training Program staff. Runs training, sign-offs and the FTP department.",
+    sections: ["Roster", "Training", "Sign-offs", "Departments", "SOP"],
+    permissions: [
+      "roster.view",
+      "sop.view",
+      "sop.edit",
+      "training.view",
+      "training.manage",
+      "training.signoff.manage",
+      // FTP is a department now, so its staff review its join applications and
+      // set standing in it — but not create or delete departments generally.
+      "departments.view",
+      "departments.approve",
+      "departments.members",
+      // FTP staff run the trainees' training, so they see who is still one.
+      "trainees.view",
+      // And they sit on promotion panels for the people they trained, and see
+      // which of them are coming up for promotion.
+      "interviews.view",
+      "interviews.score",
+      "interviews.readiness",
+      // Theory tests are part of training, so FTP builds them and marks them.
+      "tests.manage",
+      "tests.grade",
+    ],
+  },
+];
+
+/** Permissions granted to a roster member with no explicit role assignment. */
+export function defaultMemberPermissions(): string[] {
+  const preset = ROLE_PRESETS.find((r) => r.name === DEFAULT_MEMBER_ROLE);
+  return [...(preset?.permissions ?? [])];
+}

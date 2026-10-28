@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { DiscordBar } from "@/components/DiscordBar";
-import { SopViewer } from "@/components/SopViewer";
-import { CopyGuard } from "@/components/CopyGuard";
-import { Footer } from "@/components/Footer";
+import { DiscordBar } from "@/components/layout/DiscordBar";
+import { SopViewer } from "@/components/sop/SopViewer";
+import { CopyGuard } from "@/components/sop/CopyGuard";
+import { Footer } from "@/components/layout/Footer";
 import { ExternalLink } from "lucide-react";
 import type { RelatedLink } from "@/lib/sop";
 

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAuth, isDenied } from "@/lib/api-auth";
+import { requireAuth, isDenied } from "@/lib/auth/api";
 import { CHANGELOG } from "@/lib/changelog";
 
 /**

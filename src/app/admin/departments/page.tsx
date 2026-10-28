@@ -29,7 +29,7 @@ import {
   readAnswers,
   type QuestionType,
 } from "@/lib/departments";
-import { DepartmentMark, DepartmentMarkLegend } from "@/components/DepartmentMark";
+import { DepartmentMark, DepartmentMarkLegend } from "@/components/roster/DepartmentMark";
 
 interface Question {
   id: string;

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { CONTENT_PERMISSIONS } from "@/lib/constants";
-import { maxRequestBytes, storeUpload } from "@/lib/media-server";
+import { maxRequestBytes, storeUpload } from "@/lib/media/server";
 
 /** Uploads an image to the media library (multipart form, field "file"). */
 export async function POST(req: NextRequest) {

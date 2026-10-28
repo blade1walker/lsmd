@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied, actorLabel, hasPermission } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied, actorLabel, hasPermission } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { INTERVIEW_SECTION_PERMISSIONS, } from "@/lib/constants";
 import { MAX_NOTE_LENGTH } from "@/lib/interviews";
-import { INTERVIEW_INCLUDE, readInterviewDetail, seatFor } from "@/lib/interviews-server";
+import { INTERVIEW_INCLUDE, readInterviewDetail, seatFor } from "@/lib/interviews/server";
 
 /**
  * Adds a general note to the session.

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readImage } from "@/lib/media-storage";
+import { readImage } from "@/lib/media/storage";
 
 /**
  * Serves an image from the media library. Names are content hashes, so a

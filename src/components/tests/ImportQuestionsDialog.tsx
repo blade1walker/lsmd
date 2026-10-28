@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { QUESTION_TYPE_ICONS } from "./QuestionTypeIcons";
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
 import { PASTE_EXAMPLE, QUESTION_TYPE_LABELS, parseQuestionText, questionProblems, type TestQuestion } from "@/lib/tests";
-import { cloneQuestion, downloadQuestions, importFile, templateQuestions, type ImportResult } from "@/lib/tests-import";
+import { cloneQuestion, downloadQuestions, importFile, templateQuestions, type ImportResult } from "@/lib/tests/import-export";
 import { toast } from "sonner";
 
 type Source = "file" | "test" | "paste";

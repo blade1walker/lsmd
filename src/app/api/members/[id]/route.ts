@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { SECTION_HINTS, getRankWeight } from "@/lib/constants";
-import { getNotificationSettings, postToPromotionWebhook, postToCallsignWebhook, renderTemplate } from "@/lib/discord-webhook";
-import { removeFtpDiscordRole } from "@/lib/discord-roles";
-import { setLoaRole } from "@/lib/loa-role";
-import { RUNNING_LOA } from "@/lib/loa-server";
+import { getNotificationSettings, postToPromotionWebhook, postToCallsignWebhook, renderTemplate } from "@/lib/discord/webhook";
+import { removeFtpDiscordRole } from "@/lib/discord/roles";
+import { setLoaRole } from "@/lib/loa/role";
+import { RUNNING_LOA } from "@/lib/loa/server";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAuth("roster.edit");

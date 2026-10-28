@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { requireAuth, isDenied, hasPermission } from "@/lib/api-auth";
+import { requireAuth, isDenied, hasPermission } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { LOA_PERMISSIONS } from "@/lib/constants";
-import { getLoaBoard } from "@/lib/loa-board";
+import { getLoaBoard } from "@/lib/loa/board";
 
 /** The LOA section: who is on leave and since when, what is coming, and the Discord role. */
 export async function GET() {

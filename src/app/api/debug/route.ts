@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { requireAuth, isDenied } from "@/lib/api-auth";
-import { databaseUrl } from "@/lib/database-url";
+import { requireAuth, isDenied } from "@/lib/auth/api";
+import { databaseUrl } from "@/lib/db/database-url";
 
 export async function GET() {
   // Reports which env vars are set, the NEXTAUTH_URL value, and raw database
@@ -26,7 +26,7 @@ export async function GET() {
   let dbStatus = "not tested";
   if (hasDbUrl) {
     try {
-      const { prisma } = await import("@/lib/prisma");
+      const { prisma } = await import("@/lib/db/prisma");
       await prisma.$queryRaw`SELECT 1`;
       dbStatus = "connected";
     } catch (e) {

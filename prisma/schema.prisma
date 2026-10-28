@@ -274,7 +274,7 @@ model DepartmentTemplate {
   openForApplications Boolean @default(true)
   /** Optional rank gate, by RANKS name. Null means every rank may apply. */
   minRank      String?
-  /** Guild role granted on approval — inert until set (see lib/discord-roles). */
+  /** Guild role granted on approval — inert until set (see lib/discord/roles.ts). */
   discordRoleId String?
 
   questions    DepartmentQuestion[]
@@ -711,7 +711,7 @@ model MedicalFormVersion {
   formId        String
   /** "1.0", "1.1", … shown beside the form name wherever it is offered. */
   version       String
-  /** FormField[] — shape defined in src/lib/medical.ts. */
+  /** FormField[] — shape defined in src/lib/medical/index.ts. */
   fields        Json     @default("[]")
   /** ExportConfig — which sections and fields reach the PDF, and in what order. */
   exportConfig  Json     @default("{}")
@@ -872,7 +872,7 @@ model EmsCall {
   callNumber            String   @unique
   occurredAt            DateTime
   location              String
-  /** One of CALL_NATURES in src/lib/calls.ts. */
+  /** One of CALL_NATURES in src/lib/calls/index.ts. */
   nature                String
   /** P1 | P2 | P3 */
   priority              String   @default("P2")
@@ -1236,7 +1236,7 @@ model CitySession {
 /// designation carries over; the board only lists members clocked on.
 model UnitStatus {
   memberId  String   @id
-  /// One of UNIT_STATUSES in src/lib/duty-board.ts.
+  /// One of UNIT_STATUSES in src/lib/duty-board/index.ts.
   status    String   @default("Available")
   /// Ambulance or unit designation, e.g. "Medic 1".
   unit      String?
@@ -1268,7 +1268,7 @@ model ActivitySettings {
 // ─── Tests & Quizzes ────────────────────────────────────────────────────────
 
 /// A test or quiz built in the admin panel and taken by members on /tests.
-/// Questions live in one JSON column (shape: TestQuestion in src/lib/tests.ts)
+/// Questions live in one JSON column (shape: TestQuestion in src/lib/tests/index.ts)
 /// rather than a table, so the builder saves the whole test in one write and
 /// reordering is just the array order — the same choice MedicalFormVersion
 /// makes for its fields.
@@ -1399,7 +1399,7 @@ model LoaSettings {
 
 /// One editable piece of the public website — a heading, a paragraph, a link,
 /// an image or a section's visibility — keyed as in SITE_CONTENT
-/// (src/lib/site-content.ts). Values are JSON text so the table means the
+/// (src/lib/site-content/index.ts). Values are JSON text so the table means the
 /// same on any database. A key with no row shows its built-in default.
 model SiteContent {
   key         String    @id

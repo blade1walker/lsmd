@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import pg from "pg";
-import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { EXPORT_PERMISSIONS } from "@/lib/constants";
-import { databaseUrl, quietSslMode } from "@/lib/database-url";
+import { databaseUrl, quietSslMode } from "@/lib/db/database-url";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;

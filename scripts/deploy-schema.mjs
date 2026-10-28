@@ -24,7 +24,7 @@ const onCI =
 
 /**
  * Which database to apply the schema to — the same choice as
- * src/lib/database-url.ts, which this file cannot import. With Vercel's Neon
+ * src/lib/db/database-url.ts, which this file cannot import. With Vercel's Neon
  * connection (NEON_*) present it wins, and DATABASE_URL is pointed at it for
  * every step this script runs.
  */

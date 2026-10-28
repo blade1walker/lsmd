@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readFiveMSettings } from "@/lib/fivem-server";
+import { readFiveMSettings } from "@/lib/fivem/server";
 import { connectUrlFor, parseJoinCode } from "@/lib/fivem";
 
 /**

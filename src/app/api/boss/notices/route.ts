@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { CONTENT_PERMISSIONS } from "@/lib/constants";
 import { parseNoticeInput } from "@/lib/site-content";
-import { toNoticeView } from "@/lib/site-content-server";
+import { toNoticeView } from "@/lib/site-content/server";
 
 /** Creates a notice as a draft — it shows in preview until someone publishes it. */
 export async function POST(req: NextRequest) {

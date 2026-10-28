@@ -20,7 +20,7 @@ import {
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
 import { isRankAtLeast } from "@/lib/constants";
 import { departmentTag, questionOptions } from "@/lib/departments";
-import { DepartmentMark } from "@/components/DepartmentMark";
+import { DepartmentMark } from "@/components/roster/DepartmentMark";
 
 interface Question {
   id: string;

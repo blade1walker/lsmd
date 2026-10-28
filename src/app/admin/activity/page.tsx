@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { fetchJson, errorMessage } from "@/lib/fetch-json";
-import { formatHours } from "@/lib/roster-shared";
+import { formatHours } from "@/lib/roster";
 import {
   ACTIVITY_LIMITS,
   ACTIVITY_PERIODS,

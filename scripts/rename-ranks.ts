@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { databaseUrl } from "../src/lib/database-url";
+import { databaseUrl } from "../src/lib/db/database-url";
 
 /**
  * Moves records from a retired rank name to its new one, so renaming a rank

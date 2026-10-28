@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth, isDenied } from "@/lib/api-auth";
+import { requireAuth, isDenied } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import {
   getNotificationSettings,
@@ -10,7 +10,7 @@ import {
   resolveWebhookSource,
   type WebhookKind,
   type NotificationSettings,
-} from "@/lib/discord-webhook";
+} from "@/lib/discord/webhook";
 
 /** Stand-in values so a test message reads like a real one. */
 const SAMPLE = {

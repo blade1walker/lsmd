@@ -1,4 +1,4 @@
-import { getRadioCodes } from "@/lib/radio-codes-data";
+import { getRadioCodes } from "@/lib/radio-codes/server";
 import { RadioCodesPageClient } from "./RadioCodesPageClient";
 
 export const dynamic = "force-dynamic";

@@ -21,7 +21,7 @@ import {
   PRESENTATIONAL_TYPES,
   type Answers,
 } from "@/lib/medical";
-import { exportDocumentPdf, type PdfSettings } from "@/lib/medical-pdf";
+import { exportDocumentPdf, type PdfSettings } from "@/lib/medical/pdf";
 import { toast } from "sonner";
 import { ArrowLeft, Download, Save, ShieldCheck, Unlock, Archive, Trash2 } from "lucide-react";
 

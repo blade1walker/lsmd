@@ -5,7 +5,7 @@ import { ArrowDown, ArrowUp, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
-import RankInsignia from "@/components/RankInsignia";
+import RankInsignia from "@/components/roster/RankInsignia";
 import {
   DEFAULT_RANK_COLOR,
   RANK_LAYOUTS,

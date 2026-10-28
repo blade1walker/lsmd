@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db/prisma";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
-import { rejectUnlessFiveM } from "@/lib/fivem-auth";
-import { loadMatcher, notOnRosterBody, parseActor, readFiveMSettings } from "@/lib/fivem-server";
+import { rejectUnlessFiveM } from "@/lib/fivem/auth";
+import { loadMatcher, notOnRosterBody, parseActor, readFiveMSettings } from "@/lib/fivem/server";
 import { nameKey } from "@/lib/fivem";
 import { CALL_NATURES, CALL_NUMBER_PREFIX, CALL_OUTCOMES, HOSPITALS, MAX_RESPONDERS, TRANSPORT_OUTCOME, parseCallInput } from "@/lib/calls";
-import { CALL_INCLUDE, checkCallReferences, toCallRecord } from "@/lib/calls-server";
-import { claimDocumentNumber } from "@/lib/medical-server";
+import { CALL_INCLUDE, checkCallReferences, toCallRecord } from "@/lib/calls/server";
+import { claimDocumentNumber } from "@/lib/medical/server";
 import { memberDisplayLabel } from "@/lib/utils";
 
 /**

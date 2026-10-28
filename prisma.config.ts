@@ -2,7 +2,7 @@
 // npm install --save-dev prisma dotenv
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
-import { directDatabaseUrl } from "./src/lib/database-url";
+import { directDatabaseUrl } from "./src/lib/db/database-url";
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
@@ -11,7 +11,7 @@ export default defineConfig({
   },
   datasource: {
     // Used only by the Prisma CLI (`db push` during deploys); the app connects
-    // through src/lib/prisma.ts. Schema changes can stall forever on a pooled
+    // through src/lib/db/prisma.ts. Schema changes can stall forever on a pooled
     // connection (PgBouncer / Supabase / Neon pooler), so a direct, non-pooled
     // URL is preferred when the host provides one — see database-url.ts.
     url: directDatabaseUrl(),

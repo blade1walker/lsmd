@@ -18,7 +18,7 @@ import {
   FileText,
   ClipboardCheck,
 } from "lucide-react";
-import ActivityPill from "@/components/ActivityPill";
+import ActivityPill from "@/components/roster/ActivityPill";
 import { EMS_TRAINING, overallProgress, phaseProgress, type EmsProgress } from "@/lib/training";
 
 interface MemberProfileData {

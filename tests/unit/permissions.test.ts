@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { ALL_PERMISSIONS, LOA_PERMISSIONS, FIVEM_PERMISSIONS, ACTIVITY_PERMISSIONS, isRankAtLeast } from "@/lib/constants";
-import { effectiveRolePermissions, inheritedPermissions } from "@/lib/role-hierarchy";
-import { ROLE_PRESETS } from "@/lib/role-presets";
+import { effectiveRolePermissions, inheritedPermissions } from "@/lib/auth/role-hierarchy";
+import { ROLE_PRESETS } from "@/lib/auth/role-presets";
 
 const roles = [
   { id: "top", order: 0, permissions: ["roles.manage"] },

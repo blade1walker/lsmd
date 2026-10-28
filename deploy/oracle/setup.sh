@@ -106,7 +106,7 @@ if [ "$(tr -cd . <<<"$DOMAIN" | wc -c)" = 1 ]; then
 fi
 sudo systemctl reload caddy || sudo systemctl restart caddy
 
-# The database is DATABASE_URL, or the NEON_* variables — see src/lib/database-url.ts.
+# The database is DATABASE_URL, or the NEON_* variables — see src/lib/db/database-url.ts.
 if [ "${NEW_ENV:-}" = 1 ] || ! sudo grep -qE '^(DATABASE_URL|NEON_URL|NEON_DATABASE_URL|NEON_POSTGRES_PRISMA_URL|NEON_POSTGRES_URL)="?postgres' "$APP/.env"; then
   say "Almost done — fill in the settings, then finish"
   cat <<EOF

@@ -1,7 +1,7 @@
 "use client";
 
-import { DiscordBar } from "@/components/DiscordBar";
-import { Footer } from "@/components/Footer";
+import { DiscordBar } from "@/components/layout/DiscordBar";
+import { Footer } from "@/components/layout/Footer";
 import { motion } from "framer-motion";
 
 interface RadioCode {

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { CALL_SECTION_PERMISSIONS } from "@/lib/constants";
 import { CALL_NUMBER_PREFIX, parseCallInput } from "@/lib/calls";
-import { CALL_INCLUDE, checkCallReferences, ownCallsFilter, toCallRecord } from "@/lib/calls-server";
-import { claimDocumentNumber } from "@/lib/medical-server";
+import { CALL_INCLUDE, checkCallReferences, ownCallsFilter, toCallRecord } from "@/lib/calls/server";
+import { claimDocumentNumber } from "@/lib/medical/server";
 import type { Prisma } from "@/generated/prisma/client";
 
 /** The log, newest first. Without calls.view it is limited to the viewer's own calls. */

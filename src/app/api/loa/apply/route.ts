@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db/prisma";
 import { apiError } from "@/lib/api-error";
-import { requireAuth, isDenied, hasPermission, actorLabel } from "@/lib/api-auth";
-import { postToLOAWebhook } from "@/lib/discord-webhook";
+import { requireAuth, isDenied, hasPermission, actorLabel } from "@/lib/auth/api";
+import { postToLOAWebhook } from "@/lib/discord/webhook";
 
 /**
  * A member asks for leave. Signed-in roster members only, and only for

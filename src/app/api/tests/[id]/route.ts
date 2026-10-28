@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import {
   cleanAnswers,
@@ -13,7 +13,7 @@ import {
   minRankMessage,
   type TestQuestion,
 } from "@/lib/tests";
-import { canTakeTest, closeIfExpired, readNumberMap, readStringMap } from "@/lib/tests-server";
+import { canTakeTest, closeIfExpired, readNumberMap, readStringMap } from "@/lib/tests/server";
 
 type Params = { params: Promise<{ id: string }> };
 

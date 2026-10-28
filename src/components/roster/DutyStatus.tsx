@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { formatHours } from "@/lib/roster-shared";
+import { formatHours } from "@/lib/roster";
 
 function subscribe(onTick: () => void) {
   const id = setInterval(onTick, 30_000);

@@ -20,7 +20,7 @@ import { AnswerReview, AttemptGrader, ScoreBadge } from "@/components/tests/Atte
 import { ImportQuestionsDialog } from "@/components/tests/ImportQuestionsDialog";
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
 import { RANKS, TEST_PERMISSIONS } from "@/lib/constants";
-import { cloneQuestion, downloadQuestions } from "@/lib/tests-import";
+import { cloneQuestion, downloadQuestions } from "@/lib/tests/import-export";
 import {
   QUESTION_TYPES,
   QUESTION_TYPE_HINTS,

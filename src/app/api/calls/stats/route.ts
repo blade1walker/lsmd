@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { CALL_SECTION_PERMISSIONS } from "@/lib/constants";
 import { TRANSPORT_OUTCOME, type CallStats } from "@/lib/calls";
-import { ownCallsFilter } from "@/lib/calls-server";
+import { ownCallsFilter } from "@/lib/calls/server";
 import type { Prisma } from "@/generated/prisma/client";
 
 const DAY_MS = 86_400_000;

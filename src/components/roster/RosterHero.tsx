@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { FileText, Radio, Shirt, GraduationCap, CalendarOff, Building2, UserPlus, Lock, ClipboardList } from "lucide-react";
-import { BrandLogo } from "../SiteContentProvider";
+import { BrandLogo } from "../layout/SiteContentProvider";
 
 /** Every public destination the old header and hero linked to, kept in one row. */
 const LINKS = [

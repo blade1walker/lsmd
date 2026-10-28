@@ -2,15 +2,15 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import MemberRow from "@/components/MemberRow";
-import AddMemberDialog from "@/components/AddMemberDialog";
+import MemberRow from "@/components/roster/MemberRow";
+import AddMemberDialog from "@/components/roster/AddMemberDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Download } from "lucide-react";
 import { RANK_LIST, ACTIVITY_STATUSES } from "@/lib/constants";
 import { departmentTag } from "@/lib/departments";
-import { groupByRank } from "@/lib/roster-shared";
-import { DepartmentMarkLegend } from "@/components/DepartmentMark";
+import { groupByRank } from "@/lib/roster";
+import { DepartmentMarkLegend } from "@/components/roster/DepartmentMark";
 import { toast } from "sonner";
 import { ErrorState } from "@/components/ui/error-state";
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied, actorLabel, hasPermission } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied, actorLabel, hasPermission } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { INTERVIEW_SECTION_PERMISSIONS } from "@/lib/constants";
 import { PANEL_ROLE_KEYS, isScoringRole } from "@/lib/interviews";
-import { INTERVIEW_INCLUDE, panelIsFull, readInterviewDetail, seatFor } from "@/lib/interviews-server";
+import { INTERVIEW_INCLUDE, panelIsFull, readInterviewDetail, seatFor } from "@/lib/interviews/server";
 
 /** The updated session, in the shape GET returns, so the page replaces its state wholesale. */
 async function respond(id: string) {

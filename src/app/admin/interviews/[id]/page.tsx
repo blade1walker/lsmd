@@ -1528,7 +1528,7 @@ function ReportButton({ interviewId }: { interviewId: string }) {
         interview: InterviewDetail;
         settings: PromotionSettingsValues;
       }>(`/api/interviews/${interviewId}/report`);
-      const { exportInterviewPdf } = await import("@/lib/interview-pdf");
+      const { exportInterviewPdf } = await import("@/lib/interviews/pdf");
       await exportInterviewPdf(interview, settings);
     } catch (err) {
       toast.error(errorMessage(err));

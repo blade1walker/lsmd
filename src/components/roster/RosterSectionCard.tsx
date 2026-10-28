@@ -2,9 +2,9 @@
 
 import React from "react";
 import { ChevronDown } from "lucide-react";
-import RankInsignia from "@/components/RankInsignia";
-import ActivityPill from "@/components/ActivityPill";
-import { DepartmentMark } from "@/components/DepartmentMark";
+import RankInsignia from "@/components/roster/RankInsignia";
+import ActivityPill from "@/components/roster/ActivityPill";
+import { DepartmentMark } from "@/components/roster/DepartmentMark";
 import { departmentTag } from "@/lib/departments";
 import {
   groupByRank,
@@ -13,7 +13,7 @@ import {
   formatHours,
   type RosterDepartment,
   type RosterMember,
-} from "@/lib/roster-shared";
+} from "@/lib/roster";
 import { StarOfLife } from "./StarOfLife";
 import { CopyId } from "./CopyId";
 import { DutyStatus } from "./DutyStatus";
