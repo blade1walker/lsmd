@@ -40,6 +40,8 @@ set -a
 . "$APP/.env"
 set +a
 export NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
+# Vercel type-checks every push; on this 1 GB VM the check alone takes 20+ minutes.
+export SKIP_TYPECHECK="${SKIP_TYPECHECK:-1}"
 
 npm ci --no-audit --no-fund --include=dev
 npm run build
