@@ -1,0 +1,9 @@
+[Unit]
+Description=Deploy the latest main of the LSMD website if it changed
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=lsmd
+ExecStart=/bin/bash /opt/lsmd/repo/deploy/oracle/deploy.sh
+TimeoutStartSec=30min
