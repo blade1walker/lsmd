@@ -104,7 +104,13 @@ rm -f "$KEYFILE"
 
 say "Waiting for $NAME to start"
 oci compute instance get --instance-id "$ID" --wait-for-state RUNNING >/dev/null
-IP=$(val compute instance list-vnics --instance-id "$ID" --query 'data[0]."public-ip"')
+# The VNIC (and its public IP) can show up a little after RUNNING.
+IP=
+for _ in $(seq 30); do
+  IP=$(val compute instance list-vnics --instance-id "$ID" --query 'data[0]."public-ip"')
+  [ -n "$IP" ] && break
+  sleep 10
+done
 say "VM ready — public IP: $IP"
 echo "  SSH in:  ssh ubuntu@$IP"
 echo "  Then follow deploy/oracle/README.md step 2 (domain) and step 3 (setup.sh)."
