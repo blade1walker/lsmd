@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, isDenied } from "@/lib/api-auth";
+import { log } from "@/lib/log";
 
 export async function PATCH(
   request: Request,
@@ -20,7 +21,7 @@ export async function PATCH(
 
     return NextResponse.json(definition);
   } catch (error) {
-    console.error("Error updating signoff:", error);
+    log.error("Error updating signoff", error);
     return NextResponse.json({ error: "Failed to update signoff" }, { status: 500 });
   }
 }
@@ -37,7 +38,7 @@ export async function DELETE(
     await prisma.signOffDefinition.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting signoff:", error);
+    log.error("Error deleting signoff", error);
     return NextResponse.json({ error: "Failed to delete signoff" }, { status: 500 });
   }
 }

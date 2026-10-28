@@ -1,4 +1,5 @@
 import { BOT_TOKEN_REJECTED, resolveBotToken } from "./discord-webhook";
+import { log } from "./log";
 
 /**
  * Adds/removes a Discord server (guild) role on a member — distinct from the
@@ -29,13 +30,11 @@ async function setGuildRole(discordId: string, roleId: string, action: "add" | "
     );
     // Discord returns 204 with an empty body on success for both verbs.
     if (!res.ok) {
-      console.error(
-        `Failed to ${action} Discord role ${roleId} for ${discordId}: ${res.status} ${await res.text()}`
-      );
+      log.error(`Failed to ${action} Discord role`, undefined, { roleId, discordId, status: res.status, response: (await res.text()).slice(0, 200) });
     }
     return res.ok;
   } catch (err) {
-    console.error(`Failed to ${action} Discord role ${roleId} for ${discordId}:`, err);
+    log.error(`Failed to ${action} Discord role`, err, { roleId, discordId });
     return false;
   }
 }

@@ -22,6 +22,7 @@ import {
   type ProbeResult,
 } from "./fivem";
 import { fiveMKeyState } from "./fivem-auth";
+import { log } from "./log";
 
 /**
  * Server half of the FiveM City Link: reading the server, matching players to
@@ -36,7 +37,7 @@ export async function readFiveMSettings(): Promise<FiveMSettings | null> {
   try {
     return await prisma.fiveMSettings.findUnique({ where: { id: "singleton" } });
   } catch (error) {
-    console.error("City Link settings could not be read:", error);
+    log.error("City Link settings could not be read", error);
     return null;
   }
 }

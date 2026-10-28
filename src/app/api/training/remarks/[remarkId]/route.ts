@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, isDenied } from "@/lib/api-auth";
+import { log } from "@/lib/log";
 
 export async function DELETE(
   request: Request,
@@ -14,7 +15,7 @@ export async function DELETE(
     await prisma.remark.delete({ where: { id: remarkId } });
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting remark:", error);
+    log.error("Error deleting remark", error);
     return NextResponse.json({ error: "Failed to delete remark" }, { status: 500 });
   }
 }

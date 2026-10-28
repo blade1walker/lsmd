@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, isDenied, hasPermission } from "@/lib/api-auth";
+import { log } from "@/lib/log";
 
 export async function POST(request: Request) {
   const auth = await requireAuth();
@@ -41,7 +42,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(entry, { status: 201 });
   } catch (error) {
-    console.error("Error clocking in:", error);
+    log.error("Error clocking in", error);
     return NextResponse.json({ error: "Failed to clock in" }, { status: 500 });
   }
 }

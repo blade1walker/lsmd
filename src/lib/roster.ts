@@ -5,6 +5,7 @@ import { resolveAccess, hasPermission } from "./access";
 import { cached } from "./data-cache";
 import type { Prisma } from "@/generated/prisma/client";
 import type { RosterMember, RosterPageData, RosterViewer, ViewerDuty } from "./roster-shared";
+import { log } from "./log";
 
 /**
  * Loads the public roster. Server-only.
@@ -293,7 +294,7 @@ export async function getHomeSummary(): Promise<HomeSummary | null> {
       stats: { personnel, onDuty: onDuty.length, departments },
     };
   } catch (error) {
-    console.error("Home summary failed to load:", error);
+    log.error("Home summary failed to load", error);
     return null;
   }
 }

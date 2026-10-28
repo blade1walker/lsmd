@@ -16,7 +16,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     });
     return NextResponse.json(section);
   } catch (error) {
-    console.error("Error updating section:", error);
     return apiError("Failed to update section", error);
   }
 }
@@ -30,7 +29,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     await prisma.section.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (error) {
-    console.error("Error deleting section:", error);
     return apiError("Failed to delete section", error);
   }
 }

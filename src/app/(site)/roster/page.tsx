@@ -3,6 +3,7 @@ import { LoadError } from "@/components/LoadError";
 import { getRosterPageData } from "@/lib/roster";
 import { parseRosterFilters } from "@/lib/roster-shared";
 import type { Metadata } from "next";
+import { log } from "@/lib/log";
 
 export const metadata: Metadata = { title: "Personnel Roster" };
 
@@ -21,7 +22,7 @@ export default async function RosterPage({
   try {
     data = await getRosterPageData();
   } catch (error) {
-    console.error("Roster failed to load:", error);
+    log.error("Roster failed to load", error);
     return <LoadError what="The roster" />;
   }
 

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { log } from "./log";
 
 /** Prisma error codes worth translating into something actionable. */
 const HINTS: Record<string, string> = {
@@ -17,7 +18,7 @@ const HINTS: Record<string, string> = {
 export function apiError(message: string, error: unknown, status = 500) {
   const { code, detail } = describe(error);
   const hint = code ? HINTS[code] : undefined;
-  console.error(`${message}${code ? ` [${code}]` : ""}:`, error);
+  log.error(message, error, { status });
 
   return NextResponse.json(
     {

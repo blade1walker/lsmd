@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import { recordDirectMessage } from "./dm-threads";
+import { log } from "./log";
 
 export async function getNotificationSettings() {
   try {
@@ -253,7 +254,7 @@ async function logDelivery(entry: {
       },
     });
   } catch (err) {
-    console.error("Failed to write notification log:", err);
+    log.error("Failed to write notification log", err);
   }
 }
 

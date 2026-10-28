@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import Database from "better-sqlite3";
+import { log } from "./log";
 
 /**
  * Applies prisma/migrations to the SQLite database on deploy.
@@ -71,7 +72,7 @@ export function applyMigrations(file: string, dir = MIGRATIONS_DIR): string[] {
       const done = history.get(name);
       if (done) {
         if (!done.finished_at) throw new Error(`Migration ${name} was started and never finished. Restore a backup taken before it.`);
-        if (done.checksum !== checksumOf(sql)) console.warn(`[migrations] ${name} was edited after it was applied; the edit is ignored.`);
+        if (done.checksum !== checksumOf(sql)) log.warn("Migration was edited after it was applied; the edit is ignored", { migration: name });
         continue;
       }
       const startedAt = new Date().toISOString();

@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import { log } from "./log";
 
 export interface AuditAction {
   action:
@@ -41,6 +42,6 @@ export async function logAudit(action: AuditAction) {
       },
     });
   } catch (error) {
-    console.error("Audit log failed:", error);
+    log.error("Audit log failed", error);
   }
 }

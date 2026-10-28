@@ -22,7 +22,6 @@ export async function POST() {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    console.error("Error sorting callsigns:", error);
     return apiError("Failed to sort callsigns", error);
   }
 }

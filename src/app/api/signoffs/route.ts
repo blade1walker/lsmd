@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, isDenied } from "@/lib/api-auth";
+import { log } from "@/lib/log";
 
 /** Sign-off definitions with every FTO's completion records and notes — training staff only. */
 export async function GET() {
@@ -17,7 +18,7 @@ export async function GET() {
 
     return NextResponse.json(definitions);
   } catch (error) {
-    console.error("Error fetching signoffs:", error);
+    log.error("Error fetching signoffs", error);
     return NextResponse.json({ error: "Failed to fetch signoffs" }, { status: 500 });
   }
 }
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(definition, { status: 201 });
   } catch (error) {
-    console.error("Error creating signoff:", error);
+    log.error("Error creating signoff", error);
     return NextResponse.json({ error: "Failed to create signoff" }, { status: 500 });
   }
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, isDenied } from "@/lib/api-auth";
+import { log } from "@/lib/log";
 
 export async function POST(request: Request) {
   const auth = await requireAuth("training.signoff.manage");
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(record, { status: 201 });
   } catch (error) {
-    console.error("Error completing signoff:", error);
+    log.error("Error completing signoff", error);
     return NextResponse.json({ error: "Failed to complete signoff" }, { status: 500 });
   }
 }

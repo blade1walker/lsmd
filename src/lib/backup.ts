@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import Database from "better-sqlite3";
 import { backupsDir, databaseFile } from "./paths";
+import { log } from "./log";
 
 /**
  * Backups of the SQLite database, taken while the site runs.
@@ -127,9 +128,9 @@ export function scheduleDailyBackups(): void {
       const age = await hoursSinceLastBackup("daily");
       if (age !== null && age < 23.5) return;
       const backup = await backupDatabase("daily");
-      console.log(`[backup] ${backup.name} (${Math.round(backup.bytes / 1024)} KB)`);
+      log.info("Daily backup taken", { file: backup.name, kb: Math.round(backup.bytes / 1024) });
     } catch (error) {
-      console.error("[backup] Daily backup failed:", error);
+      log.error("Daily backup failed", error);
     }
   };
   globalThis.__lsmdBackupTimer = setInterval(check, 60 * 60_000);

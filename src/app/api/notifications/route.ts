@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { log } from "@/lib/log";
 
 export async function GET() {
   const auth = await requireAuth("notifications");
@@ -13,7 +14,7 @@ export async function GET() {
 
     return NextResponse.json(notifications);
   } catch (error) {
-    console.error("Error fetching notifications:", error);
+    log.error("Error fetching notifications", error);
     return NextResponse.json({ error: "Failed to fetch notifications" }, { status: 500 });
   }
 }
@@ -41,7 +42,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(notification, { status: 201 });
   } catch (error) {
-    console.error("Error creating notification:", error);
+    log.error("Error creating notification", error);
     return NextResponse.json({ error: "Failed to create notification" }, { status: 500 });
   }
 }

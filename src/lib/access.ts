@@ -5,6 +5,7 @@ import { DEFAULT_MEMBER_ROLE, defaultMemberPermissions } from "./role-presets";
 import { memberDisplayLabel } from "./utils";
 import { effectiveRolePermissions, type RoleWithHierarchy } from "./role-hierarchy";
 import { stringList } from "./json-fields";
+import { log } from "./log";
 
 export type DenialReason = "not-in-roster" | "no-discord-id";
 
@@ -185,7 +186,7 @@ export async function provisionAdminUser(discordId: string): Promise<void> {
       },
     });
   } catch (error) {
-    console.error("Failed to provision admin user:", error);
+    log.error("Failed to provision admin user", error);
   }
 }
 
@@ -215,6 +216,6 @@ export async function syncAdminUserFromRoster(discordId: string): Promise<void> 
       data: { discordName: label },
     });
   } catch (error) {
-    console.error("Failed to sync admin user from roster:", error);
+    log.error("Failed to sync admin user from roster", error);
   }
 }

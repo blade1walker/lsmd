@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, isDenied } from "@/lib/api-auth";
+import { log } from "@/lib/log";
 
 export async function PATCH(
   request: Request,
@@ -19,7 +20,7 @@ export async function PATCH(
 
     return NextResponse.json(notification);
   } catch (error) {
-    console.error("Error marking notification read:", error);
+    log.error("Error marking notification read", error);
     return NextResponse.json({ error: "Failed to mark read" }, { status: 500 });
   }
 }

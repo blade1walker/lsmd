@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { cached } from "@/lib/data-cache";
 import { optionalAccess } from "@/lib/api-auth";
 import { meetsMinRank, minRankMessage, parseQuestions } from "@/lib/tests";
+import { log } from "@/lib/log";
 
 interface Card {
   id: string;
@@ -72,7 +73,7 @@ export async function TrainingCards() {
       };
     });
   } catch (error) {
-    console.error("Training cards failed to load:", error);
+    log.error("Training cards failed to load", error);
   }
 
   if (cards.length === 0) {

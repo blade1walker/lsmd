@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { LoadError } from "@/components/LoadError";
 import { CadetPageClient } from "./CadetPageClient";
+import { log } from "@/lib/log";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,7 @@ export default async function CadetPage() {
       include: { trainingRecord: { include: { remarks: true } } },
     })
     .catch((error) => {
-      console.error("Training progress failed to load:", error);
+      log.error("Training progress failed to load", error);
       return undefined;
     });
   if (member === undefined) return <LoadError what="Your training progress" />;
