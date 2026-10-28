@@ -3,7 +3,15 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, isDenied } from "@/lib/api-auth";
 import { apiError } from "@/lib/api-error";
 
+/**
+ * Every section with its members' full rows (Discord, Steam and State IDs,
+ * timezone, HR flags), so roster staff only. Was public; the public roster
+ * reads /api/members, which trims the rows for anonymous callers.
+ */
 export async function GET() {
+  const auth = await requireAuth("roster.view");
+  if (isDenied(auth)) return auth.error;
+
   try {
     const sections = await prisma.section.findMany({
       include: { members: { orderBy: { order: "asc" } } },

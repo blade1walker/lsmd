@@ -31,6 +31,9 @@ const ACTIVE_LOA = {
   select: { endDate: true, startDate: true, reason: true },
 };
 
+/** The same for anonymous callers, without the reason — that can be personal or medical. */
+const ACTIVE_LOA_PUBLIC = { ...ACTIVE_LOA, select: { endDate: true, startDate: true } };
+
 /** Drives the roster's per-department tick columns. Public either way — the tags are on the public roster. */
 const DEPARTMENT_MEMBERSHIPS = {
   select: { id: true, departmentId: true, role: true },
@@ -55,7 +58,7 @@ export async function GET() {
             : {
                 select: {
                   ...PUBLIC_MEMBER_FIELDS,
-                  loas: ACTIVE_LOA,
+                  loas: ACTIVE_LOA_PUBLIC,
                   departmentMemberships: DEPARTMENT_MEMBERSHIPS,
                 },
               }),

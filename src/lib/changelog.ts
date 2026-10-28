@@ -30,6 +30,8 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     date: "2026-10-28",
     changes: [
+      { type: "security", text: "Members' Discord, Steam and State IDs, timezones and HR flags are no longer readable without signing in (the full section list now needs roster access), and the public roster no longer shows why someone is on leave" },
+      { type: "security", text: "Filing a removal request, reporting a member inactive and recording a promotion notice now need the matching permission (removal.request, hr.inactivity, roster.promote), and the requester is always the signed-in user. Training sign-off records now need training access. All of these were open to anyone before" },
       { type: "security", text: "LOA requests now need you to be signed in, and you can only request leave for yourself (HR can still file for someone). Before, anyone could file and announce leave for any member without signing in" },
       { type: "fix", text: "\"Could not check access\" errors and slow or failing pages: the server's database connections no longer time out" },
       { type: "feature", text: "Admin → Ranks & Insignia: move ranks up or down the ladder to change who outranks whom, and set each rank's insignia — stars, bars, chevrons, pips or none, how many (up to 5), its color, and whether they sit in a row, stacked or in a pyramid. Changes apply across the whole site at once, and Reset to defaults puts the original ladder back" },

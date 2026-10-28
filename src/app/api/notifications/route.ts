@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied } from "@/lib/api-auth";
+import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
 
 export async function GET() {
   const auth = await requireAuth("notifications");
@@ -18,10 +18,15 @@ export async function GET() {
   }
 }
 
+/** Promotion notices feed Promotion History, so writing one needs roster.promote; it used to be open. */
 export async function POST(request: Request) {
+  const auth = await requireAuth("roster.promote");
+  if (isDenied(auth)) return auth.error;
+
   try {
     const body = await request.json();
-    const { memberId, memberName, callSign, fromRank, toRank, promotedBy } = body;
+    const { memberId, memberName, callSign, fromRank, toRank } = body;
+    const promotedBy = actorLabel(auth.access);
 
     const notification = await prisma.promotionNotification.create({
       data: {
