@@ -8,6 +8,14 @@
 # is put back. Does nothing when main has not changed (unless FORCE=1).
 set -euo pipefail
 
+# This file lives in the checkout that `git reset` below rewrites, and bash
+# reads a script as it runs, so run from a private copy instead.
+if [ -z "${LSMD_DEPLOY_COPY:-}" ]; then
+  copy=$(mktemp)
+  cp "$0" "$copy"
+  LSMD_DEPLOY_COPY=1 exec bash "$copy" "$@"
+fi
+
 APP=/opt/lsmd
 REPO="$APP/repo"
 LOCK="$APP/.deploy.lock"
@@ -21,6 +29,16 @@ CURRENT=$(readlink -f "$APP/current" 2>/dev/null || true)
 DEST="$APP/releases/$SHA"
 
 if [ "$CURRENT" = "$DEST" ] && [ -z "${FORCE:-}" ]; then
+  exit 0
+fi
+
+# A push that only touches files the running site never uses (docs, these
+# deploy scripts, the bot, the FiveM resource) skips the 15-minute rebuild,
+# which slows the live site on this small VM. Only the scripts are updated.
+if [ -n "$CURRENT" ] && [ -z "${FORCE:-}" ] &&
+   git -C "$REPO" diff --quiet "$(basename "$CURRENT")" origin/main -- . \
+     ':!deploy' ':!*.md' ':!bot' ':!fivem' ':!.github' ':!Dockerfile' ':!.dockerignore' 2>/dev/null; then
+  git -C "$REPO" reset -q --hard origin/main
   exit 0
 fi
 

@@ -16,6 +16,11 @@ Environment=NODE_OPTIONS=--dns-result-order=ipv4first
 ExecStart=/usr/bin/node node_modules/next/dist/bin/next start -H 127.0.0.1 -p 3000
 Restart=always
 RestartSec=5
+# The site wins over builds (lsmd-update) on the small VM: its memory is kept
+# out of swap and it gets the CPU and disk first.
+MemoryLow=400M
+CPUWeight=1000
+IOWeight=1000
 
 [Install]
 WantedBy=multi-user.target

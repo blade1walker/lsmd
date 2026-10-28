@@ -6,4 +6,10 @@ After=network-online.target
 Type=oneshot
 User=lsmd
 ExecStart=/bin/bash /opt/lsmd/repo/deploy/oracle/deploy.sh
-TimeoutStartSec=30min
+# Builds run in the background at the lowest priority so the live site stays
+# responsive; they take longer, hence the generous timeout.
+Nice=19
+CPUWeight=10
+IOSchedulingClass=idle
+IOWeight=10
+TimeoutStartSec=60min
