@@ -92,9 +92,14 @@ sudo chmod 440 /etc/sudoers.d/lsmd
 sudo systemctl daemon-reload
 
 sed "s/{{DOMAIN}}/$DOMAIN/g" "$APP/repo/deploy/oracle/Caddyfile" | sudo tee /etc/caddy/Caddyfile >/dev/null
+# A root domain (lsmd.tech, not ems.lsmd.tech) also gets www.<domain> redirected to it.
+if [ "$(tr -cd . <<<"$DOMAIN" | wc -c)" = 1 ]; then
+  printf '\nwww.%s {\n\tredir https://%s{uri} permanent\n}\n' "$DOMAIN" "$DOMAIN" | sudo tee -a /etc/caddy/Caddyfile >/dev/null
+fi
 sudo systemctl reload caddy || sudo systemctl restart caddy
 
-if [ "${NEW_ENV:-}" = 1 ] || ! grep -q '^DATABASE_URL="postgres' "$APP/.env"; then
+# The database is DATABASE_URL, or Vercel's Neon connection (NEON_*) — see src/lib/database-url.ts.
+if [ "${NEW_ENV:-}" = 1 ] || ! sudo grep -qE '^(DATABASE_URL|NEON_URL|NEON_DATABASE_URL|NEON_POSTGRES_PRISMA_URL|NEON_POSTGRES_URL)="?postgres' "$APP/.env"; then
   say "Almost done — fill in the settings, then finish"
   cat <<EOF
   1. Edit the settings (copy each value from Vercel -> Project -> Settings -> Environment Variables):
