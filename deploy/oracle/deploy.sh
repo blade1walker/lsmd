@@ -15,6 +15,7 @@ if [ -z "${LSMD_DEPLOY_COPY:-}" ]; then
   cp "$0" "$copy"
   LSMD_DEPLOY_COPY=1 exec bash "$copy" "$@"
 fi
+trap 'rm -f "$0"' EXIT
 
 APP=/opt/lsmd
 REPO="$APP/repo"
