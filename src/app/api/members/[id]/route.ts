@@ -6,6 +6,8 @@ import { logAudit } from "@/lib/audit";
 import { SECTION_HINTS, getRankWeight } from "@/lib/constants";
 import { getNotificationSettings, postToPromotionWebhook, postToCallsignWebhook, renderTemplate } from "@/lib/discord-webhook";
 import { removeFtpDiscordRole } from "@/lib/discord-roles";
+import { setLoaRole } from "@/lib/loa-role";
+import { RUNNING_LOA } from "@/lib/loa-server";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAuth("roster.edit");
@@ -130,6 +132,19 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       await removeFtpDiscordRole(member.discordId);
     }
 
+    // Leave follows the roster status too. Moving someone off LOA here ends
+    // whatever leave was still running, so the LOA section does not go on
+    // listing them; moving them onto it gives the EMS LOA role straight away.
+    if (before && before.activity !== member.activity && (before.activity === "LOA" || member.activity === "LOA")) {
+      if (before.activity === "LOA") {
+        await prisma.lOA.updateMany({
+          where: { memberId: id, status: { in: [...RUNNING_LOA] } },
+          data: { status: "Ended", endedAt: new Date(), endedBy: actorLabel(auth.access) },
+        });
+      }
+      await setLoaRole(member.discordId, member.activity === "LOA");
+    }
+
     // Promotion History. Written for every rank change this request won — up
     // or down — so the record is complete; only the winner of the atomic
     // claim above gets here, so a double-submit writes one row, not two.
@@ -239,6 +254,9 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
     if (member.category === "FTP" && member.discordId) {
       await removeFtpDiscordRole(member.discordId);
+    }
+    if (member.activity === "LOA" && member.discordId) {
+      await setLoaRole(member.discordId, false);
     }
 
     await logAudit({

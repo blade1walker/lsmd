@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Check, X, Clock, CheckCircle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -181,6 +182,9 @@ export default function AdminHrPage() {
         <p className="text-gray-500 text-sm mt-1">
           Manage LOA, removal requests, and inactivity requests
         </p>
+        <Link href="/admin/loa" className="mt-2 inline-block text-sm text-amber-300 hover:text-amber-200">
+          Open the LOA section — everyone on leave, how long for, and putting someone on leave →
+        </Link>
       </div>
 
       <div className="space-y-8">

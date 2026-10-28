@@ -40,6 +40,7 @@ import {
   Gamepad2,
   ClipboardList,
   Award,
+  CalendarOff,
 } from "lucide-react";
 import {
   DEPARTMENT_SECTION_PERMISSIONS,
@@ -55,6 +56,7 @@ import {
   DUTY_BOARD_PERMISSIONS,
   TEST_SECTION_PERMISSIONS,
   RANK_PERMISSIONS,
+  LOA_SECTION_PERMISSIONS,
 } from "@/lib/constants";
 
 // `permission` mirrors the check on the matching API route, so a section is
@@ -94,6 +96,7 @@ const navItems: {
   { href: "/admin/clock-log", label: "Clock Log", icon: Clock, permission: "clock.view" },
   { href: "/admin/activity", label: "Activity", icon: Activity, permission: ACTIVITY_SECTION_PERMISSIONS },
   { href: "/admin/hr", label: "HR", icon: Heart, permission: "hr.view" },
+  { href: "/admin/loa", label: "LOA", icon: CalendarOff, permission: LOA_SECTION_PERMISSIONS },
   { href: "/admin/signoffs", label: "Sign-offs", icon: GraduationCap, permission: "training.signoff.manage" },
   { href: "/admin/notification-settings", label: "Notify Settings", icon: Settings, permission: "notifications" },
   { href: "/admin/notifications", label: "Notifications", icon: Bell, permission: "notifications" },

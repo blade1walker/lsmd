@@ -59,6 +59,9 @@ export const ROLE_PRESETS: RolePreset[] = [
       "interviews.readiness",
       // Reads who is meeting the weekly activity requirement.
       "activity.view",
+      // The LOA section: who is on leave, placing members on leave by hand.
+      "loa.view",
+      "loa.manage",
     ],
     aliases: ["HR Assistant"],
   },
@@ -96,6 +99,8 @@ export const ROLE_PRESETS: RolePreset[] = [
       "fivem.view",
       // Reads and marks test results, e.g. a written exam before promotion.
       "tests.grade",
+      "loa.view",
+      "loa.manage",
     ],
   },
   {
