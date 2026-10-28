@@ -8,12 +8,13 @@
 # It sets up the network once (VCN, internet gateway, public subnet, ports
 # 22/80/443 open), then keeps asking for the VM until it gets one and prints
 # its public IP. Safe to run again — it reuses what already exists.
-# OCPUS / MEM / COMPARTMENT can be overridden from the environment.
+# SHAPE / OCPUS / MEM / COMPARTMENT can be overridden from the environment
+# (SHAPE=VM.Standard.E2.1.Micro is the always-available 1 GB AMD fallback).
 set -uo pipefail
 
 PUBKEY="${1:-}"
 NAME=lsmd-web
-SHAPE=VM.Standard.A1.Flex
+SHAPE="${SHAPE:-VM.Standard.A1.Flex}"
 OCPUS="${OCPUS:-2}"
 MEM="${MEM:-12}"
 COMP="${COMPARTMENT:-${OCI_TENANCY:-}}"
@@ -70,12 +71,19 @@ ID=$(val compute instance list -c "$COMP" --display-name "$NAME" --query "data[?
 if [ -n "$ID" ]; then
   say "$NAME already exists"
 else
-  say "Requesting $SHAPE ($OCPUS OCPU / $MEM GB) in $AD — retrying every minute until Oracle has room"
+  # Only Flex shapes take a size; fixed shapes like E2.1.Micro reject one.
+  CONFIG=()
+  if [[ $SHAPE == *Flex ]]; then
+    CONFIG=(--shape-config "{\"ocpus\":$OCPUS,\"memoryInGBs\":$MEM}")
+    say "Requesting $SHAPE ($OCPUS OCPU / $MEM GB) in $AD — retrying every minute until Oracle has room"
+  else
+    say "Requesting $SHAPE in $AD — retrying every minute until Oracle has room"
+  fi
   n=0
   while :; do
     n=$((n + 1))
     out=$(oci compute instance launch -c "$COMP" --availability-domain "$AD" --display-name "$NAME" \
-          --shape "$SHAPE" --shape-config "{\"ocpus\":$OCPUS,\"memoryInGBs\":$MEM}" \
+          --shape "$SHAPE" "${CONFIG[@]}" \
           --image-id "$IMAGE" --subnet-id "$SUBNET" --assign-public-ip true \
           --ssh-authorized-keys-file "$KEYFILE" --query data.id --raw-output 2>&1)
     if [[ $out == ocid1.instance* ]]; then ID=$out; break; fi
