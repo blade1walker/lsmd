@@ -77,9 +77,8 @@ const STATUS_STYLES: Record<string, string> = {
 /**
  * Upload-or-paste control for one letterhead mark, shared by both bands.
  *
- * The URL field is kept alongside the uploader rather than hidden behind it:
- * Vercel Blob may not be configured on every deployment, and pasting a hosted
- * image is the fallback that keeps the letterhead usable when it isn't.
+ * The URL field is kept alongside the uploader rather than hidden behind it,
+ * so an image already hosted elsewhere can be used without uploading a copy.
  */
 function LogoPicker({
   label,

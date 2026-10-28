@@ -1,8 +1,8 @@
 # Hosting the website on Oracle Cloud (Always Free)
 
 This runs the site on one free Oracle Cloud VM instead of Vercel. The
-database stays on Neon and image uploads stay on Vercel Blob — both work from
-any server, so no data moves.
+database stays on Neon, which works from any server, so no data moves. Images
+uploaded on the site are kept on the VM itself, in `/opt/lsmd/data`.
 
 What runs on the VM:
 
@@ -62,7 +62,6 @@ The first run installs everything and stops to ask for the settings:
    ```
    `NEXTAUTH_URL` is already set to the new address. The database URL is whichever is set on Vercel —
    `DATABASE_URL`, or the `NEON_…` variables if the Neon integration added them (copy those as they are).
-   Copy `BLOB_READ_WRITE_TOKEN` too, or SOP and medical image uploads stop working.
 2. **Discord sign-in:** Discord Developer Portal → your app → **OAuth2 → Redirects** → add
    `https://ems.example.com/api/auth/callback/discord`. Without it every sign-in fails with "Invalid OAuth2 redirect_uri".
 3. Run the same command again (or `bash /opt/lsmd/repo/deploy/oracle/setup.sh ems.example.com`). It builds and starts the site.

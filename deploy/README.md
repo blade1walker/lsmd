@@ -1,8 +1,9 @@
 # Moving the website off Vercel
 
 Everything needed to run the site somewhere other than Vercel. The database
-(Neon) and image uploads (Vercel Blob) are separate services that work from
-any host, so **no data moves** — only the website itself does.
+(Neon) is a separate service that works from any host, so **no data moves** —
+only the website itself does. Uploaded images are stored by the site itself,
+in `DATA_DIR` (see `.env.example`).
 
 | File | What it is |
 | --- | --- |
@@ -29,7 +30,6 @@ them from where they come from instead, into a `.env` file (start from
 | `DISCORD_CLIENT_ID` / `DISCORD_CLIENT_SECRET` | Discord Developer Portal → *Nexus EMS bot* → **OAuth2** | Yes |
 | `DISCORD_BOT_TOKEN` | Same app → **Bot** → Token | For DMs / role sync |
 | `DISCORD_*_WEBHOOK_URL` | Discord channel → Edit → **Integrations → Webhooks** → Copy URL | Per channel |
-| `BLOB_READ_WRITE_TOKEN` | Vercel → **Storage** → the Blob store (shown on its quickstart) | For uploads |
 | `NEXUS_BOT_API_KEY`, `FIVEM_API_KEY`, `CRON_SECRET` | Whatever the bot / FiveM `server.cfg` already use, or new random values set on both sides | Per feature |
 
 Discord shows the client secret and bot token only once. If you have to

@@ -36,7 +36,6 @@ const OPTIONAL = {
   DISCORD_BOT_TOKEN: "DMs, Discord usernames and role sync",
   NEXUS_BOT_API_KEY: "the Nexus EMS Discord bot's API access",
   FIVEM_API_KEY: "the FiveM sync resource",
-  BLOB_READ_WRITE_TOKEN: "image uploads (SOP editor, medical)",
   CRON_SECRET: "the nightly LOA expiry job",
   DISCORD_GUILD_ID: "FTP role sync (with DISCORD_FTP_ROLE_ID)",
   DISCORD_FTP_ROLE_ID: "FTP role sync (with DISCORD_GUILD_ID)",

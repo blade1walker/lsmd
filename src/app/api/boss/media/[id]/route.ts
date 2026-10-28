@@ -5,10 +5,12 @@ import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { CONTENT_PERMISSIONS } from "@/lib/constants";
 import { deleteImage, mediaUrl } from "@/lib/media-storage";
+import { findMediaUses } from "@/lib/media-server";
 
 /**
- * Deletes an image. Refused while the website uses it — live or in a draft —
- * so a delete can never leave a broken picture on the site.
+ * Deletes an image. Refused while anything shows it — website content live
+ * or in a draft, an SOP document, the medical letterhead — so a delete can
+ * never leave a broken picture behind.
  */
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAuth(CONTENT_PERMISSIONS.publish);
@@ -19,14 +21,10 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     const asset = await prisma.mediaAsset.findUnique({ where: { id } });
     if (!asset) return NextResponse.json({ error: "Image not found" }, { status: 404 });
 
-    const url = JSON.stringify(mediaUrl(asset.fileName));
-    const inUse = await prisma.siteContent.findMany({
-      where: { OR: [{ published: url }, { draft: url }] },
-      select: { key: true },
-    });
-    if (inUse.length) {
+    const uses = await findMediaUses(mediaUrl(asset.fileName));
+    if (uses.length) {
       return NextResponse.json(
-        { error: "This image is in use", detail: `Pick another image for ${inUse.map((r) => r.key).join(", ")} first.` },
+        { error: "This image is in use", detail: `Replace it in ${uses.join(", ")} first.` },
         { status: 409 }
       );
     }
