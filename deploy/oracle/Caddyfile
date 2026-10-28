@@ -1,7 +1,0 @@
-# Installed to /etc/caddy/Caddyfile by setup.sh, with {{DOMAIN}} filled in.
-# Caddy gets and renews the HTTPS certificate on its own; the domain's DNS
-# must point at this VM's public IP first.
-{{DOMAIN}} {
-	encode zstd gzip
-	reverse_proxy 127.0.0.1:3000
-}
