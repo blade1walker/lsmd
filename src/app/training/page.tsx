@@ -12,7 +12,8 @@ import { getRankWeight } from "@/lib/constants";
 import { EMS_TRAINING, overallProgress, phaseProgress, type TrainingSummaryRow } from "@/lib/training";
 
 /** Medical Intern, EMR and EMT — the ranks still working through the curriculum. */
-const TRAINEE_MAX_WEIGHT = getRankWeight("EMT");
+// Read on use: the rank order can change in Admin → Ranks.
+const traineeMaxWeight = () => getRankWeight("EMT");
 
 function Bar({ percent }: { percent: number }) {
   return (
@@ -51,7 +52,7 @@ export default function TrainingPage() {
       rows
         .filter((row) => {
           const weight = getRankWeight(row.member.rank);
-          return weight >= 1 && weight <= TRAINEE_MAX_WEIGHT;
+          return weight >= 1 && weight <= traineeMaxWeight();
         })
         .map((row) => ({ row, overall: overallProgress(row.progress) }))
         .sort((a, b) => b.overall.percent - a.overall.percent || a.row.member.name.localeCompare(b.row.member.name)),

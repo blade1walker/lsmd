@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import RankInsignia from "@/components/RankInsignia";
 import ActivityPill from "@/components/ActivityPill";
 import { DepartmentMark } from "@/components/DepartmentMark";
-import { getRankInfo, RANK_LIST, ACTIVITY_STATUSES } from "@/lib/constants";
+import { RANK_LIST, ACTIVITY_STATUSES } from "@/lib/constants";
 import type { DepartmentColumn } from "@/components/RosterTable";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -70,7 +70,6 @@ export default function MemberRow({
     steamId: member.steamId ?? "",
   });
 
-  const rankInfo = getRankInfo(member.rank);
   const standing = new Map(
     (member.departmentMemberships ?? []).map((m) => [m.departmentId, m.role])
   );
@@ -242,7 +241,7 @@ export default function MemberRow({
       </td>
       <td className="py-3 px-4">
         <div className="flex items-center gap-2">
-          <RankInsignia shape={rankInfo?.shape ?? "none"} count={rankInfo?.count ?? 0} size={14} />
+          <RankInsignia rank={member.rank} size={14} />
           <span className="text-gray-300 text-xs">{member.rank}</span>
         </div>
       </td>

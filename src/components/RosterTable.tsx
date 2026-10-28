@@ -6,7 +6,6 @@ import ActivityPill from "@/components/ActivityPill";
 import DeptBadge from "@/components/DeptBadge";
 import ClockButton from "@/components/ClockButton";
 import { DepartmentMark } from "@/components/DepartmentMark";
-import { getRankInfo } from "@/lib/constants";
 import { departmentTag } from "@/lib/departments";
 import { formatDuration } from "@/lib/utils";
 
@@ -84,7 +83,6 @@ export default function RosterTable({
         </thead>
         <tbody>
           {members.map((member, idx) => {
-            const rankInfo = getRankInfo(member.rank);
             const clock = clockStatus?.[member.id];
             const standing = new Map(
               (member.departmentMemberships ?? []).map((m) => [m.departmentId, m.role])
@@ -116,7 +114,7 @@ export default function RosterTable({
                 </td>
                 <td className="py-3 px-4">
                   <div className="flex items-center gap-2">
-                    <RankInsignia shape={rankInfo?.shape as "none" | "pip" | "chevron" | "bar" | "star"} count={rankInfo?.count ?? 0} size={14} />
+                    <RankInsignia rank={member.rank} size={14} />
                     <span className="text-gray-300 text-xs">{member.rank}</span>
                   </div>
                 </td>

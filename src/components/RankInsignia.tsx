@@ -1,81 +1,84 @@
 "use client";
 
 import React from "react";
+import { DEFAULT_RANK_COLOR, getRankInfo, type RankLayout, type RankShape } from "@/lib/constants";
 
 interface RankInsigniaProps {
-  shape?: "none" | "pip" | "chevron" | "bar" | "star";
-  count?: number;
+  /** Draws this rank's badge as set in Admin → Ranks. */
   rank?: string;
+  /** Or draw a badge directly (the Ranks editor's preview). */
+  shape?: RankShape;
+  count?: number;
+  color?: string | null;
+  layout?: RankLayout;
   size?: number;
 }
 
-function getRankFromName(rank: string): { shape: string; count: number } {
-  const map: Record<string, { shape: string; count: number }> = {
-    "Medical Director": { shape: "star", count: 5 },
-    "Director of EMS": { shape: "star", count: 4 },
-    "Chief of EMS": { shape: "star", count: 3 },
-    "Deputy Chief of EMS": { shape: "star", count: 2 },
-    "Assistant Chief": { shape: "star", count: 1 },
-    "Division Chief": { shape: "bar", count: 2 },
-    "EMS Captain": { shape: "bar", count: 1 },
-    "Lieutenant": { shape: "chevron", count: 3 },
-    "Senior Paramedic": { shape: "chevron", count: 2 },
-    "Paramedic": { shape: "chevron", count: 1 },
-    "EMT": { shape: "pip", count: 2 },
-    "EMR": { shape: "pip", count: 1 },
-    "Medical Intern": { shape: "none", count: 0 },
-  };
-  return map[rank] ?? { shape: "none", count: 0 };
+/** Rows of a pyramid, top first: 3 → 1+2, 4 → 1+3, 5 → 2+3. */
+function rowsFor(layout: RankLayout, count: number): number[] {
+  if (layout === "stack") return Array.from({ length: count }, () => 1);
+  if (layout === "pyramid" && count >= 3) {
+    const bottom = Math.ceil(count / 2) + (count === 4 ? 1 : 0);
+    return [count - bottom, bottom];
+  }
+  return [count];
 }
 
-export default function RankInsignia({ shape, count, rank, size = 16 }: RankInsigniaProps) {
-  let finalShape = shape ?? "none";
-  let finalCount = count ?? 0;
+export default function RankInsignia({ rank, shape, count, color, layout, size = 16 }: RankInsigniaProps) {
+  const info = rank && !shape ? getRankInfo(rank) : null;
+  const finalShape = shape ?? info?.shape ?? "none";
+  const finalCount = count ?? info?.count ?? 0;
+  const fill = color ?? info?.color ?? DEFAULT_RANK_COLOR;
+  const arrangement = layout ?? info?.layout ?? "row";
 
-  if (rank && !shape) {
-    const info = getRankFromName(rank);
-    finalShape = info.shape as "none" | "pip" | "chevron" | "bar" | "star";
-    finalCount = info.count;
-  }
-
-  if (finalShape === "none" || finalCount === 0) return null;
+  if (finalShape === "none" || finalCount <= 0) return null;
 
   const itemSize = size * 0.6;
   const gap = 2;
-  const svgWidth = finalCount * (itemSize + gap);
+  const cell = itemSize + gap;
+  // Chevrons and bars are short, so stacked ones sit closer together.
+  const rowHeight = finalShape === "chevron" || finalShape === "bar" ? itemSize * 0.55 + gap : cell;
+  const rows = rowsFor(arrangement, finalCount);
+  const width = Math.max(...rows) * cell;
+  const height = Math.max(size, rows.length * rowHeight + (size - rowHeight));
+
+  const points: { x: number; y: number }[] = [];
+  rows.forEach((n, r) => {
+    const offset = (width - n * cell) / 2;
+    const y = height / 2 + (r - (rows.length - 1) / 2) * rowHeight;
+    for (let i = 0; i < n; i++) points.push({ x: offset + i * cell + itemSize / 2 + gap / 2, y });
+  });
 
   return (
     <svg
-      width={svgWidth}
-      height={size}
-      viewBox={`0 0 ${svgWidth} ${size}`}
+      width={width}
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
     >
-      {Array.from({ length: finalCount }).map((_, i) => {
-        const x = i * (itemSize + gap) + itemSize / 2;
-        const y = size / 2;
-
+      {points.map(({ x, y }, i) => {
         if (finalShape === "pip") {
-          return <circle key={i} cx={x} cy={y} r={itemSize / 2} fill="#dc2626" opacity={0.9} />;
+          return <circle key={i} cx={x} cy={y} r={itemSize / 2} fill={fill} opacity={0.9} />;
         }
         if (finalShape === "chevron") {
-          const points = `${x - itemSize / 2},${y + itemSize / 3} ${x},${y - itemSize / 3} ${x + itemSize / 2},${y + itemSize / 3}`;
-          return <polyline key={i} points={points} stroke="#dc2626" strokeWidth={1.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />;
+          const p = `${x - itemSize / 2},${y + itemSize / 3} ${x},${y - itemSize / 3} ${x + itemSize / 2},${y + itemSize / 3}`;
+          return <polyline key={i} points={p} stroke={fill} strokeWidth={1.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />;
         }
         if (finalShape === "bar") {
-          return <rect key={i} x={x - itemSize / 2} y={y - itemSize / 6} width={itemSize} height={itemSize / 3} rx={1} fill="#dc2626" opacity={0.9} />;
+          return <rect key={i} x={x - itemSize / 2} y={y - itemSize / 6} width={itemSize} height={itemSize / 3} rx={1} fill={fill} opacity={0.9} />;
         }
         if (finalShape === "star") {
           const r = itemSize / 2;
-          const points = Array.from({ length: 5 })
+          const p = Array.from({ length: 5 })
             .map((_, j) => {
               const angle = (j * 72 - 90) * (Math.PI / 180);
-              const innerAngle = ((j * 72 + 36) - 90) * (Math.PI / 180);
+              const innerAngle = (j * 72 + 36 - 90) * (Math.PI / 180);
               return `${x + r * Math.cos(angle)},${y + r * Math.sin(angle)} ${x + r * 0.4 * Math.cos(innerAngle)},${y + r * 0.4 * Math.sin(innerAngle)}`;
             })
             .join(" ");
-          return <polygon key={i} points={points} fill="#dc2626" opacity={0.9} />;
+          return <polygon key={i} points={p} fill={fill} opacity={0.9} />;
         }
         return null;
       })}

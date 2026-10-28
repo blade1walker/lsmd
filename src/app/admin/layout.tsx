@@ -39,6 +39,7 @@ import {
   Activity,
   Gamepad2,
   ClipboardList,
+  Award,
 } from "lucide-react";
 import {
   DEPARTMENT_SECTION_PERMISSIONS,
@@ -53,6 +54,7 @@ import {
   ACTIVITY_SECTION_PERMISSIONS,
   DUTY_BOARD_PERMISSIONS,
   TEST_SECTION_PERMISSIONS,
+  RANK_PERMISSIONS,
 } from "@/lib/constants";
 
 // `permission` mirrors the check on the matching API route, so a section is
@@ -71,6 +73,7 @@ const navItems: {
   { href: "/admin/fivem", label: "City Link", icon: Gamepad2, permission: FIVEM_SECTION_PERMISSIONS },
   { href: "/admin/roster-banner", label: "Roster Banner", icon: Megaphone, permission: "roster.announce" },
   { href: "/admin/callsigns", label: "Call Signs", icon: Hash, permission: "roster.edit" },
+  { href: "/admin/ranks", label: "Ranks & Insignia", icon: Award, permission: [...RANK_PERMISSIONS.manage] },
   { href: "/admin/trainees", label: "Trainees", icon: GraduationCap, permission: "trainees.view" },
   { href: "/admin/interviews", label: "Promotions & Interviews", icon: ClipboardCheck, permission: INTERVIEW_SECTION_PERMISSIONS },
   { href: "/admin/promotions", label: "Promotion History", icon: TrendingUp, permission: "promotions.view" },

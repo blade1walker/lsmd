@@ -48,6 +48,7 @@ const PERMISSION_GROUP_LABELS: Record<string, string> = {
   promotions: "Promotion History",
   interviews: "Promotion & Interview",
   tests: "Tests & Quizzes",
+  ranks: "Ranks & Insignia",
 };
 
 /**

@@ -30,6 +30,7 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     date: "2026-10-28",
     changes: [
+      { type: "feature", text: "Admin → Ranks & Insignia: move ranks up or down the ladder to change who outranks whom, and set each rank's insignia — stars, bars, chevrons, pips or none, how many (up to 5), its color, and whether they sit in a row, stacked or in a pyramid. Changes apply across the whole site at once, and Reset to defaults puts the original ladder back" },
       { type: "improvement", text: "New top rank Medical Director (five stars), above the top rank, which is renamed from Director of Medicine to Director of EMS. Members, test and department rank gates, and open requests on Director of Medicine move to Director of EMS on their own" },
     ],
   },

@@ -6,24 +6,102 @@ export const SUPER_ADMIN_IDS = [
   "1170690398558097511",
 ];
 
-export const RANKS = [
-  { name: "Medical Director", tier: "High Command", shape: "star", count: 5, weight: 13 },
-  { name: "Director of EMS", tier: "High Command", shape: "star", count: 4, weight: 12 },
-  { name: "Chief of EMS", tier: "High Command", shape: "star", count: 3, weight: 11 },
-  { name: "Deputy Chief of EMS", tier: "High Command", shape: "star", count: 2, weight: 10 },
-  { name: "Assistant Chief", tier: "High Command", shape: "star", count: 1, weight: 9 },
-  { name: "Division Chief", tier: "Command", shape: "bar", count: 2, weight: 8 },
-  { name: "EMS Captain", tier: "Command", shape: "bar", count: 1, weight: 7 },
-  { name: "Lieutenant", tier: "Command", shape: "chevron", count: 3, weight: 6 },
-  { name: "Senior Paramedic", tier: "NCO", shape: "chevron", count: 2, weight: 5 },
-  { name: "Paramedic", tier: "Patrol", shape: "chevron", count: 1, weight: 4 },
-  { name: "EMT", tier: "Patrol", shape: "pip", count: 2, weight: 3 },
-  { name: "EMR", tier: "Patrol", shape: "pip", count: 1, weight: 2 },
-  { name: "Medical Intern", tier: "Probationary", shape: "none", count: 0, weight: 1 },
-] as const;
+export const RANK_SHAPES = ["none", "pip", "chevron", "bar", "star"] as const;
+export type RankShape = (typeof RANK_SHAPES)[number];
+/** How a badge's shapes sit: side by side, on top of each other, or in a triangle. */
+export const RANK_LAYOUTS = ["row", "stack", "pyramid"] as const;
+export type RankLayout = (typeof RANK_LAYOUTS)[number];
+export const RANK_MAX_COUNT = 5;
+export const DEFAULT_RANK_COLOR = "#dc2626";
 
-export const RANK_LIST = RANKS.map((r) => r.name);
+export interface RankDef {
+  name: string;
+  tier: string;
+  shape: RankShape;
+  count: number;
+  color: string;
+  layout: RankLayout;
+  /** Higher outranks lower. Derived from the position in the ladder, never stored. */
+  weight: number;
+}
+
+/** What an admin can change on a rank (Admin → Ranks), stored as a RankSetting row. */
+export interface RankOverride {
+  name: string;
+  position: number;
+  shape: string;
+  count: number;
+  color: string | null;
+  layout: string;
+}
+
+/**
+ * The rank ladder as shipped, highest first. Names and tiers are fixed here;
+ * the order and each badge can be changed in Admin → Ranks, and RANKS below
+ * reflects those changes.
+ */
+export const DEFAULT_RANKS: readonly Omit<RankDef, "weight" | "color" | "layout">[] = [
+  { name: "Medical Director", tier: "High Command", shape: "star", count: 5 },
+  { name: "Director of EMS", tier: "High Command", shape: "star", count: 4 },
+  { name: "Chief of EMS", tier: "High Command", shape: "star", count: 3 },
+  { name: "Deputy Chief of EMS", tier: "High Command", shape: "star", count: 2 },
+  { name: "Assistant Chief", tier: "High Command", shape: "star", count: 1 },
+  { name: "Division Chief", tier: "Command", shape: "bar", count: 2 },
+  { name: "EMS Captain", tier: "Command", shape: "bar", count: 1 },
+  { name: "Lieutenant", tier: "Command", shape: "chevron", count: 3 },
+  { name: "Senior Paramedic", tier: "NCO", shape: "chevron", count: 2 },
+  { name: "Paramedic", tier: "Patrol", shape: "chevron", count: 1 },
+  { name: "EMT", tier: "Patrol", shape: "pip", count: 2 },
+  { name: "EMR", tier: "Patrol", shape: "pip", count: 1 },
+  { name: "Medical Intern", tier: "Probationary", shape: "none", count: 0 },
+];
+
+/** The ladder with admin changes applied: ordered by position, weights from the order. */
+export function buildRanks(overrides: readonly RankOverride[] = []): RankDef[] {
+  const byName = new Map(overrides.map((o) => [o.name, o]));
+  const ordered = DEFAULT_RANKS.map((rank, index) => ({ rank, o: byName.get(rank.name), index })).sort(
+    (a, b) => (a.o?.position ?? a.index) - (b.o?.position ?? b.index) || a.index - b.index
+  );
+  return ordered.map(({ rank, o }, i) => ({
+    name: rank.name,
+    tier: rank.tier,
+    shape: o && (RANK_SHAPES as readonly string[]).includes(o.shape) ? (o.shape as RankShape) : rank.shape,
+    count: o ? Math.max(0, Math.min(RANK_MAX_COUNT, Math.round(o.count))) : rank.count,
+    color: o?.color && /^#[0-9a-f]{6}$/i.test(o.color) ? o.color : DEFAULT_RANK_COLOR,
+    layout: o && (RANK_LAYOUTS as readonly string[]).includes(o.layout) ? (o.layout as RankLayout) : "row",
+    weight: ordered.length - i,
+  }));
+}
+
+declare global {
+  // Shared by every copy of this module in one process (Next bundles it into
+  // several server layers) and, in the browser, set before the app loads by
+  // the /api/rank-config script in the root layout.
+  var __lsmdRanks: { ranks: RankDef[]; names: string[]; ftp?: string[] } | undefined;
+  var __LSMD_RANK_OVERRIDES__: RankOverride[] | undefined;
+}
+
+const rankStore: NonNullable<typeof globalThis.__lsmdRanks> = (globalThis.__lsmdRanks ??= (() => {
+  const ranks = buildRanks(globalThis.__LSMD_RANK_OVERRIDES__);
+  return { ranks, names: ranks.map((r) => r.name) };
+})());
+
+/**
+ * The ladder, highest first. The array is updated in place when an admin
+ * changes the ranks (applyRankOverrides), so every importer sees the change
+ * without re-importing.
+ */
+export const RANKS: readonly RankDef[] = rankStore.ranks;
+export const RANK_LIST: readonly string[] = rankStore.names;
 export const RANK_NAMES = RANK_LIST;
+
+/** Puts admin rank changes into effect in this process (server) or page (browser). */
+export function applyRankOverrides(overrides: readonly RankOverride[]) {
+  const next = buildRanks(overrides);
+  rankStore.ranks.splice(0, rankStore.ranks.length, ...next);
+  rankStore.names.splice(0, rankStore.names.length, ...next.map((r) => r.name));
+  if (rankStore.ftp) rankStore.ftp.splice(0, rankStore.ftp.length, ...ftpEligibleRanks());
+}
 
 export const SECTION_HINTS: Record<string, string[]> = {
   "High Command": ["Medical Director", "Director of EMS", "Chief of EMS", "Deputy Chief of EMS", "Assistant Chief"],
@@ -165,6 +243,8 @@ export const ALL_PERMISSIONS = [
   // permission beyond being signed in on the roster.
   "tests.manage",
   "tests.grade",
+  // Rank ladder order and each rank's insignia (Admin → Ranks).
+  "ranks.manage",
 ] as const;
 
 /**
@@ -208,10 +288,12 @@ export function isRankAtLeast(rank: string | null | undefined, minRank: string):
 /** Minimum roster rank permitted to apply for the Field Training Program. */
 export const FTP_MIN_RANK = "Paramedic";
 
+function ftpEligibleRanks(): string[] {
+  return RANKS.filter((r) => r.weight >= getRankWeight(FTP_MIN_RANK)).map((r) => r.name);
+}
+
 /** Ranks that meet FTP_MIN_RANK, highest first — for explaining the rule in the UI. */
-export const FTP_ELIGIBLE_RANKS = RANKS
-  .filter((r) => r.weight >= getRankWeight(FTP_MIN_RANK))
-  .map((r) => r.name);
+export const FTP_ELIGIBLE_RANKS: string[] = (rankStore.ftp ??= ftpEligibleRanks());
 
 /**
  * Department permissions, and the older permission each one still accepts.
@@ -411,6 +493,11 @@ export const ACTIVITY_SECTION_PERMISSIONS: string[] = [...ACTIVITY_PERMISSIONS.v
 export const TEST_PERMISSIONS = {
   manage: ["tests.manage"],
   grade: ["tests.grade", "tests.manage"],
+} as const satisfies Record<string, readonly string[]>;
+
+/** Admin → Ranks: reorder the ladder and set each rank's insignia. */
+export const RANK_PERMISSIONS = {
+  manage: ["ranks.manage"],
 } as const satisfies Record<string, readonly string[]>;
 
 /** Any permission that opens the Tests page, for the sidebar check. */

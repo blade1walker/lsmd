@@ -91,6 +91,15 @@ const GRANTS: { id: string; roles: Record<string, string[]> }[] = [
       "Training Admin": ["activity.view"],
     },
   },
+  {
+    id: "2026-10-28-rank-settings",
+    roles: {
+      // Rank order decides who outranks whom everywhere, so only the roles
+      // that run the roster may change it.
+      "Super Admin": ["ranks.manage"],
+      "Roster Admin": ["ranks.manage"],
+    },
+  },
 ];
 
 const prisma = (() => {

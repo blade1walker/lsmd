@@ -1347,3 +1347,22 @@ model TestAttempt {
   @@index([testId, status])
   @@index([discordId])
 }
+
+/// An admin's change to one rank in the ladder (Admin → Ranks): where it sits
+/// and what its insignia looks like. Rank names and tiers stay in RANKS
+/// (src/lib/constants.ts); a rank with no row keeps its shipped position and
+/// badge. Weights are never stored — they follow from position.
+model RankSetting {
+  name      String   @id
+  /// 0 is the top of the ladder.
+  position  Int
+  /// none | pip | chevron | bar | star
+  shape     String
+  count     Int
+  /// #rrggbb; null is the default red.
+  color     String?
+  /// row | stack | pyramid
+  layout    String   @default("row")
+  updatedBy String?
+  updatedAt DateTime @updatedAt
+}

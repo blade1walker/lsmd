@@ -49,6 +49,12 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${oswald.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        {/* Rank order and insignia from Admin → Ranks. A plain blocking script so
+            it has run before any of the app's code reads RANKS. */}
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
+        <script src="/api/rank-config" />
+      </head>
       <body className="min-h-full flex flex-col bg-[#0a0a0f] text-white font-[family-name:var(--font-inter)]">
         <script
           dangerouslySetInnerHTML={{
