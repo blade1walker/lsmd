@@ -82,7 +82,10 @@ export async function PUT(req: NextRequest) {
           create: { ...r, updatedBy: by },
           update: { ...r, updatedBy: by },
         })
-      )
+      ),
+      // Prisma's default 2 s to open a transaction is shorter than one new
+      // connection takes when the database is far from the server.
+      { maxWait: 15_000, timeout: 30_000 }
     );
     const overrides = await loadRankSettings({ force: true });
     const after = buildRanks(overrides);

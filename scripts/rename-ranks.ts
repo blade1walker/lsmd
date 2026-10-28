@@ -34,7 +34,9 @@ async function main() {
       prisma.onboardingRequest.updateMany({ where: { assignedRank: from }, data: { assignedRank: to } }),
       prisma.recruitRequest.updateMany({ where: { rank: from }, data: { rank: to } }),
       prisma.promotionInterview.updateMany({ where: { currentRank: from }, data: { currentRank: to } }),
-    ]);
+      // The default 2 s to open a transaction is less than one connection to
+      // the database takes from a far-away host (Oracle in Mumbai → Neon in the US).
+    ], { maxWait: 15_000, timeout: 30_000 });
     const moved = results.reduce((sum, r) => sum + r.count, 0);
     if (moved) console.log(`[rename-ranks] "${from}" -> "${to}": ${moved} record(s) updated.`);
   }
