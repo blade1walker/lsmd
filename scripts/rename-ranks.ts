@@ -1,7 +1,5 @@
 import "dotenv/config";
-import { PrismaClient } from "../src/generated/prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { databaseUrl } from "../src/lib/db/database-url";
+import { createPrismaClient } from "../src/lib/db/prisma";
 
 /**
  * Moves records from a retired rank name to its new one, so renaming a rank
@@ -19,10 +17,7 @@ const RENAMES: Record<string, string> = {
   "Director of Medicine": "Director of EMS",
 };
 
-const prisma = (() => {
-  const adapter = new PrismaPg({ connectionString: databaseUrl()! });
-  return new PrismaClient({ adapter });
-})();
+const prisma = createPrismaClient();
 
 async function main() {
   for (const [from, to] of Object.entries(RENAMES)) {

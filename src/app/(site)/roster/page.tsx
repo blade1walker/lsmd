@@ -1,36 +1,13 @@
 import { RosterPageClient } from "@/components/roster/RosterPageClient";
+import { LoadError } from "@/components/layout/LoadError";
 import { getRosterPageData } from "@/lib/roster/server";
 import { parseRosterFilters } from "@/lib/roster";
 import type { Metadata } from "next";
+import { log } from "@/lib/log";
 
 export const metadata: Metadata = { title: "Personnel Roster" };
 
 export const dynamic = "force-dynamic";
-
-function DatabaseError() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-[#0a0a0a] text-white p-8">
-      <h1 className="font-[family-name:var(--font-oswald)] text-3xl font-bold text-red-500 mb-4">
-        Database Connection Failed
-      </h1>
-      <p className="text-gray-400 text-center max-w-md mb-6">
-        The application cannot connect to the database. Please make sure
-        <code className="bg-white/10 px-2 py-1 rounded mx-1">DATABASE_URL</code>
-        is set in the server settings.
-      </p>
-      <div className="bg-white/5 border border-white/10 rounded-lg p-4 text-sm text-gray-500 max-w-lg w-full">
-        <p className="font-semibold text-gray-300 mb-2">Steps to fix:</p>
-        <ol className="list-decimal list-inside space-y-1">
-          <li>
-            Add <code className="bg-white/10 px-1 rounded">DATABASE_URL</code> with your PostgreSQL connection string to{" "}
-            <code className="bg-white/10 px-1 rounded">/opt/lsmd/.env</code> on the server
-          </li>
-          <li>Restart the site</li>
-        </ol>
-      </div>
-    </div>
-  );
-}
 
 export default async function RosterPage({
   searchParams,
@@ -45,8 +22,8 @@ export default async function RosterPage({
   try {
     data = await getRosterPageData();
   } catch (error) {
-    console.error("Roster failed to load:", error);
-    return <DatabaseError />;
+    log.error("Roster failed to load", error);
+    return <LoadError what="The roster" />;
   }
 
   return <RosterPageClient data={data} initialFilters={initialFilters} />;

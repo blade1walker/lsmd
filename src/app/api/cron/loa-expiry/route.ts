@@ -5,6 +5,7 @@ import { getNotificationSettings, sendDiscordDM, renderTemplate } from "@/lib/di
 import { logAudit } from "@/lib/audit";
 import { endLeave } from "@/lib/loa/server";
 import { syncAllLoaRoles } from "@/lib/loa/role";
+import { log } from "@/lib/log";
 
 export const dynamic = "force-dynamic";
 
@@ -126,7 +127,7 @@ export async function GET(req: NextRequest) {
     // missed — Discord down at the time, or the bot's role moved — is put
     // right here. Never fails the job.
     const roleSync = await syncAllLoaRoles("system (nightly LOA job)").catch((err) => {
-      console.error("EMS LOA role sync failed:", err);
+      log.error("EMS LOA role sync failed", err);
       return null;
     });
 

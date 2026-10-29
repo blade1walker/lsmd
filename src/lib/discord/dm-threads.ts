@@ -1,4 +1,5 @@
 import { prisma } from "../db/prisma";
+import { log } from "../log";
 
 /**
  * Persistence for bot DM conversations.
@@ -110,7 +111,7 @@ export async function recordDirectMessage(entry: RecordedMessage) {
 
     return message;
   } catch (error) {
-    console.error("Failed to record direct message:", error);
+    log.error("Failed to record direct message", error);
     return null;
   }
 }
@@ -123,6 +124,6 @@ export async function markThreadRead(discordId: string) {
       data: { lastReadAt: new Date() },
     });
   } catch (error) {
-    console.error("Failed to mark thread read:", error);
+    log.error("Failed to mark thread read", error);
   }
 }

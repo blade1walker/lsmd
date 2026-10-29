@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { requireAuth, isDenied } from "@/lib/auth/api";
+import { log } from "@/lib/log";
 
 export async function POST(request: Request) {
   const auth = await requireAuth("roster.edit");
@@ -28,7 +29,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error reordering:", error);
+    log.error("Error reordering", error);
     return NextResponse.json({ error: "Failed to reorder" }, { status: 500 });
   }
 }

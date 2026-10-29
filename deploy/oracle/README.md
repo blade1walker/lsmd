@@ -1,8 +1,9 @@
 # Hosting on Oracle Cloud (Always Free)
 
 The site runs on one free Oracle Cloud VM (`lsmd-web`, Mumbai) at
-<https://lsmd.tech>. The database is on Neon; images uploaded on the site are
-kept on the VM itself, in `/opt/lsmd/data`.
+<https://lsmd.tech>. Its data — the SQLite database, its backups and uploaded
+images — is kept on the VM itself, in `/opt/lsmd/data` (see
+[`../../docs/DATABASE.md`](../../docs/DATABASE.md)).
 
 What runs on the VM:
 
@@ -10,7 +11,7 @@ What runs on the VM:
 | --- | --- |
 | **Caddy** | Serves `https://lsmd.tech` (and redirects `www`), gets and renews the certificate on its own |
 | **lsmd.service** | The website (`next start`), only reachable through Caddy |
-| **lsmd-update.timer** | Every 2 minutes: pulls `main`, and when GitHub Actions has published a new build, downloads it, applies the database schema and switches over. The old version keeps serving until then, and a release that fails to start is rolled back |
+| **lsmd-update.timer** | Every 2 minutes: pulls `main`, and when GitHub Actions has published a new build, downloads it, backs up the database, applies any new migrations and switches over. The old version keeps serving until then, and a release that fails to start is rolled back |
 | **lsmd-loa-expiry.timer** | 08:00 UTC daily: the LOA expiry job |
 | **lsmd-bot.service** | The Discord bot (`bot/`), rebuilt by the update job whenever `bot/` changes on `main`. Switched on once its token is in `/opt/lsmd/bot.env` — see [`bot/README.md`](../../bot/README.md#hosting) |
 
@@ -43,8 +44,9 @@ build; the VM still picks up the new scripts and bot on its next pass.
    ```
    The first run stops for the settings: restore `/opt/lsmd/.env` and
    `/opt/lsmd/bot.env` from your backup (or fill them in from `.env.example`),
-   then run the same command again. It builds, starts everything and turns on
-   auto-deploy.
+   and put your copy of the data folder back at `/opt/lsmd/data` (see
+   docs/DATABASE.md → Restoring). Then run the same command again. It builds,
+   starts everything and turns on auto-deploy.
 
 `setup.sh` is safe to run again at any time — for example after a unit file in
 this folder changes, since `deploy.sh` does not reinstall systemd units.
@@ -57,17 +59,19 @@ this folder changes, since `deploy.sh` does not reinstall systemd units.
 | Deploy logs | `journalctl -u lsmd-update -f` |
 | Deploy now | `sudo -u lsmd FORCE=1 bash /opt/lsmd/repo/deploy/oracle/deploy.sh` |
 | Change a setting | `sudo -u lsmd nano /opt/lsmd/.env`, then `sudo systemctl restart lsmd` |
-| Roll back | `sudo systemctl stop lsmd-update.timer` (or it redeploys the newest build within 2 minutes), then `ls -dt /opt/lsmd/releases/*` → `sudo ln -sfn /opt/lsmd/releases/<older> /opt/lsmd/current && sudo systemctl restart lsmd`. Start the timer again once a fix is pushed |
+| Roll back | `sudo systemctl stop lsmd-update.timer` (or it redeploys the newest build within 2 minutes), then `ls -dt /opt/lsmd/releases/*` → `sudo ln -sfn /opt/lsmd/releases/<older> /opt/lsmd/current && sudo systemctl restart lsmd`. Start the timer again once a fix is pushed. A release that changed the database may also need its pre-deploy backup restored — see docs/DATABASE.md |
 | Pause auto-deploy | `sudo systemctl stop lsmd-update.timer` · resume with `start` |
+| Database health / backups | `cd /opt/lsmd/current && sudo -u lsmd npm run db:check` · `npm run db:backup -- --list` |
 | Run the LOA job now | `sudo systemctl start lsmd-loa-expiry` |
 | Bot logs / restart | `journalctl -u lsmd-bot -f` · `sudo systemctl restart lsmd-bot` (after editing `/opt/lsmd/bot.env`) |
 | Restart | `sudo systemctl restart lsmd` |
 
-The Oracle Always Free VM has no automatic backups. Two things on it can't be
-rebuilt from this repo — keep a copy of both somewhere safe:
+The site backs its database up before every deploy and once a day, into
+`/opt/lsmd/data/backups` — but the VM itself has no automatic backups, so those
+copies go if the VM does. Keep a copy of these somewhere else:
 
 - `/opt/lsmd/.env` and `/opt/lsmd/bot.env`, the settings;
-- `/opt/lsmd/data/uploads`, the images uploaded in the Boss Menu
-  (`sudo tar -czf lsmd-uploads.tgz -C /opt/lsmd data`).
+- `/opt/lsmd/data`, the database, its backups and uploaded images
+  (`sudo tar -czf lsmd-data.tgz -C /opt/lsmd data`).
 
-The rest of the data lives in Neon.
+Restoring a backup: [`docs/DATABASE.md`](../../docs/DATABASE.md#restoring).

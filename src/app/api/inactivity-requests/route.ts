@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
+import { log } from "@/lib/log";
 
 export async function GET() {
   const auth = await requireAuth("hr.view");
@@ -18,7 +19,7 @@ export async function GET() {
 
     return NextResponse.json(requests);
   } catch (error) {
-    console.error("Error fetching inactivity requests:", error);
+    log.error("Error fetching inactivity requests", error);
     return NextResponse.json({ error: "Failed to fetch requests" }, { status: 500 });
   }
 }
@@ -43,7 +44,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(inactivityRequest, { status: 201 });
   } catch (error) {
-    console.error("Error creating inactivity request:", error);
+    log.error("Error creating inactivity request", error);
     return NextResponse.json({ error: "Failed to create request" }, { status: 500 });
   }
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { requireAuth, isDenied } from "@/lib/auth/api";
+import { log } from "@/lib/log";
 
 export async function GET(request: Request) {
   const auth = await requireAuth();
@@ -43,7 +44,7 @@ export async function GET(request: Request) {
       todayTotal,
     });
   } catch (error) {
-    console.error("Error getting clock status:", error);
+    log.error("Error getting clock status", error);
     return NextResponse.json({ error: "Failed to get status" }, { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 import { prisma } from "./db/prisma";
 import { applyRankOverrides, type RankOverride } from "./constants";
+import { log } from "./log";
 
 /**
  * Loads the admin rank changes (RankSetting rows) into RANKS for this server
@@ -35,7 +36,7 @@ export async function loadRankSettings({ force = false } = {}): Promise<RankOver
   } catch (error) {
     // The table may not exist yet on a deploy that has not pushed the schema.
     // Keep whatever is in effect (the shipped ladder at worst) and retry later.
-    console.error("Rank settings could not be loaded:", error);
+    log.error("Rank settings could not be loaded", error);
     globalThis.__lsmdRanksLoadedAt = Date.now();
     return globalThis.__lsmdRankOverrides ?? [];
   }

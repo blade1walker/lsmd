@@ -284,8 +284,9 @@ export default function AdminExportPage() {
           Full database backup
         </div>
         <p className="text-sm text-gray-500 mb-4">
-          Every table and every row exactly as stored, as one JSON file — a backup to keep, not a
-          report to read.
+          A complete copy of the database as one file, taken while the site runs and checked
+          before download — a backup to keep, which <code className="text-gray-400">npm run db:restore</code> can
+          put back. The server also keeps daily backups of its own.
         </p>
         <div className="flex flex-wrap gap-3">
           <Button

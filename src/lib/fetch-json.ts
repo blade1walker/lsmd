@@ -16,7 +16,7 @@ function messageFrom(body: unknown, status: number): string {
       hint?: unknown;
     };
     if (typeof error === "string") {
-      // `hint` is the actionable half (e.g. "run npm run db:push"), so keep it
+      // `hint` is the actionable half (e.g. "run npm run db:migrate"), so keep it
       // even when it makes the message long — it is what the reader acts on.
       return [error, detail, hint].filter((p) => typeof p === "string").join(" — ");
     }

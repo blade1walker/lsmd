@@ -13,7 +13,6 @@ export async function GET() {
     });
     return NextResponse.json(members);
   } catch (error) {
-    console.error("Error fetching FTO members:", error);
     return apiError("Failed to fetch FTO members", error);
   }
 }

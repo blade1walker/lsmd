@@ -1,5 +1,7 @@
 import { prisma } from "./db/prisma";
 import { shiftSlotLabel } from "./shifts";
+import { stringList } from "./db/json-fields";
+import { log } from "./log";
 
 /**
  * Every table behind an admin page, in one place, so "export everything" is a
@@ -244,7 +246,7 @@ export const DATASETS: DatasetDefinition[] = [
     fetch: async () =>
       (await prisma.adminRole.findMany({ orderBy: { order: "asc" } })).map((r) => ({
         ...r,
-        permissions: r.permissions.join(", "),
+        permissions: stringList(r.permissions).join(", "),
       })),
   },
   {
@@ -324,7 +326,7 @@ export async function loadDataset(definition: DatasetDefinition): Promise<Export
   try {
     records = await definition.fetch();
   } catch (error) {
-    console.error(`Export: failed to read "${definition.key}":`, error);
+    log.error("Export: a dataset could not be read", error, { dataset: definition.key });
   }
 
   const columns = columnsOf(records);

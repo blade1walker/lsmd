@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { requireAuth, isDenied } from "@/lib/auth/api";
+import { log } from "@/lib/log";
 
 export async function POST() {
   const auth = await requireAuth();
@@ -14,7 +15,7 @@ export async function POST() {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error marking all read:", error);
+    log.error("Error marking all read", error);
     return NextResponse.json({ error: "Failed to mark all read" }, { status: 500 });
   }
 }

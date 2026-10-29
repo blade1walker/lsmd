@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { requireAuth, isDenied } from "@/lib/auth/api";
+import { log } from "@/lib/log";
 
 export async function GET() {
   const auth = await requireAuth("training.view");
@@ -21,7 +22,7 @@ export async function GET() {
 
     return NextResponse.json(records);
   } catch (error) {
-    console.error("Error fetching FTO records:", error);
+    log.error("Error fetching FTO records", error);
     return NextResponse.json({ error: "Failed to fetch records" }, { status: 500 });
   }
 }

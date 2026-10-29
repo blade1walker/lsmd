@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { requireAuth, isDenied } from "@/lib/auth/api";
+import { log } from "@/lib/log";
 
 export async function PATCH(
   request: Request,
@@ -20,7 +21,7 @@ export async function PATCH(
 
     return NextResponse.json(code);
   } catch (error) {
-    console.error("Error updating radio code:", error);
+    log.error("Error updating radio code", error);
     return NextResponse.json({ error: "Failed to update code" }, { status: 500 });
   }
 }
@@ -37,7 +38,7 @@ export async function DELETE(
     await prisma.radioCode.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting radio code:", error);
+    log.error("Error deleting radio code", error);
     return NextResponse.json({ error: "Failed to delete code" }, { status: 500 });
   }
 }

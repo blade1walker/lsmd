@@ -1,6 +1,7 @@
 import { NextAuthOptions } from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
 import { resolveAccess, provisionAdminUser, syncAdminUserFromRoster } from "./access";
+import { log } from "../log";
 
 /**
  * NEXTAUTH_URL is this site's own public address. It has been set to
@@ -24,7 +25,7 @@ function dropInvalidNextAuthUrl() {
   }
   if (!reason) return;
 
-  console.error(
+  log.error(
     `NEXTAUTH_URL is ignored because ${reason}. Set it to this site's own address ` +
       `(e.g. https://lsmd.tech) in /opt/lsmd/.env.`
   );
@@ -65,7 +66,7 @@ export const authOptions: NextAuthOptions = {
       // file with NODE_ENV=production but without the runtime environment, so
       // throwing on import would fail the build instead of the request.
       if (!process.env.NEXTAUTH_SECRET && process.env.NODE_ENV === "production") {
-        console.error("NEXTAUTH_SECRET is not set. Sessions cannot be signed securely.");
+        log.error("NEXTAUTH_SECRET is not set. Sessions cannot be signed securely.");
         return false;
       }
 
@@ -79,7 +80,7 @@ export const authOptions: NextAuthOptions = {
         const access = await resolveAccess(discordId);
 
         if (!access.allowed) {
-          console.warn(`Sign-in denied for Discord ID ${discordId ?? "unknown"}: ${access.denialReason}`);
+          log.warn("Sign-in denied", { discordId: discordId ?? "unknown", reason: access.denialReason });
           return "/admin/login?error=NotInRoster";
         }
 
@@ -91,7 +92,7 @@ export const authOptions: NextAuthOptions = {
           await syncAdminUserFromRoster(discordId);
         }
       } catch (error) {
-        console.error(`Sign-in for Discord ID ${discordId ?? "unknown"} could not be checked:`, error);
+        log.error("Sign-in could not be checked", error, { discordId: discordId ?? "unknown" });
         return "/admin/login?error=DatabaseUnavailable";
       }
 
@@ -113,7 +114,7 @@ export const authOptions: NextAuthOptions = {
         try {
           access = await resolveAccess(token.discordId as string);
         } catch (error) {
-          console.error("Session access could not be re-checked; keeping the last result:", error);
+          log.error("Session access could not be re-checked; keeping the last result", error);
           return token;
         }
         token.isAdmin = access.allowed;

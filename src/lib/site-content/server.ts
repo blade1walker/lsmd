@@ -19,6 +19,7 @@ import {
   type SiteContentState,
   type SiteNoticeView,
 } from "./";
+import { log } from "../log";
 
 /**
  * Server half of the Boss Menu: what the public site shows (published, or the
@@ -104,7 +105,7 @@ export const getSiteContentState = cache(async (): Promise<SiteContentState> => 
       return { values: resolveContent(rows, "published"), notices, preview: false };
     });
   } catch (error) {
-    console.error("Site content could not be read; showing defaults:", error);
+    log.error("Site content could not be read; showing defaults", error);
     return { values: resolveContent([], "published"), notices: [], preview: false };
   }
 });

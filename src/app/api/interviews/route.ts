@@ -64,12 +64,12 @@ export async function GET(req: NextRequest) {
     if (q) {
       conditions.push({
         OR: [
-          { sessionId: { contains: q, mode: "insensitive" } },
-          { memberName: { contains: q, mode: "insensitive" } },
-          { callSign: { contains: q, mode: "insensitive" } },
-          { currentRank: { contains: q, mode: "insensitive" } },
-          { targetRank: { contains: q, mode: "insensitive" } },
-          { panel: { some: { name: { contains: q, mode: "insensitive" } } } },
+          { sessionId: { contains: q } },
+          { memberName: { contains: q } },
+          { callSign: { contains: q } },
+          { currentRank: { contains: q } },
+          { targetRank: { contains: q } },
+          { panel: { some: { name: { contains: q } } } },
         ],
       });
     }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { requireAuth, isDenied } from "@/lib/auth/api";
+import { log } from "@/lib/log";
 
 export async function GET() {
   const auth = await requireAuth("clock.view");
@@ -19,7 +20,7 @@ export async function GET() {
 
     return NextResponse.json(entries);
   } catch (error) {
-    console.error("Error fetching clock log:", error);
+    log.error("Error fetching clock log", error);
     return NextResponse.json({ error: "Failed to fetch log" }, { status: 500 });
   }
 }

@@ -1,22 +1,15 @@
 import { getRadioCodes } from "@/lib/radio-codes/server";
+import { LoadError } from "@/components/layout/LoadError";
 import { RadioCodesPageClient } from "./RadioCodesPageClient";
+import { log } from "@/lib/log";
 
 export const dynamic = "force-dynamic";
 
 export default async function RadioCodesPage() {
-  try {
-    const codes = await getRadioCodes();
-    return <RadioCodesPageClient codes={codes as any} />;
-  } catch {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-[#0a0a0a] text-white p-8">
-        <h1 className="font-[family-name:var(--font-oswald)] text-2xl font-bold text-red-500 mb-4">
-          Database Error
-        </h1>
-        <p className="text-gray-400 text-center max-w-md">
-          Cannot connect to the database. Please ensure DATABASE_URL is set in /opt/lsmd/.env on the server.
-        </p>
-      </div>
-    );
-  }
+  const codes = await getRadioCodes().catch((error) => {
+    log.error("Radio codes failed to load", error);
+    return null;
+  });
+  if (!codes) return <LoadError what="The radio codes" />;
+  return <RadioCodesPageClient codes={codes} />;
 }

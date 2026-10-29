@@ -71,15 +71,16 @@ export async function getLoaBoard(canManage: boolean): Promise<LoaBoard> {
   const since = new Map<string, Date>();
   if (rosterOnly.length) {
     const changes = await prisma.auditLog.findMany({
-      where: {
-        entityType: "Member",
-        entityId: { in: rosterOnly.map((m) => m.id) },
-        details: { path: ["activity"], string_ends_with: "-> LOA" },
-      },
+      where: { entityType: "Member", entityId: { in: rosterOnly.map((m) => m.id) } },
       orderBy: { createdAt: "desc" },
-      select: { entityId: true, createdAt: true },
+      select: { entityId: true, createdAt: true, details: true },
     });
-    for (const c of changes) if (!since.has(c.entityId)) since.set(c.entityId, c.createdAt);
+    // The change that put them on leave records "<old> -> LOA" under activity.
+    const toLoa = (details: unknown) => {
+      const activity = (details as { activity?: unknown } | null)?.activity;
+      return typeof activity === "string" && activity.endsWith("-> LOA");
+    };
+    for (const c of changes) if (toLoa(c.details) && !since.has(c.entityId)) since.set(c.entityId, c.createdAt);
   }
 
   const started = running.filter((l) => l.startDate <= now).map(toEntry);

@@ -4,9 +4,11 @@
 # hand:  sudo -u lsmd FORCE=1 bash /opt/lsmd/repo/deploy/oracle/deploy.sh
 #
 # The site is built by GitHub Actions (.github/workflows/oracle-build.yml) and
-# published to the `oracle-build` release; this only downloads it, applies the
-# database schema and switches over, so the 1 GB VM never builds and the live
-# site never slows down. LOCAL_BUILD=1 builds on the VM instead (slow, 15+ min).
+# published to the `oracle-build` release; this only downloads it, gets the
+# database ready (scripts/deploy-schema.mjs: backup, migrations — and on the
+# first SQLite release, the one-time copy from Neon) and switches over, so the
+# 1 GB VM never builds and the live site never slows down. LOCAL_BUILD=1 builds
+# on the VM instead (slow, 15+ min).
 #
 # The live site keeps serving the previous release until the new one is ready,
 # and if the new one does not answer after the restart, the previous release
@@ -58,7 +60,7 @@ load_env() {
   . "$APP/.env"
   set +a
   export NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
-  # No IPv6 route on the VM; Neon's IPv6 addresses would time out (see lsmd.service).
+  # No IPv6 route on the VM: the one-time copy from Neon must use IPv4 (see lsmd.service).
   export NODE_OPTIONS="--dns-result-order=ipv4first --no-network-family-autoselection"
 }
 
@@ -87,8 +89,6 @@ if [ -z "${LOCAL_BUILD:-}" ]; then
 
   cd "$DEST"
   load_env
-  # Schema push, permission grants and backfills; never fails the deploy.
-  node scripts/deploy-schema.mjs
 else
   SHA=$(git -C "$REPO" rev-parse --short=10 origin/main)
   DEST="$APP/releases/$SHA"
@@ -109,6 +109,10 @@ else
   npm ci --no-audit --no-fund --include=dev
   npm run build
 fi
+
+# Backup, migrations and release data updates. A failure stops here, with the
+# previous release still live and the database as it was.
+node scripts/deploy-schema.mjs
 
 PREVIOUS="$CURRENT"
 ln -sfn "$DEST" "$APP/current"

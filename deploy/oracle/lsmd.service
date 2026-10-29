@@ -9,10 +9,11 @@ WorkingDirectory=/opt/lsmd/current
 EnvironmentFile=/opt/lsmd/.env
 Environment=NODE_ENV=production
 Environment=NEXT_TELEMETRY_DISABLED=1
-# Oracle VMs have no IPv6 route, but Neon resolves to IPv6 first: without this
-# every database connection times out (ETIMEDOUT) instead of using IPv4. Node's
-# address racing gives IPv4 only 250 ms, under the ~300 ms round trip to the US
-# database, then falls through to IPv6 and hangs — so it is switched off too.
+# Oracle VMs have no IPv6 route, but some hosts the site calls (Discord, the old
+# Neon database during the move) resolve to IPv6 first: without this those
+# connections time out (ETIMEDOUT) instead of using IPv4. Node's address racing
+# gives IPv4 only 250 ms, under a ~300 ms round trip, then falls through to
+# IPv6 and hangs — so it is switched off too.
 Environment="NODE_OPTIONS=--dns-result-order=ipv4first --no-network-family-autoselection"
 # Only Caddy talks to it; port 3000 is never exposed.
 ExecStart=/usr/bin/node node_modules/next/dist/bin/next start -H 127.0.0.1 -p 3000

@@ -1,12 +1,9 @@
 import "dotenv/config";
-import { PrismaClient } from "../src/generated/prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { createPrismaClient } from "../src/lib/db/prisma";
 import { ROLE_PRESETS } from "../src/lib/auth/role-presets";
+import { nextRoleOrder } from "../src/lib/auth/role-order";
 
-const prisma = (() => {
-  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
-  return new PrismaClient({ adapter });
-})();
+const prisma = createPrismaClient();
 
 async function main() {
   for (const preset of ROLE_PRESETS) {
@@ -36,9 +33,11 @@ async function main() {
     }
 
     if (!existing) {
-      await prisma.adminRole.create({
-        data: { name: preset.name, permissions: preset.permissions },
-      });
+      await prisma.$transaction(async (tx) =>
+        tx.adminRole.create({
+          data: { name: preset.name, permissions: preset.permissions, order: await nextRoleOrder(tx) },
+        })
+      );
       console.log(`Created ${preset.name} (${preset.permissions.length} permissions)`);
       continue;
     }

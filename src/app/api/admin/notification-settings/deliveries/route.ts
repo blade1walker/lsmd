@@ -31,9 +31,9 @@ export async function GET(req: NextRequest) {
         ...(query
           ? {
               OR: [
-                { event: { contains: query, mode: "insensitive" as const } },
-                { target: { contains: query, mode: "insensitive" as const } },
-                { preview: { contains: query, mode: "insensitive" as const } },
+                { event: { contains: query } },
+                { target: { contains: query } },
+                { preview: { contains: query } },
               ],
             }
           : {}),

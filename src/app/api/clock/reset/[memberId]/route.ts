@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { requireAuth, isDenied } from "@/lib/auth/api";
+import { log } from "@/lib/log";
 
 export async function DELETE(
   request: Request,
@@ -18,7 +19,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error resetting clock data:", error);
+    log.error("Error resetting clock data", error);
     return NextResponse.json({ error: "Failed to reset" }, { status: 500 });
   }
 }

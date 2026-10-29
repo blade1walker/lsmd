@@ -3,8 +3,12 @@ generator client {
   output   = "../src/generated/prisma"
 }
 
+// One SQLite file on the server (DATA_DIR/lsmd.db), in WAL mode — see
+// src/lib/db/sqlite.ts for the connection settings and src/lib/paths.ts for where
+// it lives. Schema changes are migrations in prisma/migrations, applied on
+// every deploy by scripts/db-deploy.ts.
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
 }
 
 model Section {
@@ -60,6 +64,9 @@ model Member {
   citySessions       CitySession[]
   /** Where they are on the Duty Board while on duty. */
   unitStatus         UnitStatus?
+
+  @@index([sectionId])
+  @@index([discordId])
 }
 
 model ClockEntry {
@@ -73,6 +80,9 @@ model ClockEntry {
   /// are closed automatically when the member leaves the city.
   source      String   @default("site")
   member      Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([memberId, clockInAt])
+  @@index([clockOutAt])
 }
 
 // Superseded by SopDocument, which supports more than one SOP. Kept rather
@@ -186,6 +196,9 @@ model LOA {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([memberId])
+  @@index([status, endDate])
 }
 
 model InactivityRequest {
@@ -198,6 +211,8 @@ model InactivityRequest {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   member      Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([memberId])
 }
 
 model PromotionNotification {
@@ -215,16 +230,17 @@ model PromotionNotification {
 model AdminRole {
   id          String       @id @default(cuid())
   name        String       @unique
-  permissions String[]
+  /// string[] — permission names.
+  permissions Json         @default("[]")
   // Position in the reorderable hierarchy — lower value ranks higher, same
   // convention as Section.order/SopDocument.order elsewhere in this schema.
   // A role's effective permissions include its own plus every role ranked
   // at or below it, so a permission on a lower role is automatically held by
-  // every role above it. autoincrement() rather than a fixed default so
-  // existing rows get distinct values when this column is added — a shared
-  // default would tie every role at the same rank and cascade them all into
-  // each other, which is a real permission escalation, not a display glitch.
-  order       Int          @default(autoincrement())
+  // every role above it. Every role must have its own value — a shared one
+  // would tie roles at the same rank and cascade them into each other, which
+  // is a real permission escalation, not a display glitch — so whatever
+  // creates a role gives it the next free number (nextRoleOrder()).
+  order       Int          @default(0)
   // Legacy single-role assignment. Kept rather than replaced so existing
   // assignments are not silently dropped — resolveAccess() unions this with
   // the new multi-role relation below, so either one alone still works.
@@ -383,9 +399,12 @@ model AdminUser {
   // who needs one extra permission without a whole role built around them.
   // Additive only: this can grant beyond what their role(s) allow, never
   // revoke a permission a role already grants.
-  extraPermissions String[] @default([])
+  /// string[] — permission names.
+  extraPermissions Json     @default("[]")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
+  @@index([roleId])
 }
 
 model RemovalRequest {
@@ -404,6 +423,8 @@ model RemovalRequest {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   member          Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([memberId])
 }
 
 model RadioCode {
@@ -440,6 +461,9 @@ model FTOSignOffRecord {
   notes               String?
   ftoMember           Member            @relation(fields: [ftoMemberId], references: [id], onDelete: Cascade)
   signOffDefinition   SignOffDefinition @relation(fields: [signOffDefinitionId], references: [id], onDelete: Cascade)
+
+  @@index([ftoMemberId])
+  @@index([signOffDefinitionId])
 }
 
 model Remark {
@@ -450,6 +474,8 @@ model Remark {
   content          String
   createdAt        DateTime       @default(now())
   trainingRecord   TrainingRecord @relation(fields: [trainingRecordId], references: [id], onDelete: Cascade)
+
+  @@index([trainingRecordId])
 }
 
 model DeletionLog {
@@ -776,6 +802,7 @@ model MedicalDocument {
   @@index([authorDiscordId])
   @@index([documentTypeId])
   @@index([createdAt])
+  @@index([formVersionId])
 }
 
 model MedicalAttachment {
@@ -959,7 +986,8 @@ model PromotionSettings {
   minDaysInDepartment Int      @default(30)
   minTrainingPercent  Int      @default(0)
   /// Departments a candidate must belong to, by DepartmentTemplate name.
-  requiredDepartments String[] @default([])
+  /// string[]
+  requiredDepartments Json     @default("[]")
   /// Whether a candidate must be Active on the roster (not Reserve or on LOA).
   requireActive       Boolean  @default(true)
   /// Days a failed candidate waits before another interview may be created.

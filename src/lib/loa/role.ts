@@ -2,6 +2,7 @@ import { prisma } from "../db/prisma";
 import type { LoaSettings, Prisma } from "@/generated/prisma/client";
 import { discordRest } from "../discord/roles";
 import { resolveBotToken } from "../discord/webhook";
+import { log } from "../log";
 
 /**
  * The "EMS LOA" Discord role: held by every member while they are on leave.
@@ -36,7 +37,7 @@ export async function readLoaSettings(): Promise<LoaSettings | null> {
   try {
     return await prisma.loaSettings.findUnique({ where: { id: "singleton" } });
   } catch (error) {
-    console.error("LOA settings could not be read:", error);
+    log.error("LOA settings could not be read", error);
     return null;
   }
 }
@@ -139,7 +140,7 @@ export async function setLoaRole(discordId: string | null | undefined, onLeave: 
     }
     return { ok: false, error: "Discord refused the role change" };
   } catch (error) {
-    console.error("EMS LOA role change failed:", error);
+    log.error("EMS LOA role change failed", error);
     return { ok: false, error: "The role change failed unexpectedly" };
   }
 }
