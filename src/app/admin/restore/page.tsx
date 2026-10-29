@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RotateCcw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ErrorState } from "@/components/ui/error-state";
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
+import { useLoad } from "@/lib/use-load";
 
 interface DeletionLog {
   id: string;
@@ -24,9 +25,9 @@ export default function AdminRestorePage() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchLogs = useCallback(async () => {
-    setError(null);
     try {
       setLogs(await fetchList<DeletionLog>("/api/admin/deleted"));
+      setError(null);
     } catch (err) {
       setError(errorMessage(err));
       setLogs([]);
@@ -35,9 +36,7 @@ export default function AdminRestorePage() {
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    fetchLogs();
-  }, [fetchLogs]);
+  useLoad(fetchLogs);
 
   const handleRestore = async (logId: string) => {
     try {

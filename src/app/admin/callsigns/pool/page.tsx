@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { ChevronLeft, Hash } from "lucide-react";
 import { ErrorState } from "@/components/ui/error-state";
@@ -13,6 +13,7 @@ import {
   isReservedCallSign,
 } from "@/lib/constants";
 import { toast } from "sonner";
+import { useLoad } from "@/lib/use-load";
 
 interface Member {
   id: string;
@@ -31,10 +32,10 @@ export default function CallsignPoolPage() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
-    setError(null);
     try {
       const sections = await fetchList<Section>("/api/members");
       setMembers(sections.flatMap((s) => s.members ?? []));
+      setError(null);
     } catch (err) {
       setError(errorMessage(err));
       setMembers([]);
@@ -44,7 +45,7 @@ export default function CallsignPoolPage() {
     }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useLoad(fetchData);
 
   // A call sign can legitimately be held by more than one member if it was
   // assigned manually, so map to a list rather than a single holder.

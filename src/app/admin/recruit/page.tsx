@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CheckCircle, XCircle, Loader2, Upload, Eye, Trash2, Plus, Pencil, Send, X, ClipboardList, Search } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { RANK_LIST } from "@/lib/constants";
+import { useLoad } from "@/lib/use-load";
 
 interface RecruitRequest {
   id: string;
@@ -81,11 +82,7 @@ export default function AdminRecruitPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    fetchRequests();
-  }, []);
-
-  const fetchRequests = async () => {
+  const fetchRequests = useCallback(async () => {
     try {
       const res = await fetch("/api/recruit");
       if (res.ok) {
@@ -96,7 +93,9 @@ export default function AdminRecruitPage() {
       console.error(err);
     }
     setLoading(false);
-  };
+  }, []);
+
+  useLoad(fetchRequests);
 
   const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -107,7 +106,7 @@ export default function AdminRecruitPage() {
       const [data, XLSX] = await Promise.all([file.arrayBuffer(), import("xlsx")]);
       const workbook = XLSX.read(data);
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonData = XLSX.utils.sheet_to_json(sheet) as any[];
+      const jsonData = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet);
 
       if (jsonData.length === 0) {
         alert("No data found in the file");
@@ -129,7 +128,7 @@ export default function AdminRecruitPage() {
         return;
       }
 
-      const importData = jsonData.map((row: any) => {
+      const importData = jsonData.map((row) => {
         const keys = Object.keys(row);
         return {
           discordId: String(row[keys[discordIdIdx]] || ""),

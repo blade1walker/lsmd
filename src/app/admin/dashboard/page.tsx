@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { fetchJson, errorMessage } from "@/lib/fetch-json";
@@ -26,6 +26,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
+import { useLoad } from "@/lib/use-load";
 
 interface DashboardData {
   stats: {
@@ -104,10 +105,9 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
     try {
       setData(await fetchJson<DashboardData>("/api/admin/dashboard"));
+      setError(null);
     } catch (err) {
       console.error("Failed to load dashboard:", err);
       setError(errorMessage(err));
@@ -116,9 +116,7 @@ export default function AdminDashboardPage() {
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  useLoad(fetchData);
 
   if (loading) {
     return (

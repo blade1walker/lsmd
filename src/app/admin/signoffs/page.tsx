@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { ErrorState } from "@/components/ui/error-state";
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
+import { useLoad } from "@/lib/use-load";
 
 interface SignOffDefinition {
   id: string;
@@ -42,7 +43,6 @@ export default function AdminSignoffsPage() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
-    setError(null);
     try {
       const [defList, recList] = await Promise.all([
         fetchList<SignOffDefinition>("/api/signoffs"),
@@ -50,6 +50,7 @@ export default function AdminSignoffsPage() {
       ]);
       setDefinitions(defList);
       setRecords(recList);
+      setError(null);
     } catch (err) {
       setError(errorMessage(err));
       setDefinitions([]);
@@ -59,9 +60,7 @@ export default function AdminSignoffsPage() {
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  useLoad(fetchData);
 
   const handleAddDefinition = async () => {
     if (!newDefinition) return;

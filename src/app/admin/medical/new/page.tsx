@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
 import { toast } from "sonner";
 import { ArrowLeft, Search, UserCheck } from "lucide-react";
+import { useLoad } from "@/lib/use-load";
 
 interface UsableForm {
   id: string;
@@ -57,7 +58,6 @@ export default function NewMedicalDocumentPage() {
   const [creating, setCreating] = useState(false);
 
   const load = useCallback(async () => {
-    setError(null);
     try {
       const [formList, sections] = await Promise.all([
         fetchList<UsableForm>("/api/medical/forms?usable=1"),
@@ -65,6 +65,7 @@ export default function NewMedicalDocumentPage() {
       ]);
       setForms(formList);
       setMembers(sections.flatMap((s) => s.members ?? []));
+      setError(null);
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -72,9 +73,7 @@ export default function NewMedicalDocumentPage() {
     }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useLoad(load);
 
   const matches = useMemo(() => {
     const q = patientQuery.trim().toLowerCase();

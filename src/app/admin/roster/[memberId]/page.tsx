@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import ActivityPill from "@/components/roster/ActivityPill";
 import { EMS_TRAINING, overallProgress, phaseProgress, type EmsProgress } from "@/lib/training";
+import { useLoad } from "@/lib/use-load";
 
 interface MemberProfileData {
   member: {
@@ -70,10 +71,9 @@ export default function MemberProfilePage() {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = useCallback(async () => {
-    setLoading(true);
-    setError(null);
     try {
       setData(await fetchJson<MemberProfileData>(`/api/members/${memberId}/profile`));
+      setError(null);
     } catch (err) {
       console.error("Failed to load profile:", err);
       setError(errorMessage(err));
@@ -82,9 +82,7 @@ export default function MemberProfilePage() {
     setLoading(false);
   }, [memberId]);
 
-  useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
+  useLoad(fetchProfile);
 
   if (loading) {
     return (

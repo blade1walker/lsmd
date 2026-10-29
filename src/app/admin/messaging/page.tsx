@@ -21,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
+import { useLoad } from "@/lib/use-load";
 
 const MAX_LENGTH = 2000;
 
@@ -165,18 +166,16 @@ function ConversationsTab() {
   const transcriptRef = useRef<HTMLDivElement>(null);
 
   const loadThreads = useCallback(async () => {
-    setError(null);
     try {
       setThreads(await fetchList<ThreadSummary>("/api/messaging/threads"));
+      setError(null);
     } catch (err) {
       setError(errorMessage(err));
     }
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    loadThreads();
-  }, [loadThreads]);
+  useLoad(loadThreads);
 
   /** `sync` pulls fresh history from Discord first — that is how replies arrive. */
   const openThread = useCallback(async (discordId: string, sync: boolean) => {
@@ -196,15 +195,12 @@ function ConversationsTab() {
 
   // Opening a conversation shows the stored transcript immediately, then pulls
   // anything new from Discord behind it.
-  useEffect(() => {
-    if (!selectedId) {
-      setThread(null);
-      return;
-    }
+  const selectThread = (discordId: string) => {
+    setSelectedId(discordId);
     setThread(null);
     setDraft("");
-    openThread(selectedId, false).then(() => openThread(selectedId, true).then(loadThreads));
-  }, [selectedId, openThread, loadThreads]);
+    openThread(discordId, false).then(() => openThread(discordId, true).then(loadThreads));
+  };
 
   useEffect(() => {
     const el = transcriptRef.current;
@@ -245,7 +241,7 @@ function ConversationsTab() {
       });
       setNewId("");
       await loadThreads();
-      setSelectedId(id);
+      selectThread(id);
     } catch (err) {
       toast.error(errorMessage(err));
     }
@@ -347,7 +343,7 @@ function ConversationsTab() {
           {visible.map((t) => (
             <button
               key={t.id}
-              onClick={() => setSelectedId(t.discordId)}
+              onClick={() => selectThread(t.discordId)}
               className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
                 t.discordId === selectedId
                   ? "bg-[#dc2626]/10"

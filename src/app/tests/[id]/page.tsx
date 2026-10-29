@@ -15,6 +15,7 @@ import { ExamGuard, enterFullscreen, type LeaveReason } from "@/components/tests
 import { fetchJson, errorMessage, ApiError } from "@/lib/fetch-json";
 import { isAnswered, minRankMessage, type Answers, type PublicQuestion, type TestQuestion } from "@/lib/tests";
 import { toast } from "sonner";
+import { useLoad } from "@/lib/use-load";
 
 interface PastAttempt {
   id: string;
@@ -87,9 +88,7 @@ export default function TakeTestPage() {
     }
   }, [id]);
 
-  useEffect(() => {
-    if (status === "authenticated") load();
-  }, [status, load]);
+  useLoad(load, status === "authenticated");
 
   const current = test?.current ?? null;
   const deadline =

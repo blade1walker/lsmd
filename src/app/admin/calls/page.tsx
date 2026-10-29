@@ -22,6 +22,7 @@ import {
   type EmsCallRecord,
 } from "@/lib/calls";
 import { toast } from "sonner";
+import { useLoad } from "@/lib/use-load";
 
 interface RosterMember {
   id: string;
@@ -168,12 +169,13 @@ export default function CallLogPage() {
     return () => clearTimeout(timer);
   }, [loadCalls]);
 
+  useLoad(loadStats);
+
   useEffect(() => {
-    loadStats();
     fetchList<{ members?: RosterMember[] }>("/api/members")
       .then((sections) => setMembers(sections.flatMap((s) => s.members ?? [])))
       .catch(() => {});
-  }, [loadStats]);
+  }, []);
 
   const memberById = useMemo(() => new Map(members.map((m) => [m.id, m])), [members]);
 

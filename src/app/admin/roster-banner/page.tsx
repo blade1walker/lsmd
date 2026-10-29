@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +10,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { RosterBannerStrip } from "@/components/roster/RosterBannerStrip";
 import { fetchJson, errorMessage } from "@/lib/fetch-json";
 import { toast } from "sonner";
+import { useLoad } from "@/lib/use-load";
 
 interface Banner {
   active: boolean;
@@ -28,10 +29,10 @@ export default function RosterBannerPage() {
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    setError(null);
     try {
       setBanner(await fetchJson<Banner>("/api/roster-banner"));
       setDirty(false);
+      setError(null);
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -39,9 +40,7 @@ export default function RosterBannerPage() {
     }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useLoad(load);
 
   const edit = (patch: Partial<Banner>) => {
     if (!banner) return;

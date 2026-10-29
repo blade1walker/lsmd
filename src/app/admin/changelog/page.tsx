@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Search } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { fetchList, errorMessage } from "@/lib/fetch-json";
 import type { ChangelogEntry, ChangeType } from "@/lib/changelog";
+import { useLoad } from "@/lib/use-load";
 
 const TYPES: { key: ChangeType; label: string; badge: string }[] = [
   { key: "feature", label: "New", badge: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400" },
@@ -33,9 +34,9 @@ export default function ChangelogPage() {
   const [type, setType] = useState<ChangeType | "">("");
 
   const load = useCallback(async () => {
-    setError(null);
     try {
       setEntries(await fetchList<ChangelogEntry>("/api/changelog"));
+      setError(null);
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -43,9 +44,7 @@ export default function ChangelogPage() {
     }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useLoad(load);
 
   const counts = useMemo(() => {
     const tally: Record<string, number> = {};

@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { toast } from "sonner";
 import { Database, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
 import { fetchJson, errorMessage } from "@/lib/fetch-json";
+import { useLoad } from "@/lib/use-load";
 
 interface DatasetInfo {
   key: string;
@@ -51,20 +52,18 @@ export default function AdminExportPage() {
 
 
   const load = useCallback(async () => {
-    setError(null);
     try {
       const list = await fetchJson<DatasetInfo[]>("/api/admin/export/data?list=1");
       setCatalogue(list);
       setSelected(new Set(list.map((d) => d.key)));
+      setError(null);
     } catch (err) {
       setError(errorMessage(err));
     }
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useLoad(load);
 
   // Grouped by the admin page each dataset backs, so the picker reads like the
   // sidebar rather than like a table list.
@@ -288,13 +287,14 @@ export default function AdminExportPage() {
           report to read.
         </p>
         <div className="flex flex-wrap gap-3">
-          <Button
-            onClick={() => window.location.assign("/api/admin/export/database")}
-            className="bg-[#dc2626] text-black hover:bg-[#b91c1c]"
+          <a
+            href="/api/admin/export/database"
+            download
+            className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition-colors bg-[#dc2626] text-black hover:bg-[#b91c1c]"
           >
             <Database className="w-4 h-4 mr-2" />
             Download database
-          </Button>
+          </a>
         </div>
       </div>
     </div>

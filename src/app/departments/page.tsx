@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSession, signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
 import { isRankAtLeast } from "@/lib/constants";
 import { departmentTag, questionOptions } from "@/lib/departments";
 import { DepartmentMark } from "@/components/roster/DepartmentMark";
+import { useLoad } from "@/lib/use-load";
 
 interface Question {
   id: string;
@@ -79,18 +80,16 @@ export default function DepartmentsPage() {
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    setLoadError(null);
     try {
       setDepartments(await fetchList<Department>("/api/departments"));
+      setLoadError(null);
     } catch (err) {
       setLoadError(errorMessage(err));
     }
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    if (status !== "loading") load();
-  }, [status, load]);
+  useLoad(load, status !== "loading");
 
   const rank = session?.user?.memberRank ?? null;
 

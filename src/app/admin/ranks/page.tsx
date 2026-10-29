@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { ArrowDown, ArrowUp, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,6 +16,7 @@ import {
 } from "@/lib/constants";
 import { fetchJson, errorMessage } from "@/lib/fetch-json";
 import { toast } from "sonner";
+import { useLoad } from "@/lib/use-load";
 
 const SHAPE_LABELS: Record<string, string> = {
   none: "None",
@@ -59,12 +60,12 @@ export default function RanksPage() {
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    setError(null);
     try {
       const data = await fetchJson<RanksResponse>("/api/admin/ranks");
       setRanks(data.ranks);
       setDefaults(data.defaults);
       setDirty(false);
+      setError(null);
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -72,9 +73,7 @@ export default function RanksPage() {
     }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useLoad(load);
 
   const edit = (name: string, patch: Partial<RankDef>) => {
     setRanks((list) => list.map((r) => (r.name === name ? { ...r, ...patch } : r)));

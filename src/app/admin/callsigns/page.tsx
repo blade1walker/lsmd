@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,7 @@ import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
 import Link from "next/link";
 import { Radio, Search, Hash } from "lucide-react";
 import { toast } from "sonner";
+import { useLoad } from "@/lib/use-load";
 
 interface Member {
   id: string;
@@ -33,10 +34,10 @@ export default function AdminCallsignsPage() {
   const [saving, setSaving] = useState(false);
 
   const fetchData = useCallback(async () => {
-    setError(null);
     try {
       const sections = await fetchList<Section>("/api/members");
       setMembers(sections.flatMap((s) => s.members ?? []));
+      setError(null);
     } catch (err) {
       setError(errorMessage(err));
       setMembers([]);
@@ -46,7 +47,7 @@ export default function AdminCallsignsPage() {
     }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useLoad(fetchData);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();

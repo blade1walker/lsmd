@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Check, X, Clock, CheckCircle } from "lucide-react";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ErrorState } from "@/components/ui/error-state";
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
+import { useLoad } from "@/lib/use-load";
 
 interface LOA {
   id: string;
@@ -60,7 +61,6 @@ export default function AdminHrPage() {
   const [processingId, setProcessingId] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
-    setError(null);
     try {
       const [loaList, removalList, inactList] = await Promise.all([
         fetchList<LOA>("/api/loa"),
@@ -70,6 +70,7 @@ export default function AdminHrPage() {
       setLoas(loaList);
       setRemovals(removalList);
       setInactivities(inactList);
+      setError(null);
     } catch (err) {
       setError(errorMessage(err));
       setLoas([]);
@@ -80,7 +81,7 @@ export default function AdminHrPage() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useLoad(fetchData);
 
   const handleLoaAction = async (id: string, status: string) => {
     if (processingId) return;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,7 @@ import { CalendarClock, ClipboardList, Loader2, Trash2 } from "lucide-react";
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
 import { SHIFT_PERMISSIONS } from "@/lib/constants";
 import { SHIFT_SLOTS } from "@/lib/shifts";
+import { useLoad } from "@/lib/use-load";
 
 interface RosterMember {
   id: string;
@@ -56,7 +57,6 @@ export default function AdminShiftsPage() {
   const canManage = isSuperAdmin || SHIFT_PERMISSIONS.manage.some((p) => permissions.includes(p));
 
   const load = useCallback(async () => {
-    setError(null);
     try {
       const [sections, signupList] = await Promise.all([
         fetchList<RosterSection>("/api/members"),
@@ -68,28 +68,23 @@ export default function AdminShiftsPage() {
           .sort((a, b) => a.name.localeCompare(b.name))
       );
       setSignups(signupList);
+      setError(null);
     } catch (err) {
       setError(errorMessage(err));
     }
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useLoad(load);
 
   // Picking a name that already has a pick loads it, so resubmitting reads as
   // an edit rather than starting blank every time.
-  useEffect(() => {
-    if (!memberId) {
-      setPrimarySlot("");
-      setSecondarySlot("");
-      return;
-    }
-    const existing = signups.find((s) => s.memberId === memberId);
+  const pickMember = (id: string) => {
+    setMemberId(id);
+    const existing = id ? signups.find((s) => s.memberId === id) : undefined;
     setPrimarySlot(existing ? String(existing.primarySlot) : "");
     setSecondarySlot(existing ? String(existing.secondarySlot) : "");
-  }, [memberId, signups]);
+  };
 
   const schedule = useMemo(() => {
     return SHIFT_SLOTS.map((label, slot) => ({
@@ -189,7 +184,7 @@ export default function AdminShiftsPage() {
               <Label className="text-gray-400 text-sm">Name</Label>
               <select
                 value={memberId}
-                onChange={(e) => setMemberId(e.target.value)}
+                onChange={(e) => pickMember(e.target.value)}
                 className={`mt-1 ${selectClass}`}
               >
                 <option value="">Select your name…</option>

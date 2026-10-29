@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,7 @@ import {
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ArrowLeft, ArrowUp, ArrowDown, Trash2, Plus, ChevronDown, ChevronRight, ClipboardPaste } from "lucide-react";
+import { useLoad } from "@/lib/use-load";
 
 const PASTE_EXAMPLE = `# Examination
 1. Was the patient injured? *
@@ -105,7 +106,6 @@ export default function FormBuilderPage() {
   const [metaDirty, setMetaDirty] = useState(false);
 
   const load = useCallback(async () => {
-    setError(null);
     try {
       const [detail, typeList] = await Promise.all([
         fetchJson<FormDetail>(`/api/medical/forms/${formId}`),
@@ -126,6 +126,7 @@ export default function FormBuilderPage() {
       setExportConfig(parseExportConfig(latest?.exportConfig));
       setSignatureMode(latest?.signatureMode ?? "optional");
       setDirty(false);
+      setError(null);
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -133,9 +134,7 @@ export default function FormBuilderPage() {
     }
   }, [formId]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useLoad(load);
 
   const latest = form?.versions[0];
   // Editing a published version doesn't overwrite it — the save mints the next

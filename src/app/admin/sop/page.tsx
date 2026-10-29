@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +10,7 @@ import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
 import { LEGACY_DOC_ID, type RelatedLink } from "@/lib/sop";
 import { Save, Plus, Trash2, Image as ImageIcon, Link as LinkIcon } from "lucide-react";
 import { toast } from "sonner";
+import { useLoad } from "@/lib/use-load";
 
 interface SopDoc {
   id: string;
@@ -45,12 +46,12 @@ export default function AdminSopPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchDocs = useCallback(async () => {
-    setError(null);
     try {
       const list = await fetchList<SopDoc>("/api/sop");
       setDocs(list);
       setDrafts({});
       setSelectedId((prev) => (prev && list.some((d) => d.id === prev) ? prev : list[0]?.id ?? null));
+      setError(null);
     } catch (err) {
       setError(errorMessage(err));
       setDocs([]);
@@ -59,7 +60,7 @@ export default function AdminSopPage() {
     }
   }, []);
 
-  useEffect(() => { fetchDocs(); }, [fetchDocs]);
+  useLoad(fetchDocs);
 
   const selectedDoc = docs.find((d) => d.id === selectedId) ?? null;
   const draft: Draft = selectedDoc

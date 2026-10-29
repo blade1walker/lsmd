@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +30,7 @@ import {
   type QuestionType,
 } from "@/lib/departments";
 import { DepartmentMark, DepartmentMarkLegend } from "@/components/roster/DepartmentMark";
+import { useLoad } from "@/lib/use-load";
 
 interface Question {
   id: string;
@@ -127,14 +128,14 @@ export default function AdminDepartmentsPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>("applications");
+  const [selectedTab, setTab] = useState<Tab>("applications");
   const [newDeptName, setNewDeptName] = useState("");
   const [creating, setCreating] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   // UX only — every route re-checks for itself. This just keeps controls that
   // would fail out of the way.
-  const granted = session?.user?.permissions ?? [];
+  const granted = useMemo(() => session?.user?.permissions ?? [], [session]);
   const isSuperAdmin = session?.user?.isSuperAdmin ?? false;
   const can = useCallback(
     (kind: keyof typeof DEPARTMENT_PERMISSIONS) =>
@@ -146,9 +147,11 @@ export default function AdminDepartmentsPage() {
   const canApprove = can("approve");
   const canEditMembers = can("members");
   const visibleTabs = TABS.filter((t) => can(TAB_PERMISSION[t]));
+  // The open tab is always one this admin may actually use — the default,
+  // "applications", is visible to anyone reaching this page.
+  const tab = visibleTabs.includes(selectedTab) ? selectedTab : (visibleTabs[0] ?? selectedTab);
 
   const load = useCallback(async () => {
-    setError(null);
     try {
       const [deptList, appList, memberList, sections] = await Promise.all([
         fetchList<Department>("/api/admin/departments"),
@@ -161,21 +164,14 @@ export default function AdminDepartmentsPage() {
       setMemberships(memberList);
       setRoster(sections.flatMap((s) => s.members));
       setSelectedId((current) => current ?? deptList[0]?.id ?? null);
+      setError(null);
     } catch (err) {
       setError(errorMessage(err));
     }
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  // Keeps the selected tab on something this admin may actually open — the
-  // default is "applications", which anyone reaching this page can see.
-  useEffect(() => {
-    if (visibleTabs.length > 0 && !visibleTabs.includes(tab)) setTab(visibleTabs[0]);
-  }, [visibleTabs, tab]);
+  useLoad(load);
 
   const selected = departments.find((d) => d.id === selectedId) ?? null;
 
@@ -767,11 +763,13 @@ function QuestionEditor({
   const [optionText, setOptionText] = useState(questionOptions(question).join("\n"));
 
   // Reset when the row is replaced by a reload, so an edit elsewhere is picked up.
-  useEffect(() => {
+  const [shownFor, setShownFor] = useState(question);
+  if (question !== shownFor) {
+    setShownFor(question);
     setLabel(question.label);
     setPlaceholder(question.placeholder ?? "");
     setOptionText(questionOptions(question).join("\n"));
-  }, [question]);
+  }
 
   return (
     <div className="bg-[#0a0a0a] border border-[#1e1e1e] rounded-lg p-4 space-y-3">
@@ -993,16 +991,9 @@ function MembersTab({
 
 /* ---------------------------------------------------------------------- */
 
-function SettingsTab({
-  department,
-  onSave,
-  onDelete,
-}: {
-  department: Department;
-  onSave: (id: string, patch: Partial<Department>) => void;
-  onDelete: (dept: Department) => void;
-}) {
-  const [draft, setDraft] = useState({
+/** The settings form's fields, from a saved department. */
+function draftOf(department: Department) {
+  return {
     name: department.name,
     tag: department.tag ?? "",
     color: department.color,
@@ -1012,21 +1003,26 @@ function SettingsTab({
     minRank: department.minRank ?? "",
     discordRoleId: department.discordRoleId ?? "",
     openForApplications: department.openForApplications,
-  });
+  };
+}
 
-  useEffect(() => {
-    setDraft({
-      name: department.name,
-      tag: department.tag ?? "",
-      color: department.color,
-      description: department.description ?? "",
-      documentLink: department.documentLink ?? "",
-      webhookUrl: department.webhookUrl ?? "",
-      minRank: department.minRank ?? "",
-      discordRoleId: department.discordRoleId ?? "",
-      openForApplications: department.openForApplications,
-    });
-  }, [department]);
+function SettingsTab({
+  department,
+  onSave,
+  onDelete,
+}: {
+  department: Department;
+  onSave: (id: string, patch: Partial<Department>) => void;
+  onDelete: (dept: Department) => void;
+}) {
+  const [draft, setDraft] = useState(() => draftOf(department));
+  // Start over from the saved values when another department is picked or a
+  // reload replaces this one.
+  const [draftFor, setDraftFor] = useState(department);
+  if (department !== draftFor) {
+    setDraftFor(department);
+    setDraft(draftOf(department));
+  }
 
   return (
     <div className="space-y-4 max-w-2xl">

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { ErrorState } from "@/components/ui/error-state";
 import { fetchJson, errorMessage } from "@/lib/fetch-json";
+import { useLoad } from "@/lib/use-load";
 
 interface AuditEntry {
   id: string;
@@ -41,14 +42,13 @@ export default function AdminAuditPage() {
   const limit = 50;
 
   const fetchLogs = useCallback(async () => {
-    setLoading(true);
-    setError(null);
     try {
       const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
       if (entityType) params.set("entityType", entityType);
       const data = await fetchJson<{ logs: AuditEntry[]; total: number }>(`/api/admin/audit?${params}`);
       setLogs(data.logs ?? []);
       setTotal(data.total ?? 0);
+      setError(null);
     } catch (err) {
       console.error("Failed to fetch audit logs:", err);
       setError(errorMessage(err));
@@ -59,9 +59,7 @@ export default function AdminAuditPage() {
     }
   }, [offset, entityType]);
 
-  useEffect(() => {
-    fetchLogs();
-  }, [fetchLogs]);
+  useLoad(fetchLogs);
 
   const totalPages = Math.ceil(total / limit);
   const entityTypes = ["Member", "AdminRole", "AdminUser", "LOA", "RemovalRequest", "InactivityRequest", "OnboardingRequest", "FTPRequest", "RecruitRequest", "DepartmentApplication", "DepartmentMembership"];

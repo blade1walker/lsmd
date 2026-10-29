@@ -38,7 +38,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Log not found" }, { status: 404 });
     }
 
-    const data = log.data as any;
+    const data = log.data as unknown as {
+      name: string;
+      rank: string;
+      callSign: string | null;
+      sectionId: string | null;
+      activity: string;
+    };
 
     if (log.entityType === "Member") {
       await prisma.member.create({

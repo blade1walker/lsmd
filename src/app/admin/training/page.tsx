@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { CheckCircle2, Circle, ChevronDown, ClipboardList, Minus, Plus, Search } from "lucide-react";
@@ -17,6 +17,7 @@ import {
   type TrainingSummaryRow,
 } from "@/lib/training";
 import { toast } from "sonner";
+import { useLoad } from "@/lib/use-load";
 
 type Filter = "all" | "not-started" | "in-progress" | "complete";
 
@@ -57,9 +58,9 @@ export default function AdminTrainingPage() {
   const [saving, setSaving] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    setError(null);
     try {
       setRows(await fetchList<TrainingSummaryRow>("/api/training/summary"));
+      setError(null);
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -67,9 +68,7 @@ export default function AdminTrainingPage() {
     }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useLoad(load);
 
   const replaceProgress = (memberId: string, progress: EmsProgress) =>
     setRows((prev) => prev.map((r) => (r.memberId === memberId ? { ...r, progress } : r)));

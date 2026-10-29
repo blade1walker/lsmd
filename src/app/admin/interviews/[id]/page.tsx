@@ -52,6 +52,7 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
+import { useLoad } from "@/lib/use-load";
 
 function formatDate(iso: string | null) {
   return iso ? new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) : "—";
@@ -87,9 +88,9 @@ export default function InterviewSessionPage() {
   const [finalizing, setFinalizing] = useState(false);
 
   const load = useCallback(async () => {
-    setError(null);
     try {
       setInterview(await fetchJson<InterviewDetail>(`/api/interviews/${params.id}`));
+      setError(null);
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -97,9 +98,7 @@ export default function InterviewSessionPage() {
     }
   }, [params.id]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useLoad(load);
 
   useEffect(() => {
     fetchJson<PromotionSettingsValues>("/api/interviews/settings")

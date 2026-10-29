@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
 import { DOCUMENT_CATEGORIES, FORM_STATUSES } from "@/lib/medical";
 import { toast } from "sonner";
 import { Plus, ExternalLink, Trash2, Upload, Image as ImageIcon, Pencil } from "lucide-react";
+import { useLoad } from "@/lib/use-load";
 
 interface DocumentType {
   id: string;
@@ -168,7 +169,6 @@ export default function MedicalFormsPage() {
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
-    setError(null);
     try {
       const [formList, typeList, settingsRow] = await Promise.all([
         fetchList<MedicalFormRow>("/api/medical/forms"),
@@ -178,6 +178,7 @@ export default function MedicalFormsPage() {
       setForms(formList);
       setTypes(typeList);
       setSettings(settingsRow);
+      setError(null);
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -185,9 +186,7 @@ export default function MedicalFormsPage() {
     }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useLoad(load);
 
   const createForm = async () => {
     if (!newForm.name.trim() || !newForm.documentTypeId) return;

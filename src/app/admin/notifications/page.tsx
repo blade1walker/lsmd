@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
+import { useLoad } from "@/lib/use-load";
 
 interface Notification {
   id: string;
@@ -30,7 +31,7 @@ export default function AdminNotificationsPage() {
     }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useLoad(fetchData);
 
   const handleMarkRead = async (id: string) => {
     await fetch(`/api/notifications/${id}`, { method: "PATCH" });

@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { fetchList, ApiError, errorMessage } from "@/lib/fetch-json";
 import { SopPageClient, type SopDoc } from "./SopPageClient";
+import { useLoad } from "@/lib/use-load";
 
 function Notice({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -26,10 +27,10 @@ export default function SopPage() {
   const [forbidden, setForbidden] = useState(false);
 
   const fetchDocs = useCallback(async () => {
-    setError(null);
-    setForbidden(false);
     try {
       setDocs(await fetchList<SopDoc>("/api/sop"));
+      setError(null);
+      setForbidden(false);
     } catch (err) {
       if (err instanceof ApiError && err.status === 403) {
         setForbidden(true);
@@ -39,9 +40,7 @@ export default function SopPage() {
     }
   }, []);
 
-  useEffect(() => {
-    if (session) fetchDocs();
-  }, [session, fetchDocs]);
+  useLoad(fetchDocs, !!session);
 
   if (status === "loading") {
     return <div className="min-h-screen bg-[#0a0a0a]" />;

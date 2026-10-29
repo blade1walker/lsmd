@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { ErrorState } from "@/components/ui/error-state";
@@ -8,6 +8,7 @@ import RankInsignia from "@/components/roster/RankInsignia";
 import { fetchList, errorMessage } from "@/lib/fetch-json";
 import { TRAINEE_RANKS } from "@/lib/constants";
 import { GraduationCap, Search } from "lucide-react";
+import { useLoad } from "@/lib/use-load";
 
 interface Trainee {
   id: string;
@@ -32,9 +33,9 @@ export default function AdminTraineesPage() {
   const [search, setSearch] = useState("");
 
   const fetchData = useCallback(async () => {
-    setError(null);
     try {
       setTrainees(await fetchList<Trainee>("/api/trainees"));
+      setError(null);
     } catch (err) {
       setError(errorMessage(err));
       setTrainees([]);
@@ -43,7 +44,7 @@ export default function AdminTraineesPage() {
     }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useLoad(fetchData);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();

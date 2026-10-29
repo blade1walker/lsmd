@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import Link from "next/link";
 import { useSession, signIn } from "next-auth/react";
 import { CheckCircle, ClipboardList, Lock, Timer } from "lucide-react";
@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { TestShell } from "@/components/tests/TestShell";
 import { fetchList, errorMessage } from "@/lib/fetch-json";
+import { useLoad } from "@/lib/use-load";
 
 interface TestCard {
   id: string;
@@ -44,9 +45,7 @@ export default function TestsPage() {
     }
   }, []);
 
-  useEffect(() => {
-    if (status === "authenticated") load();
-  }, [status, load]);
+  useLoad(load, status === "authenticated");
 
   if (status === "unauthenticated") {
     return (

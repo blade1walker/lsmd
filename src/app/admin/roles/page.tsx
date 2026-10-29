@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,7 @@ import { inheritedPermissions, effectiveRolePermissions } from "@/lib/auth/role-
 import { defaultMemberPermissions } from "@/lib/auth/role-presets";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
+import { useLoad } from "@/lib/use-load";
 
 interface AdminRole { id: string; name: string; permissions: string[]; order: number; }
 interface AdminUser {
@@ -124,7 +125,6 @@ export default function AdminRolesPage() {
   const [userRoleFilter, setUserRoleFilter] = useState("");
 
   const fetchData = useCallback(async () => {
-    setError(null);
     try {
       const [roleList, userList, sections] = await Promise.all([
         fetchList<AdminRole>("/api/admin/roles"),
@@ -134,6 +134,7 @@ export default function AdminRolesPage() {
       setRoles(roleList);
       setUsers(userList);
       setMembers(sections.flatMap((s) => s.members ?? []));
+      setError(null);
     } catch (err) {
       console.error("Failed to fetch:", err);
       setError(errorMessage(err));
@@ -145,7 +146,7 @@ export default function AdminRolesPage() {
     }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useLoad(fetchData);
 
   // Members already carrying an explicit role are managed in the list below;
   // the rest fall back to the default role until one is assigned here.

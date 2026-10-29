@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { ErrorState } from "@/components/ui/error-state";
 import { fetchList, errorMessage } from "@/lib/fetch-json";
+import { useLoad } from "@/lib/use-load";
 
 interface ClockEntry {
   id: string;
@@ -16,21 +17,29 @@ interface ClockEntry {
   };
 }
 
+/** One member's clocked time, as /api/clock/totals returns it. */
+interface MemberTotal {
+  id: string;
+  name: string;
+  callSign: string | null;
+  totalSeconds: number;
+}
+
 export default function AdminClockLogPage() {
   const [entries, setEntries] = useState<ClockEntry[]>([]);
-  const [totals, setTotals] = useState<any[]>([]);
+  const [totals, setTotals] = useState<MemberTotal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
-    setError(null);
     try {
       const [log, totalsList] = await Promise.all([
         fetchList<ClockEntry>("/api/clock/log"),
-        fetchList<any>("/api/clock/totals"),
+        fetchList<MemberTotal>("/api/clock/totals"),
       ]);
       setEntries(log);
       setTotals(totalsList);
+      setError(null);
     } catch (err) {
       console.error("Error fetching data:", err);
       setError(errorMessage(err));
@@ -40,9 +49,7 @@ export default function AdminClockLogPage() {
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  useLoad(fetchData);
 
   const formatDuration = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -117,7 +124,7 @@ export default function AdminClockLogPage() {
             <div className="p-4 bg-[#0a0a0a] rounded-lg text-center">
               <div className="text-2xl font-bold text-[#dc2626] font-[family-name:var(--font-oswald)]">
                 {formatDuration(
-                  totals.reduce((sum: number, t: any) => sum + t.totalSeconds, 0)
+                  totals.reduce((sum, t) => sum + t.totalSeconds, 0)
                 )}
               </div>
               <div className="text-xs text-gray-500 mt-1">Total Hours</div>

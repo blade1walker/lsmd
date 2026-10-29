@@ -31,7 +31,7 @@ export default function LOARequestPage() {
       .then((r) => r.json())
       .then((data) => {
         const all = Array.isArray(data)
-          ? data.flatMap((s: any) => s.members ?? [])
+          ? data.flatMap((s: { members?: Member[] }) => s.members ?? [])
           : [];
         setMembers(all);
       })

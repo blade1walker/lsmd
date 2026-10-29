@@ -10,6 +10,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
 import { DEFAULT_PROMOTION_SETTINGS, type PromotionSettingsValues } from "@/lib/interviews";
 import { ArrowLeft, Save, Sliders } from "lucide-react";
+import { useLoad } from "@/lib/use-load";
 
 interface Department {
   id: string;
@@ -29,9 +30,9 @@ export default function InterviewSettingsPage() {
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
-    setError(null);
     try {
       setValues(await fetchJson<PromotionSettingsValues>("/api/interviews/settings"));
+      setError(null);
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -39,15 +40,16 @@ export default function InterviewSettingsPage() {
     }
   }, []);
 
+  useLoad(load);
+
   useEffect(() => {
-    load();
     fetchList<Department>("/api/departments")
       .then(setDepartments)
       .catch(() => {
         // The required-departments picker falls back to whatever is already
         // configured; the rest of the page works without the list.
       });
-  }, [load]);
+  }, []);
 
   function set<K extends keyof PromotionSettingsValues>(key: K, value: PromotionSettingsValues[K]) {
     setValues((current) => ({ ...current, [key]: value }));

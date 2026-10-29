@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Check, X, UserPlus } from "lucide-react";
 import { RANK_LIST } from "@/lib/constants";
+import { useLoad } from "@/lib/use-load";
 
 interface OnboardingRequest {
   id: string;
@@ -39,7 +40,7 @@ export default function AdminOnboardingPage() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useLoad(fetchData);
 
   const handleApprove = async (id: string) => {
     if (processingId) return;

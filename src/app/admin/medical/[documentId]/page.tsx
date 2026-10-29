@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ import {
 import { exportDocumentPdf, type PdfSettings } from "@/lib/medical/pdf";
 import { toast } from "sonner";
 import { ArrowLeft, Download, Save, ShieldCheck, Unlock, Archive, Trash2 } from "lucide-react";
+import { useLoad } from "@/lib/use-load";
 
 interface DocumentDetail {
   id: string;
@@ -76,7 +77,6 @@ export default function MedicalDocumentPage() {
   const [mode, setMode] = useState<"fill" | "review">("fill");
 
   const load = useCallback(async () => {
-    setError(null);
     try {
       const [detail, letterhead] = await Promise.all([
         fetchJson<DocumentDetail>(`/api/medical/documents/${documentId}`),
@@ -91,6 +91,7 @@ export default function MedicalDocumentPage() {
       setSigned(!!detail.signedAt);
       setDirty(false);
       if (isLocked(detail.status)) setMode("review");
+      setError(null);
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -98,9 +99,7 @@ export default function MedicalDocumentPage() {
     }
   }, [documentId]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useLoad(load);
 
   const fields = useMemo(() => parseFields(doc?.formVersion.fields), [doc]);
   const shown = useMemo(() => visibleFields(fields, answers), [fields, answers]);

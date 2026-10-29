@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db/prisma";
+import { DatabaseError } from "@/components/ui/database-error";
 import { CadetPageClient } from "./CadetPageClient";
 
 export const dynamic = "force-dynamic";
@@ -18,8 +19,9 @@ export default async function CadetPage() {
     redirect("/admin/login");
   }
 
+  let member;
   try {
-    const member = await prisma.member.findFirst({
+    member = await prisma.member.findFirst({
       where: { discordId: session.user.discordId },
       include: {
         trainingRecord: {
@@ -29,18 +31,8 @@ export default async function CadetPage() {
         },
       },
     });
-
-    return <CadetPageClient member={member as any} />;
   } catch {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-[#0a0a0a] text-white p-8">
-        <h1 className="font-[family-name:var(--font-oswald)] text-2xl font-bold text-red-500 mb-4">
-          Database Error
-        </h1>
-        <p className="text-gray-400 text-center max-w-md">
-          Cannot connect to the database. Please ensure DATABASE_URL is set in /opt/lsmd/.env on the server.
-        </p>
-      </div>
-    );
+    return <DatabaseError />;
   }
+  return <CadetPageClient member={member} />;
 }

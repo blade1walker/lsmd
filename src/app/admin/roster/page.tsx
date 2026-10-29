@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import MemberRow from "@/components/roster/MemberRow";
 import AddMemberDialog from "@/components/roster/AddMemberDialog";
@@ -14,6 +14,7 @@ import { DepartmentMarkLegend } from "@/components/roster/DepartmentMark";
 import { toast } from "sonner";
 import { ErrorState } from "@/components/ui/error-state";
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
+import { useLoad } from "@/lib/use-load";
 
 interface Section {
   id: string;
@@ -62,7 +63,6 @@ export default function AdminRosterPage() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
-    setError(null);
     try {
       const [sectionList, deptList] = await Promise.all([
         fetchList<Section>("/api/members"),
@@ -70,6 +70,7 @@ export default function AdminRosterPage() {
       ]);
       setSections(sectionList);
       setDepartmentOptions(deptList);
+      setError(null);
     } catch (err) {
       setError(errorMessage(err));
       setSections([]);
@@ -79,7 +80,7 @@ export default function AdminRosterPage() {
     }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useLoad(fetchData);
 
   const handleUpdate = async (id: string, data: Record<string, unknown>) => {
     try {

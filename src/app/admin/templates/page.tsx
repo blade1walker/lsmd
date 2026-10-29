@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Trash2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { ErrorState } from "@/components/ui/error-state";
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
+import { useLoad } from "@/lib/use-load";
 
 interface TempRank {
   id: string;
@@ -42,7 +43,6 @@ export default function AdminTemplatesPage() {
   const [deptLinkDraft, setDeptLinkDraft] = useState("");
 
   const fetchData = useCallback(async () => {
-    setError(null);
     try {
       const [rankList, catList, deptList] = await Promise.all([
         fetchList<TempRank>("/api/admin/temp-ranks"),
@@ -52,6 +52,7 @@ export default function AdminTemplatesPage() {
       setTempRanks(rankList);
       setCategories(catList);
       setDepartments(deptList);
+      setError(null);
     } catch (err) {
       setError(errorMessage(err));
       setTempRanks([]);
@@ -62,9 +63,7 @@ export default function AdminTemplatesPage() {
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  useLoad(fetchData);
 
   const handleAddTempRank = async () => {
     if (!newTempRank) return;

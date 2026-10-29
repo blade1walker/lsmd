@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Save, RotateCcw, ChevronDown, ChevronUp, MessageSquare, Webhook, Bot, Send, ScrollText, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { fetchJson, errorMessage } from "@/lib/fetch-json";
+import { useLoad } from "@/lib/use-load";
 
 interface Settings {
   recruitWebhook: boolean;
@@ -634,7 +635,7 @@ export default function AdminNotificationSettingsPage() {
   const [failuresOnly, setFailuresOnly] = useState(false);
   const [loadingLog, setLoadingLog] = useState(false);
 
-  const fetchSettings = async () => {
+  const fetchSettings = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/notification-settings");
       if (res.ok) {
@@ -647,7 +648,7 @@ export default function AdminNotificationSettingsPage() {
       console.error(err);
     }
     setLoading(false);
-  };
+  }, []);
 
   // Loaded when the tab is opened or refreshed rather than from an effect —
   // the log is a snapshot the admin asks for, not state to keep in sync.
@@ -662,9 +663,7 @@ export default function AdminNotificationSettingsPage() {
     setLoadingLog(false);
   }, [failuresOnly]);
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
+  useLoad(fetchSettings);
 
   const handleSave = async () => {
     setSaving(true);

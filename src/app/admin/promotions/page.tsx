@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { ErrorState } from "@/components/ui/error-state";
@@ -9,6 +9,7 @@ import { fetchList, errorMessage } from "@/lib/fetch-json";
 import { RANK_LIST } from "@/lib/constants";
 import { EVALUATION_CATEGORIES, type CategoryKey } from "@/lib/interviews";
 import { ArrowRight, ChevronDown, Search, TrendingUp, X } from "lucide-react";
+import { useLoad } from "@/lib/use-load";
 
 interface PromotionRecord {
   id: string;
@@ -72,9 +73,9 @@ export default function AdminPromotionsPage() {
   const [expanded, setExpanded] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
-    setError(null);
     try {
       setRecords(await fetchList<PromotionRecord>("/api/promotions"));
+      setError(null);
     } catch (err) {
       setError(errorMessage(err));
       setRecords([]);
@@ -83,7 +84,7 @@ export default function AdminPromotionsPage() {
     }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useLoad(fetchData);
 
   // One entry per employee. Records arrive newest first, so the name kept is
   // the most recent one — a renamed member shows under their current name.
