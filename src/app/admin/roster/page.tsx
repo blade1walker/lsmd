@@ -178,7 +178,7 @@ export default function AdminRosterPage() {
               : `${allMembers.length} total members`}
           </p>
         </div>
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex max-w-full min-w-0 items-center gap-3 flex-wrap">
           <Input
             placeholder="Search name, call sign, Discord / Steam / State ID..."
             value={search}
