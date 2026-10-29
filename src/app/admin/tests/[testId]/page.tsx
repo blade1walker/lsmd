@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { ArrowLeft, Download, FileUp, Eye, EyeOff, Lock, Plus, RotateCcw, Save } from "lucide-react";
+import { ArrowLeft, Download, FileUp, Eye, EyeOff, Lock, RotateCcw, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,7 +20,7 @@ import { AnswerReview, AttemptGrader, ScoreBadge } from "@/components/tests/Atte
 import { ImportQuestionsDialog } from "@/components/tests/ImportQuestionsDialog";
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
 import { RANKS, TEST_PERMISSIONS } from "@/lib/constants";
-import { cloneQuestion, downloadQuestions } from "@/lib/tests-import";
+import { cloneQuestion, downloadQuestions } from "@/lib/tests/import-export";
 import {
   QUESTION_TYPES,
   QUESTION_TYPE_HINTS,
@@ -369,7 +369,7 @@ export default function TestBuilderPage() {
       {tab === "results" && <ResultsPanel testId={testId} title={settings.title} passing={settings.passingScore} canManage={canManage} />}
 
       {canManage && (tab === "questions" || tab === "settings") && (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[#1e1e28] bg-[#0a0a0f]/95 backdrop-blur md:left-64">
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[#1e1e28] bg-[#0a0a0f]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:left-64">
           <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
             <p className="text-xs text-gray-500">
               {dirty ? (

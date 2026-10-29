@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
-import { getPromotionSettings, mayViewInterview, readInterviewDetail } from "@/lib/interviews-server";
+import { getPromotionSettings, mayViewInterview, readInterviewDetail } from "@/lib/interviews/server";
 
 /**
  * Everything the printed examination report needs, in one read: the session in

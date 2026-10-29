@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { existsSync } from "node:fs";
 import { rm } from "node:fs/promises";
-import { backupDatabase } from "../src/lib/backup";
+import { backupDatabase } from "../src/lib/db/backup";
 import { databaseFile } from "../src/lib/paths";
 import { describeUrl, importFromPostgres, postgresSourceUrl } from "./lib/postgres-transfer";
 

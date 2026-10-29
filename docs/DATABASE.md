@@ -29,7 +29,7 @@ Docker the `app_data` volume):
 - **`foreign_keys = ON`** — relations' delete rules are enforced by the database.
 - **One writer, one transaction at a time.** The site is one process with one
   connection. Every transaction runs on its own, in order, and no other
-  request's query can run inside it (src/lib/sqlite.ts). So inside
+  request's query can run inside it (src/lib/db/sqlite.ts). So inside
   `prisma.$transaction(async (tx) => …)`, use only `tx`, and never wait on the
   network: the whole database waits with it.
 - **Text search** (`contains`) ignores letter case for A–Z; accented letters

@@ -1,5 +1,4 @@
-# Shell scripts run on Linux hosts and containers; a Windows checkout must not
+# Shell scripts run on the Linux VM; a Windows checkout must not
 # turn their line endings into CRLF, or bash fails on "\r".
 *.sh text eol=lf
-Dockerfile text eol=lf
 deploy/**/Caddyfile text eol=lf

@@ -1,6 +1,6 @@
-import { PreviewBar, SiteContentProvider } from "@/components/SiteContentProvider";
+import { PreviewBar, SiteContentProvider } from "@/components/layout/SiteContentProvider";
 import { clientValues } from "@/lib/site-content";
-import { getSiteContentState } from "@/lib/site-content-server";
+import { getSiteContentState } from "@/lib/site-content/server";
 
 /**
  * The public pages that show the Boss Menu's content: the brand, footer and

@@ -1,8 +1,7 @@
 "use client";
 
-import { DiscordBar } from "@/components/DiscordBar";
-import { Footer } from "@/components/Footer";
-import { motion } from "framer-motion";
+import { DiscordBar } from "@/components/layout/DiscordBar";
+import { Footer } from "@/components/layout/Footer";
 
 interface RadioCode {
   id: string;
@@ -41,11 +40,9 @@ export function RadioCodesPageClient({ codes }: RadioCodesPageClientProps) {
             { title: "11-Codes", codes: elevenCodes },
             { title: "Response Codes", codes: responseCodes },
           ].map(({ title, codes: sectionCodes }) => (
-            <motion.div
+            <div
               key={title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-[#111111] border border-[#1e1e1e] rounded-xl overflow-hidden"
+              className="bg-[#111111] border border-[#1e1e1e] rounded-xl overflow-hidden animate-fade-up"
             >
               <div className="px-6 py-4 border-b border-[#1e1e1e]">
                 <h2 className="font-[family-name:var(--font-oswald)] text-xl font-bold text-white uppercase">
@@ -84,7 +81,7 @@ export function RadioCodesPageClient({ codes }: RadioCodesPageClientProps) {
                   ))
                 )}
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       </main>

@@ -743,7 +743,7 @@ export default function AdminNotificationSettingsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="font-[family-name:var(--font-oswald)] text-2xl font-bold text-white uppercase">
             Notification Settings
@@ -752,7 +752,7 @@ export default function AdminNotificationSettingsPage() {
             Manage messages, webhooks, and bot configuration
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Button onClick={handleReset} variant="outline" className="border-[#1e1e1e] text-gray-400">
             <RotateCcw className="w-4 h-4 mr-2" />
             Reset
@@ -765,7 +765,7 @@ export default function AdminNotificationSettingsPage() {
       </div>
 
       {/* Section Tabs */}
-      <div className="flex gap-1 mb-6 bg-[#111111] border border-[#1e1e1e] rounded-xl p-1 w-fit">
+      <div className="flex gap-1 mb-6 bg-[#111111] border border-[#1e1e1e] rounded-xl p-1 w-fit max-w-full overflow-x-auto">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -773,7 +773,7 @@ export default function AdminNotificationSettingsPage() {
               setActiveSection(tab.id);
               if (tab.id === "log") fetchDeliveries();
             }}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+            className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
               activeSection === tab.id ? "bg-[#dc2626] text-black" : "text-gray-400 hover:text-white"
             }`}
           >

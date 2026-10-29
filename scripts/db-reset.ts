@@ -3,8 +3,8 @@ import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { rm } from "node:fs/promises";
 import path from "node:path";
-import { backupDatabase } from "../src/lib/backup";
-import { applyMigrations } from "../src/lib/migrations";
+import { backupDatabase } from "../src/lib/db/backup";
+import { applyMigrations } from "../src/lib/db/migrations";
 import { dataDir, databaseFile } from "../src/lib/paths";
 
 /**

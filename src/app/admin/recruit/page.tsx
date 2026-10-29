@@ -6,8 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CheckCircle, XCircle, Loader2, Upload, Eye, Trash2, Plus, Pencil, Send, X, ClipboardList, Search } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { RANK_NAMES } from "@/lib/constants";
-import * as XLSX from "xlsx";
+import { RANK_LIST } from "@/lib/constants";
 
 interface RecruitRequest {
   id: string;
@@ -105,7 +104,7 @@ export default function AdminRecruitPage() {
 
     setImporting(true);
     try {
-      const data = await file.arrayBuffer();
+      const [data, XLSX] = await Promise.all([file.arrayBuffer(), import("xlsx")]);
       const workbook = XLSX.read(data);
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData = XLSX.utils.sheet_to_json(sheet) as any[];
@@ -267,7 +266,7 @@ export default function AdminRecruitPage() {
       });
       const data = await res.json();
       setTestResult(res.ok ? `${testType === "dm" ? "DM" : "Webhook"} sent successfully!` : `Failed: ${data.error || "Unknown error"}`);
-    } catch (err) {
+    } catch {
       setTestResult("Failed to send test");
     }
     setTestSending(false);
@@ -300,7 +299,7 @@ export default function AdminRecruitPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="font-[family-name:var(--font-oswald)] text-2xl font-bold text-white uppercase">
             Recruit Management
@@ -309,7 +308,7 @@ export default function AdminRecruitPage() {
             Import, add, and manage recruitment applications
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" onChange={handleFileImport} className="hidden" />
           <Button onClick={() => fileRef.current?.click()} disabled={importing} className="bg-[#dc2626] text-black hover:bg-[#b91c1c]">
             {importing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
@@ -340,10 +339,10 @@ export default function AdminRecruitPage() {
 
       {/* Tabs */}
       <div className="flex items-center justify-between gap-4 mb-2 flex-wrap">
-        <div className="flex gap-1 bg-[#111111] border border-[#1e1e1e] rounded-xl p-1 w-fit">
+        <div className="flex gap-1 bg-[#111111] border border-[#1e1e1e] rounded-xl p-1 w-fit max-w-full overflow-x-auto">
           <button
             onClick={() => setActiveTab("pending")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               activeTab === "pending" ? "bg-[#dc2626] text-black" : "text-gray-400 hover:text-white"
             }`}
           >
@@ -351,7 +350,7 @@ export default function AdminRecruitPage() {
           </button>
           <button
             onClick={() => setActiveTab("log")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               activeTab === "log" ? "bg-[#dc2626] text-black" : "text-gray-400 hover:text-white"
             }`}
           >
@@ -577,7 +576,7 @@ export default function AdminRecruitPage() {
                   style={{ colorScheme: "dark" }}
                 >
                   <option value="" className="bg-black text-white">Not set</option>
-                  {RANK_NAMES.map((r) => (
+                  {RANK_LIST.map((r) => (
                     <option key={r} value={r} className="bg-black text-white">{r}</option>
                   ))}
                 </select>

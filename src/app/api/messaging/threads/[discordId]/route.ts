@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
-import { sendDiscordDM, describeResult } from "@/lib/discord-webhook";
-import { syncThread } from "@/lib/discord-dm";
-import { markThreadRead, upsertThread, DM_MAX_LENGTH } from "@/lib/dm-threads";
+import { sendDiscordDM, describeResult } from "@/lib/discord/webhook";
+import { syncThread } from "@/lib/discord/dm";
+import { markThreadRead, upsertThread, DM_MAX_LENGTH } from "@/lib/discord/dm-threads";
 
 async function loadThread(discordId: string) {
   return prisma.dMThread.findUnique({

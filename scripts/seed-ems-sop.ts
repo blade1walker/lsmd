@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { createPrismaClient } from "../src/lib/prisma";
+import { createPrismaClient } from "../src/lib/db/prisma";
 
 /**
  * Creates (or updates, if it already exists) the "Emergency Medical Services

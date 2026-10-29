@@ -8,10 +8,10 @@ export async function register() {
 
   // Open database connections and fill the roster cache in the background, so
   // the first visitor after a restart is not the one who waits for them.
-  const { warmRosterCaches } = await import("./lib/roster");
+  const { warmRosterCaches } = await import("./lib/roster/server");
   warmRosterCaches().catch((error) => log.error("Cache warm-up failed", error));
 
   // A verified database backup every day (DATA_DIR/backups).
-  const { scheduleDailyBackups } = await import("./lib/backup");
+  const { scheduleDailyBackups } = await import("./lib/db/backup");
   scheduleDailyBackups();
 }

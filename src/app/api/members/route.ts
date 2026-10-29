@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { SECTION_HINTS } from "@/lib/constants";
 import { getNextCallSign } from "@/lib/callsign";
-import { cached } from "@/lib/data-cache";
+import { cached } from "@/lib/db/cache";
 
 /** Fields safe to expose to an anonymous caller — the same ones the public roster already shows. */
 const PUBLIC_MEMBER_FIELDS = {
@@ -50,7 +50,7 @@ export async function GET() {
     const auth = await requireAuth("roster.view");
     const full = !isDenied(auth);
 
-    // Cached per variant; any roster edit drops it (src/lib/data-cache.ts).
+    // Cached per variant; any roster edit drops it (src/lib/db/cache.ts).
     const sections = await cached(full ? "members:full" : "members:public", 60_000, () => prisma.section.findMany({
       include: {
         members: {

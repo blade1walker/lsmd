@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import { CheckCircle2, Circle, ChevronDown, ClipboardList, Minus, Plus, Search } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
-import RankInsignia from "@/components/RankInsignia";
+import RankInsignia from "@/components/roster/RankInsignia";
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
 import { getRankWeight, TEST_SECTION_PERMISSIONS } from "@/lib/constants";
 import {

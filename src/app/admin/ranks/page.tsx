@@ -5,7 +5,7 @@ import { ArrowDown, ArrowUp, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
-import RankInsignia from "@/components/RankInsignia";
+import RankInsignia from "@/components/roster/RankInsignia";
 import {
   DEFAULT_RANK_COLOR,
   RANK_LAYOUTS,
@@ -184,7 +184,7 @@ export default function RanksPage() {
                 type="button"
                 onClick={() => move(i, -1)}
                 disabled={i === 0}
-                className="rounded p-0.5 text-gray-500 hover:text-white disabled:opacity-20"
+                className="rounded p-1 text-gray-500 hover:text-white disabled:opacity-20"
                 aria-label={`Move ${r.name} up`}
               >
                 <ArrowUp className="h-4 w-4" />
@@ -194,7 +194,7 @@ export default function RanksPage() {
                 type="button"
                 onClick={() => move(i, 1)}
                 disabled={i === ranks.length - 1}
-                className="rounded p-0.5 text-gray-500 hover:text-white disabled:opacity-20"
+                className="rounded p-1 text-gray-500 hover:text-white disabled:opacity-20"
                 aria-label={`Move ${r.name} down`}
               >
                 <ArrowDown className="h-4 w-4" />

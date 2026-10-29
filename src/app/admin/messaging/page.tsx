@@ -118,14 +118,14 @@ export default function MessagingPage() {
         </p>
       </div>
 
-      <div className="flex gap-1 mb-6 bg-[#111111] border border-[#1e1e1e] rounded-xl p-1 w-fit">
+      <div className="flex gap-1 mb-6 bg-[#111111] border border-[#1e1e1e] rounded-xl p-1 w-fit max-w-full overflow-x-auto">
         {TABS.map((t) => {
           const Icon = TAB_ICONS[t];
           return (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`flex shrink-0 items-center gap-2 whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 tab === t ? "bg-[#dc2626] text-black" : "text-gray-400 hover:text-white"
               }`}
             >

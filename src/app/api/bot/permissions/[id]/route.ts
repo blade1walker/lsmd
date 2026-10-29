@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { BOT_PERMISSION_PERMISSIONS } from "@/lib/constants";
-import { commandLabel } from "@/lib/bot-commands";
+import { commandLabel } from "@/lib/discord/bot-commands";
 
 /** Revokes one grant. */
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { CONTENT_PERMISSIONS } from "@/lib/constants";
-import { discardDrafts } from "@/lib/site-content-server";
+import { discardDrafts } from "@/lib/site-content/server";
 
 /** Throws drafts away — all of them, or the keys named — back to what is live. */
 export async function POST(req: NextRequest) {

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { ANNOUNCEMENT_PERMISSIONS } from "@/lib/constants";
-import { parseAnnouncement, type AnnouncementInput } from "@/lib/announcements";
+import { parseAnnouncement, type AnnouncementInput } from "@/lib/discord/announcements";
 
 /**
  * ?view=scheduled (default) lists what is still to go out, soonest first;

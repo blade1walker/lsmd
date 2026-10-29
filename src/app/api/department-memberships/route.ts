@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { DEPARTMENT_PERMISSIONS } from "@/lib/constants";
 import { DEPARTMENT_ROLES, isDepartmentRole, departmentTag } from "@/lib/departments";
-import { addDepartmentDiscordRole, removeDepartmentDiscordRole } from "@/lib/discord-roles";
+import { addDepartmentDiscordRole, removeDepartmentDiscordRole } from "@/lib/discord/roles";
 import {
   getNotificationSettings,
   postToDepartmentWebhook,
   renderTemplate,
   sendDiscordDM,
-} from "@/lib/discord-webhook";
+} from "@/lib/discord/webhook";
 
 /**
  * Who is in which department, and at what standing. This is what the roster's

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import {
   EVALUATION_CATEGORIES,
@@ -12,7 +12,7 @@ import {
   type CategoryKey,
   type InterviewAnalytics,
 } from "@/lib/interviews";
-import { getPromotionSettings } from "@/lib/interviews-server";
+import { getPromotionSettings } from "@/lib/interviews/server";
 import type { Prisma } from "@/generated/prisma/client";
 
 function mean(values: number[]): number | null {

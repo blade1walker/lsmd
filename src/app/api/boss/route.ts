@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied, hasPermission } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied, hasPermission } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { CONTENT_PERMISSIONS } from "@/lib/constants";
-import { getEditorState, toNoticeView } from "@/lib/site-content-server";
-import { mediaUrl } from "@/lib/media-storage";
+import { getEditorState, toNoticeView } from "@/lib/site-content/server";
+import { mediaUrl } from "@/lib/media/storage";
 
 /** Everything the Boss Menu edits: content fields, notices and the media library. */
 export async function GET() {

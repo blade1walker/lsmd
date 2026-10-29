@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { TEST_PERMISSIONS } from "@/lib/constants";
 import { MAX_QUESTIONS, parseQuestions } from "@/lib/tests";
-import { publishProblems, readSettings } from "@/lib/tests-server";
+import { publishProblems, readSettings } from "@/lib/tests/server";
 
 type Params = { params: Promise<{ id: string }> };
 

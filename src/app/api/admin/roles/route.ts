@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
-import { stringList } from "@/lib/json-fields";
-import { nextRoleOrder } from "@/lib/role-order";
+import { stringList } from "@/lib/db/json-fields";
+import { nextRoleOrder } from "@/lib/auth/role-order";
 
 export async function GET() {
   const auth = await requireAuth("roles.manage");

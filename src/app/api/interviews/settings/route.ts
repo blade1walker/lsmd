@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { INTERVIEW_SECTION_PERMISSIONS } from "@/lib/constants";
-import { getPromotionSettings } from "@/lib/interviews-server";
+import { getPromotionSettings } from "@/lib/interviews/server";
 
 /**
  * The scoring thresholds and announcement wiring.

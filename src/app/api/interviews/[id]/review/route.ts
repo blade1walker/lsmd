@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { REVIEW_OUTCOMES, awaitingReview, type InterviewResult } from "@/lib/interviews";
@@ -9,8 +9,8 @@ import {
   getPromotionSettings,
   readInterviewDetail,
   toPanelistRecord,
-} from "@/lib/interviews-server";
-import { promote } from "@/lib/interviews-promote";
+} from "@/lib/interviews/server";
+import { promote } from "@/lib/interviews/promote";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

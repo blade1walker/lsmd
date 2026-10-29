@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { ErrorState } from "@/components/ui/error-state";
-import RankInsignia from "@/components/RankInsignia";
+import RankInsignia from "@/components/roster/RankInsignia";
 import { fetchList, errorMessage } from "@/lib/fetch-json";
 import { TRAINEE_RANKS } from "@/lib/constants";
 import { GraduationCap, Search } from "lucide-react";

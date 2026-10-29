@@ -4,7 +4,7 @@ import { parseCallInput } from "@/lib/calls";
 import { parseUnitStatus } from "@/lib/duty-board";
 import { parseActivityPeriod } from "@/lib/activity";
 import { dayCount, daysBetween } from "@/lib/loa";
-import { groupByRank, matchesFilters, parseRosterFilters, EMPTY_FILTERS, type RosterMember } from "@/lib/roster-shared";
+import { groupByRank, matchesFilters, parseRosterFilters, EMPTY_FILTERS, type RosterMember } from "@/lib/roster";
 
 const validCall = {
   occurredAt: new Date().toISOString(),

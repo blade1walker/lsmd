@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { LOA_PERMISSIONS } from "@/lib/constants";
-import { syncAllLoaRoles } from "@/lib/loa-role";
+import { syncAllLoaRoles } from "@/lib/loa/role";
 
 // One Discord call per member who needs a change, paced by Discord's rate
 // limits — a large roster's first sync can take a while.

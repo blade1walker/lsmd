@@ -2,8 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Oswald, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { Providers } from "@/components/Providers";
+import { Providers } from "@/components/layout/Providers";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -41,6 +40,9 @@ export const viewport: Viewport = {
   initialScale: 1,
   // Pinch-zoom stays on: blocking it locks people out of small text on phones.
   themeColor: "#0a0a0f",
+  // Fill the screen around a notch and the home indicator. The page keeps
+  // its content clear of them with the safe-area insets in globals.css.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -70,9 +72,7 @@ export default function RootLayout({
           }}
         />
         <Providers>
-          <TooltipProvider>
-            {children}
-          </TooltipProvider>
+          {children}
           <Toaster />
         </Providers>
       </body>

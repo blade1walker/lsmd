@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied, actorLabel, hasPermission } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied, actorLabel, hasPermission } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { parseFields, validateAnswers, isLocked, type Answers } from "@/lib/medical";
-import { claimDocumentNumber } from "@/lib/medical-server";
+import { claimDocumentNumber } from "@/lib/medical/server";
 
 /**
  * Finalizes a document: validates it against its own form version, signs it,

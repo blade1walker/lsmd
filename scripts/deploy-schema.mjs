@@ -3,9 +3,9 @@ import { createRequire } from "node:module";
 
 /**
  * Gets the database ready for this release — see scripts/db-deploy.ts for
- * what that involves. Run on every deploy by deploy/oracle/deploy.sh and
- * deploy/start.sh (and kept under this name so a server still running an
- * older copy of deploy.sh calls it too).
+ * what that involves. Run on every deploy by deploy/oracle/deploy.sh (and
+ * kept under this name so a server still running an older copy of deploy.sh
+ * calls it too).
  *
  * The database driver is a native module. The release is built on GitHub's
  * x64 machines; on a server of another kind (an ARM Oracle VM) its compiled

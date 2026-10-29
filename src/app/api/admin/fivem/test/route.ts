@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth, isDenied } from "@/lib/api-auth";
+import { requireAuth, isDenied } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { FIVEM_PERMISSIONS } from "@/lib/constants";
-import { probeServer } from "@/lib/fivem-server";
+import { probeServer } from "@/lib/fivem/server";
 
 /**
  * "Test connection" on the City Link page. Runs against the values in the

@@ -1,7 +1,7 @@
-import { PublicPageClient } from "@/components/PublicPageClient";
-import { LoadError } from "@/components/LoadError";
-import { getRosterPageData } from "@/lib/roster";
-import { parseRosterFilters } from "@/lib/roster-shared";
+import { RosterPageClient } from "@/components/roster/RosterPageClient";
+import { LoadError } from "@/components/layout/LoadError";
+import { getRosterPageData } from "@/lib/roster/server";
+import { parseRosterFilters } from "@/lib/roster";
 import type { Metadata } from "next";
 import { log } from "@/lib/log";
 
@@ -26,5 +26,5 @@ export default async function RosterPage({
     return <LoadError what="The roster" />;
   }
 
-  return <PublicPageClient data={data} initialFilters={initialFilters} />;
+  return <RosterPageClient data={data} initialFilters={initialFilters} />;
 }

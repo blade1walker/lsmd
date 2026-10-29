@@ -9,7 +9,7 @@ export default defineConfig({
   },
   datasource: {
     // For the Prisma CLI (`migrate deploy` during deploys); the app opens the
-    // same file through src/lib/prisma.ts.
+    // same file through src/lib/db/prisma.ts.
     url: `file:${databaseFile()}`,
   },
 });

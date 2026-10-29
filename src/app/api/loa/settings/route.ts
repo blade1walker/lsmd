@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { LOA_PERMISSIONS } from "@/lib/constants";
-import { ensureLoaSettings } from "@/lib/loa-role";
+import { ensureLoaSettings } from "@/lib/loa/role";
 
 /**
  * The EMS LOA role's settings: on or off, its name, and the Discord server

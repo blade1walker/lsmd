@@ -10,7 +10,7 @@ import {
   EMPTY_FILTERS,
   type RosterDepartment,
   type RosterFilters as Filters,
-} from "@/lib/roster-shared";
+} from "@/lib/roster";
 
 const TONES = {
   red: "border-red-500/70 bg-red-600/15 text-white",

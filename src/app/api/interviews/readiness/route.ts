@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { requireAuth, isDenied } from "@/lib/api-auth";
+import { requireAuth, isDenied } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { classifyReadiness, type ReadinessEntry } from "@/lib/interviews";
-import { allCandidateSnapshots, getPromotionSettings } from "@/lib/interviews-server";
+import { allCandidateSnapshots, getPromotionSettings } from "@/lib/interviews/server";
 
 /**
  * The Promotion Readiness board: every roster member measured against the rank

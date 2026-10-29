@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
-import { postToEnrollWebhook, sendDiscordDM, getNotificationSettings } from "@/lib/discord-webhook";
+import { postToEnrollWebhook, sendDiscordDM, getNotificationSettings } from "@/lib/discord/webhook";
 import { SECTION_HINTS } from "@/lib/constants";
 import { getNextCallSign } from "@/lib/callsign";
 
@@ -57,7 +57,7 @@ export async function PATCH(
       const callSign = await getNextCallSign();
       const memberCount = await prisma.member.count();
 
-      const member = await prisma.member.create({
+      await prisma.member.create({
         data: {
           name: request.name,
           rank: assignedRank,

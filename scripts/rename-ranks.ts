@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { createPrismaClient } from "../src/lib/prisma";
+import { createPrismaClient } from "../src/lib/db/prisma";
 
 /**
  * Moves records from a retired rank name to its new one, so renaming a rank

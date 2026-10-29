@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied, hasPermission, actorLabel } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied, hasPermission, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
-import { isOnDuty, parseUnitStatusInput, setUnitStatus } from "@/lib/duty-board-server";
+import { isOnDuty, parseUnitStatusInput, setUnitStatus } from "@/lib/duty-board/server";
 
 /**
  * Sets a medic's unit status. Your own, as long as you are on duty; anyone

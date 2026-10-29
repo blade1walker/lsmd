@@ -1,6 +1,6 @@
 import "dotenv/config";
-import { createPrismaClient } from "../src/lib/prisma";
-import { stringList } from "../src/lib/json-fields";
+import { createPrismaClient } from "../src/lib/db/prisma";
+import { stringList } from "../src/lib/db/json-fields";
 
 /**
  * Hands permissions added in a release to the roles that already exist.

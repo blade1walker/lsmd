@@ -20,20 +20,4 @@ const Select = React.forwardRef<HTMLSelectElement, React.SelectHTMLAttributes<HT
 );
 Select.displayName = "Select";
 
-function SelectContent({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
-}
-
-function SelectItem({ value, children }: { value: string; children: React.ReactNode }) {
-  return <option value={value} className="bg-black text-white">{children}</option>;
-}
-
-function SelectTrigger({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
-  return <button {...props}>{children}</button>;
-}
-
-function SelectValue({ placeholder }: { placeholder?: string }) {
-  return <span>{placeholder}</span>;
-}
-
-export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue };
+export { Select };

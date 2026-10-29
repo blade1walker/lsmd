@@ -3,9 +3,9 @@ import { existsSync } from "node:fs";
 import { rename, rm, writeFile } from "node:fs/promises";
 import Database from "better-sqlite3";
 import pg from "pg";
-import { applyMigrations } from "../../src/lib/migrations";
-import { checkIntegrity } from "../../src/lib/backup";
-import { createPrismaClient } from "../../src/lib/prisma";
+import { applyMigrations } from "../../src/lib/db/migrations";
+import { checkIntegrity } from "../../src/lib/db/backup";
+import { createPrismaClient } from "../../src/lib/db/prisma";
 
 /**
  * Moving the data between the old Postgres database (Neon) and SQLite, in

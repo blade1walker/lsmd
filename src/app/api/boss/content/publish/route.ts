@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { CONTENT_PERMISSIONS } from "@/lib/constants";
-import { publishDrafts } from "@/lib/site-content-server";
+import { publishDrafts } from "@/lib/site-content/server";
 
 /** Puts drafts live — all of them, or the keys named. Live on the next page load. */
 export async function POST(req: NextRequest) {

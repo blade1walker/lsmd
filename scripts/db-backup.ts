@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { backupDatabase, listBackups } from "../src/lib/backup";
+import { backupDatabase, listBackups } from "../src/lib/db/backup";
 
 /**
  * Takes a verified backup of the database while the site keeps running.

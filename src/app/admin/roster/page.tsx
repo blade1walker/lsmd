@@ -2,15 +2,15 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import MemberRow from "@/components/MemberRow";
-import AddMemberDialog from "@/components/AddMemberDialog";
+import MemberRow from "@/components/roster/MemberRow";
+import AddMemberDialog from "@/components/roster/AddMemberDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Download } from "lucide-react";
-import { RANK_NAMES, SECTION_HINTS, ACTIVITY_STATUSES } from "@/lib/constants";
+import { RANK_LIST, ACTIVITY_STATUSES } from "@/lib/constants";
 import { departmentTag } from "@/lib/departments";
-import { groupByRank } from "@/lib/roster-shared";
-import { DepartmentMarkLegend } from "@/components/DepartmentMark";
+import { groupByRank } from "@/lib/roster";
+import { DepartmentMarkLegend } from "@/components/roster/DepartmentMark";
 import { toast } from "sonner";
 import { ErrorState } from "@/components/ui/error-state";
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
@@ -107,20 +107,20 @@ export default function AdminRosterPage() {
   const handlePromote = async (id: string) => {
     const member = sections.flatMap((s) => s.members).find((m) => m.id === id);
     if (!member) return;
-    const idx = RANK_NAMES.indexOf(member.rank as typeof RANK_NAMES[number]);
-    if (idx < RANK_NAMES.length - 1) {
-      await handleUpdate(id, { rank: RANK_NAMES[idx + 1], lastPromotion: new Date().toISOString() });
-      toast.success(`Promoted to ${RANK_NAMES[idx + 1]}`);
+    const idx = RANK_LIST.indexOf(member.rank as typeof RANK_LIST[number]);
+    if (idx < RANK_LIST.length - 1) {
+      await handleUpdate(id, { rank: RANK_LIST[idx + 1], lastPromotion: new Date().toISOString() });
+      toast.success(`Promoted to ${RANK_LIST[idx + 1]}`);
     }
   };
 
   const handleDemote = async (id: string) => {
     const member = sections.flatMap((s) => s.members).find((m) => m.id === id);
     if (!member) return;
-    const idx = RANK_NAMES.indexOf(member.rank as typeof RANK_NAMES[number]);
+    const idx = RANK_LIST.indexOf(member.rank as typeof RANK_LIST[number]);
     if (idx > 0) {
-      await handleUpdate(id, { rank: RANK_NAMES[idx - 1], lastPromotion: new Date().toISOString() });
-      toast.success(`Demoted to ${RANK_NAMES[idx - 1]}`);
+      await handleUpdate(id, { rank: RANK_LIST[idx - 1], lastPromotion: new Date().toISOString() });
+      toast.success(`Demoted to ${RANK_LIST[idx - 1]}`);
     }
   };
 
@@ -167,7 +167,7 @@ export default function AdminRosterPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
         <div>
           <h1 className="font-[family-name:var(--font-oswald)] text-2xl font-bold text-white uppercase">
             Roster Management
@@ -183,7 +183,7 @@ export default function AdminRosterPage() {
             placeholder="Search name, call sign, Discord / Steam / State ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-72"
+            className="w-full sm:w-72"
           />
           <select
             value={rankFilter}
@@ -191,7 +191,7 @@ export default function AdminRosterPage() {
             className="h-9 rounded-md border border-[#1e1e1e] bg-[#111111] px-3 text-sm text-white"
           >
             <option value="">All ranks</option>
-            {RANK_NAMES.map((r) => (
+            {RANK_LIST.map((r) => (
               <option key={r} value={r}>{r}</option>
             ))}
           </select>

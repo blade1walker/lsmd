@@ -1,8 +1,8 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/prisma";
-import { LoadError } from "@/components/LoadError";
+import { prisma } from "@/lib/db/prisma";
+import { LoadError } from "@/components/layout/LoadError";
 import { CadetPageClient } from "./CadetPageClient";
 import { log } from "@/lib/log";
 

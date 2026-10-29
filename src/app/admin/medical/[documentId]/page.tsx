@@ -21,7 +21,7 @@ import {
   PRESENTATIONAL_TYPES,
   type Answers,
 } from "@/lib/medical";
-import { exportDocumentPdf, type PdfSettings } from "@/lib/medical-pdf";
+import { exportDocumentPdf, type PdfSettings } from "@/lib/medical/pdf";
 import { toast } from "sonner";
 import { ArrowLeft, Download, Save, ShieldCheck, Unlock, Archive, Trash2 } from "lucide-react";
 
@@ -373,7 +373,7 @@ export default function MedicalDocumentPage() {
       {mode === "fill" ? (
         <div className="rounded-xl border border-[#1e1e28] bg-card p-5 space-y-5">
           {!locked && (
-            <div className="grid grid-cols-2 gap-4 pb-4 border-b border-[#1e1e28]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4 border-b border-[#1e1e28]">
               <div>
                 <Label className="text-sm">Patient name</Label>
                 <Input

@@ -1,7 +1,7 @@
 import "dotenv/config";
-import { createPrismaClient } from "../src/lib/prisma";
-import { ROLE_PRESETS } from "../src/lib/role-presets";
-import { nextRoleOrder } from "../src/lib/role-order";
+import { createPrismaClient } from "../src/lib/db/prisma";
+import { ROLE_PRESETS } from "../src/lib/auth/role-presets";
+import { nextRoleOrder } from "../src/lib/auth/role-order";
 
 const prisma = createPrismaClient();
 

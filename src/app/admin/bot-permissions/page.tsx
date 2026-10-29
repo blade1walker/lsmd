@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { fetchJson, errorMessage } from "@/lib/fetch-json";
-import { ALL_COMMANDS, BOT_COMMANDS, PUBLIC_BOT_COMMANDS, commandLabel } from "@/lib/bot-commands";
+import { ALL_COMMANDS, BOT_COMMANDS, PUBLIC_BOT_COMMANDS, commandLabel } from "@/lib/discord/bot-commands";
 import { toast } from "sonner";
 
 interface Grant {

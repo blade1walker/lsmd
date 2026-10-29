@@ -2,7 +2,7 @@ import "dotenv/config";
 import { existsSync } from "node:fs";
 import { rm } from "node:fs/promises";
 import path from "node:path";
-import { backupDatabase, checkIntegrity, copyDatabase, listBackups } from "../src/lib/backup";
+import { backupDatabase, checkIntegrity, copyDatabase, listBackups } from "../src/lib/db/backup";
 import { backupsDir, databaseFile } from "../src/lib/paths";
 
 /**

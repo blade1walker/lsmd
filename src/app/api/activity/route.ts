@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth, isDenied, hasPermission } from "@/lib/api-auth";
+import { requireAuth, isDenied, hasPermission } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { ACTIVITY_PERMISSIONS } from "@/lib/constants";
 import { parseActivityPeriod } from "@/lib/activity";
-import { getActivity } from "@/lib/activity-server";
+import { getActivity } from "@/lib/activity/server";
 
 /** Every member's duty hours, city time and calls over 7, 14 or 30 days. */
 export async function GET(req: NextRequest) {

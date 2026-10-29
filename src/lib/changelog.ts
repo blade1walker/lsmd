@@ -28,6 +28,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: "2026-10-29",
+    title: "Phones and tablets",
+    changes: [
+      { type: "improvement", text: "On a phone the roster lists each member as one compact row — name, call sign, rank and status — instead of a table that showed two columns and scrolled sideways for the rest. Tap a member for their full details" },
+      { type: "improvement", text: "Tablets held upright get the menu button on the website and the slide-in menu in the admin panel, so pages use the whole screen instead of a crowded top bar or a sidebar taking a third of it" },
+      { type: "fix", text: "Pages that ran off the side of a phone screen now fit: the Training Portal's trainee cards, and the admin Roster, Recruit, Departments, Restore, Notification Settings and Messaging pages. Dialogs keep a margin and scroll on small screens, and paired form fields stack on a phone" },
+      { type: "fix", text: "iPhones no longer zoom the page in when you tap a text box, and the site keeps clear of the notch and the home bar, including when it is added to the home screen. Back links, menu buttons and reorder arrows are easier to tap" },
+    ],
+  },
+  {
     date: "2026-10-28",
     changes: [
       { type: "improvement", text: "The site's data now lives in a database on the site's own server instead of a database service on another continent. Pages and actions that go to the database answer in a few milliseconds instead of up to a second and a half, and nothing is lost in the move: the first start copies everything across and checks every row" },

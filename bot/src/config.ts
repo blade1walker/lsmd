@@ -57,7 +57,7 @@ const apiKey = read("NEXUS_BOT_API_KEY");
 // NEXUS_BOT_API_KEY is an optional extra way in.
 let websiteProblem: string | null = null;
 if (!websiteUrl) {
-  websiteProblem = "Set WEBSITE_URL (e.g. https://your-site.vercel.app) to connect the bot to the website.";
+  websiteProblem = "Set WEBSITE_URL (e.g. https://lsmd.tech) to connect the bot to the website.";
 } else if (!/^https:\/\//.test(websiteUrl) && !/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(websiteUrl)) {
   // The bot's token travels with every request, so only over HTTPS.
   websiteProblem = "WEBSITE_URL must start with https:// — the bot's credentials are sent with every request.";

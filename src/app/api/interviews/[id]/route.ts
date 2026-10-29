@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied, actorLabel, hasPermission } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied, actorLabel, hasPermission } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { INTERVIEW_SECTION_PERMISSIONS } from "@/lib/constants";
@@ -10,7 +10,7 @@ import {
   mayFinalize,
   mayViewInterview,
   readInterviewDetail,
-} from "@/lib/interviews-server";
+} from "@/lib/interviews/server";
 
 /** One session in full: the candidate, the panel, every evaluation, the notes and the attempt history. */
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

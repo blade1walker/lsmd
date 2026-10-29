@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { DEPARTMENT_PERMISSIONS } from "@/lib/constants";
@@ -10,8 +10,8 @@ import {
   postToDepartmentWebhook,
   renderTemplate,
   sendDiscordDM,
-} from "@/lib/discord-webhook";
-import { addDepartmentDiscordRole } from "@/lib/discord-roles";
+} from "@/lib/discord/webhook";
+import { addDepartmentDiscordRole } from "@/lib/discord/roles";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAuth(DEPARTMENT_PERMISSIONS.approve);

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { CALL_SECTION_PERMISSIONS } from "@/lib/constants";
 import { parseCallInput } from "@/lib/calls";
-import { CALL_INCLUDE, checkCallReferences, mayEditCall, mayReadCall, toCallRecord } from "@/lib/calls-server";
+import { CALL_INCLUDE, checkCallReferences, mayEditCall, mayReadCall, toCallRecord } from "@/lib/calls/server";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAuth(CALL_SECTION_PERMISSIONS);

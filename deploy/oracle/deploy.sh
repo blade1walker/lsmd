@@ -31,6 +31,8 @@ RELEASE_URL="${RELEASE_URL:-https://github.com/blade1walker/lsmd/releases/downlo
 
 exec 9>"$LOCK"
 flock -n 9 || { echo "Another deploy is running."; exit 0; }
+# A download cut short (reboot, timeout) leaves its folder behind; nothing else runs now.
+rm -rf "$APP"/releases/*.download
 
 # Keep the checkout on main so the next run uses the latest version of these scripts.
 git -C "$REPO" fetch -q origin main

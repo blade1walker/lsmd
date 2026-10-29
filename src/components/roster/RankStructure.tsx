@@ -2,9 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { ChevronDown, Layers } from "lucide-react";
-import RankInsignia from "@/components/RankInsignia";
+import RankInsignia from "@/components/roster/RankInsignia";
 import { SECTION_HINTS } from "@/lib/constants";
-import type { RosterMember } from "@/lib/roster-shared";
+import type { RosterMember } from "@/lib/roster";
 
 /**
  * The whole chain of command in one panel: every rank, grouped by tier,

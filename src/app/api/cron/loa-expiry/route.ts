@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db/prisma";
 import { apiError } from "@/lib/api-error";
-import { getNotificationSettings, sendDiscordDM, renderTemplate } from "@/lib/discord-webhook";
+import { getNotificationSettings, sendDiscordDM, renderTemplate } from "@/lib/discord/webhook";
 import { logAudit } from "@/lib/audit";
-import { endLeave } from "@/lib/loa-server";
-import { syncAllLoaRoles } from "@/lib/loa-role";
+import { endLeave } from "@/lib/loa/server";
+import { syncAllLoaRoles } from "@/lib/loa/role";
 import { log } from "@/lib/log";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +19,8 @@ const DAY_MS = 86_400_000;
  * admin had to notice the end date had passed and click the button, so members
  * stayed flagged LOA on the roster indefinitely.
  *
- * Vercel sends `Authorization: Bearer $CRON_SECRET` when that variable is set.
+ * lsmd-loa-expiry.timer on the server calls it daily with
+ * `Authorization: Bearer $CRON_SECRET`.
  * Without it the route refuses rather than running unauthenticated — it mutates
  * the roster and sends DMs.
  */

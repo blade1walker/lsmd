@@ -1,5 +1,5 @@
-import { getRadioCodes } from "@/lib/radio-codes-data";
-import { LoadError } from "@/components/LoadError";
+import { getRadioCodes } from "@/lib/radio-codes/server";
+import { LoadError } from "@/components/layout/LoadError";
 import { RadioCodesPageClient } from "./RadioCodesPageClient";
 import { log } from "@/lib/log";
 

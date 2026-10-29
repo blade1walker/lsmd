@@ -1,4 +1,4 @@
-import { createPrismaClient } from "../src/lib/prisma";
+import { createPrismaClient } from "../src/lib/db/prisma";
 import dotenv from "dotenv";
 
 dotenv.config();

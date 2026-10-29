@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied, actorLabel, hasPermission } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied, actorLabel, hasPermission } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { INTERVIEW_SECTION_PERMISSIONS, RANK_LIST } from "@/lib/constants";
@@ -12,7 +12,7 @@ import {
   evaluateEligibility,
   getPromotionSettings,
   toSummary,
-} from "@/lib/interviews-server";
+} from "@/lib/interviews/server";
 import type { Prisma } from "@/generated/prisma/client";
 
 /**

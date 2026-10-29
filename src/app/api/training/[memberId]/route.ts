@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
-import { asJson } from "@/lib/medical-server";
+import { asJson } from "@/lib/medical/server";
 import { findCheckpoint, findCounter, parseEmsProgress } from "@/lib/training";
 
 const WITH_REMARKS = { remarks: { orderBy: { createdAt: "desc" as const } } };
@@ -80,7 +80,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ me
       await tx.trainingRecord.upsert({ where: { memberId }, create: { memberId }, update: {} });
 
       // Progress is a single Json value, so this is read-modify-write. The
-      // database runs one transaction at a time (src/lib/sqlite.ts), so two
+      // database runs one transaction at a time (src/lib/db/sqlite.ts), so two
       // trainers signing off different skills at the same moment each build on
       // the other's write rather than the second quietly erasing the first.
       const current = await tx.trainingRecord.findUniqueOrThrow({

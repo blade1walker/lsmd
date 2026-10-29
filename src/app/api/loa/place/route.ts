@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { LOA_PERMISSIONS } from "@/lib/constants";
 import { LOA_LIMITS } from "@/lib/loa";
-import { announceLoaApproved, beginLeave, roleNotice, RUNNING_LOA } from "@/lib/loa-server";
+import { announceLoaApproved, beginLeave, roleNotice, RUNNING_LOA } from "@/lib/loa/server";
 
 /**
  * HR puts a member on leave directly, without a request from them — the

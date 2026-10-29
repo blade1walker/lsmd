@@ -4,7 +4,7 @@ import React from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
-import { PRESENTATIONAL_TYPES, type FormField, type Answers } from "@/lib/medical";
+import { type FormField, type Answers } from "@/lib/medical";
 
 /**
  * One form field, rendered from its definition.
@@ -252,9 +252,4 @@ export default function FieldInput({
       {help}
     </div>
   );
-}
-
-/** True when the field collects nothing, so callers can skip it in summaries. */
-export function isPresentational(field: FormField): boolean {
-  return PRESENTATIONAL_TYPES.includes(field.type);
 }

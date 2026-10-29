@@ -1,4 +1,4 @@
-import { prisma } from "./prisma";
+import { prisma } from "./db/prisma";
 import { log } from "./log";
 
 export interface AuditAction {

@@ -1,9 +1,9 @@
 import "dotenv/config";
-import { createPrismaClient } from "../src/lib/prisma";
+import { createPrismaClient } from "../src/lib/db/prisma";
 import { RADIO_CODES } from "../src/lib/radio-codes";
 
 /**
- * Replaces the RadioCode table with the list in src/lib/radio-codes.ts.
+ * Replaces the RadioCode table with the list in src/lib/radio-codes/index.ts.
  *
  * This is a full replace, not a merge: codes not in that list are removed, so
  * anything added through /admin/radio-codes and not reflected there will go.

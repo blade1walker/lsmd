@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { requireAuth, isDenied } from "@/lib/api-auth";
+import { requireAuth, isDenied } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
-import { allCandidateSnapshots } from "@/lib/interviews-server";
+import { allCandidateSnapshots } from "@/lib/interviews/server";
 
 /**
  * Everyone the Create Interview form can pick from: the roster as candidates,

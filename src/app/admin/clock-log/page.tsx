@@ -1,9 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { motion } from "framer-motion";
-import { Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { fetchList, errorMessage } from "@/lib/fetch-json";
 

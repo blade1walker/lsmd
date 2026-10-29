@@ -3,10 +3,10 @@ import { createReadStream } from "node:fs";
 import { rm, stat } from "node:fs/promises";
 import path from "node:path";
 import { Readable } from "node:stream";
-import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
-import { copyDatabase } from "@/lib/backup";
+import { copyDatabase } from "@/lib/db/backup";
 import { EXPORT_PERMISSIONS } from "@/lib/constants";
 import { backupsDir } from "@/lib/paths";
 

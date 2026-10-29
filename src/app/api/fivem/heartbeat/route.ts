@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiError } from "@/lib/api-error";
-import { rejectUnlessFiveM } from "@/lib/fivem-auth";
-import { applyHeartbeat, parseHeartbeat } from "@/lib/fivem-server";
+import { rejectUnlessFiveM } from "@/lib/fivem/auth";
+import { applyHeartbeat, parseHeartbeat } from "@/lib/fivem/server";
 
 /**
  * The resource's once-a-minute report of everyone in the city. Keeps city

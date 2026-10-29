@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { fetchJson, errorMessage } from "@/lib/fetch-json";
-import { motion } from "framer-motion";
 import {
   Users,
   UserCheck,
@@ -76,11 +75,9 @@ function StatCard({
   delay: number;
 }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay }}
-      className="bg-[#111118] border border-[#1e1e28] rounded-xl p-5"
+    <div
+      style={{ animationDelay: `${delay}s` }}
+      className="bg-[#111118] border border-[#1e1e28] rounded-xl p-5 animate-fade-up"
     >
       <div className="flex items-center justify-between mb-3">
         <div className={`w-10 h-10 rounded-lg ${color} flex items-center justify-center`}>
@@ -91,7 +88,7 @@ function StatCard({
         {value}
       </div>
       <div className="text-xs text-gray-500 mt-1">{label}</div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -211,11 +208,9 @@ export default function AdminDashboardPage() {
 
       {/* Pending Breakdown */}
       {stats.totalPending > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-[#111118] border border-[#1e1e28] rounded-xl p-6 mb-8"
+        <div
+          style={{ animationDelay: "0.2s" }}
+          className="bg-[#111118] border border-[#1e1e28] rounded-xl p-6 mb-8 animate-fade-up"
         >
           <h2 className="font-[family-name:var(--font-oswald)] text-lg font-bold text-white uppercase mb-4">
             Pending Reviews
@@ -240,17 +235,15 @@ export default function AdminDashboardPage() {
               </div>
             ))}
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Activity Pie Chart */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-          className="bg-[#111118] border border-[#1e1e28] rounded-xl p-6"
+        <div
+          style={{ animationDelay: "0.25s" }}
+          className="bg-[#111118] border border-[#1e1e28] rounded-xl p-6 animate-fade-up"
         >
           <h2 className="font-[family-name:var(--font-oswald)] text-lg font-bold text-white uppercase mb-4">
             Members by Activity
@@ -296,14 +289,12 @@ export default function AdminDashboardPage() {
               </PieChart>
             </ResponsiveContainer>
           )}
-        </motion.div>
+        </div>
 
         {/* Rank Bar Chart */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-[#111118] border border-[#1e1e28] rounded-xl p-6"
+        <div
+          style={{ animationDelay: "0.3s" }}
+          className="bg-[#111118] border border-[#1e1e28] rounded-xl p-6 animate-fade-up"
         >
           <h2 className="font-[family-name:var(--font-oswald)] text-lg font-bold text-white uppercase mb-4">
             Members by Rank
@@ -353,16 +344,14 @@ export default function AdminDashboardPage() {
               </BarChart>
             </ResponsiveContainer>
           )}
-        </motion.div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Recent Promotions */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
-          className="bg-[#111118] border border-[#1e1e28] rounded-xl p-6"
+        <div
+          style={{ animationDelay: "0.35s" }}
+          className="bg-[#111118] border border-[#1e1e28] rounded-xl p-6 animate-fade-up"
         >
           <h2 className="font-[family-name:var(--font-oswald)] text-lg font-bold text-white uppercase mb-4">
             Recent Promotions
@@ -401,14 +390,12 @@ export default function AdminDashboardPage() {
               ))}
             </div>
           )}
-        </motion.div>
+        </div>
 
         {/* Top Clock Hours */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="bg-[#111118] border border-[#1e1e28] rounded-xl p-6"
+        <div
+          style={{ animationDelay: "0.4s" }}
+          className="bg-[#111118] border border-[#1e1e28] rounded-xl p-6 animate-fade-up"
         >
           <h2 className="font-[family-name:var(--font-oswald)] text-lg font-bold text-white uppercase mb-4">
             Top Clock Hours
@@ -442,14 +429,12 @@ export default function AdminDashboardPage() {
               ))}
             </div>
           )}
-        </motion.div>
+        </div>
 
         {/* Quick Actions */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.45 }}
-          className="bg-[#111118] border border-[#1e1e28] rounded-xl p-6"
+        <div
+          style={{ animationDelay: "0.45s" }}
+          className="bg-[#111118] border border-[#1e1e28] rounded-xl p-6 animate-fade-up"
         >
           <h2 className="font-[family-name:var(--font-oswald)] text-lg font-bold text-white uppercase mb-4">
             Quick Actions
@@ -473,7 +458,7 @@ export default function AdminDashboardPage() {
               </a>
             ))}
           </div>
-        </motion.div>
+        </div>
       </div>
     </div>
   );

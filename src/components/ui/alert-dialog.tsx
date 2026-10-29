@@ -15,7 +15,7 @@ const AlertDialog = ({ open, onOpenChange, children }: { open: boolean; onOpenCh
 };
 
 const AlertDialogContent = ({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-card p-6 shadow-lg sm:rounded-lg", className)} {...props}>
+  <div className={cn("fixed left-[50%] top-[50%] z-50 grid w-[calc(100%-2rem)] max-w-lg max-h-[calc(100dvh-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 overflow-y-auto rounded-lg border bg-card p-4 shadow-lg sm:p-6", className)} {...props}>
     {children}
   </div>
 );
@@ -44,22 +44,8 @@ const AlertDialogCancel = ({ className, children, ...props }: React.ButtonHTMLAt
   <Button variant="outline" className={cn("mt-2 sm:mt-0", className)} {...props}>{children}</Button>
 );
 
-const AlertDialogTrigger = ({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
-  <button {...props}>{children}</button>
-);
-
-const AlertDialogPortal = ({ children }: { children: React.ReactNode }) => <>{children}</>;
-const AlertDialogOverlay = () => null;
-
-function buttonVariants(opts?: { variant?: string }) {
-  return "";
-}
-
 export {
   AlertDialog,
-  AlertDialogPortal,
-  AlertDialogOverlay,
-  AlertDialogTrigger,
   AlertDialogContent,
   AlertDialogHeader,
   AlertDialogFooter,
@@ -67,5 +53,4 @@ export {
   AlertDialogDescription,
   AlertDialogAction,
   AlertDialogCancel,
-  buttonVariants,
 };

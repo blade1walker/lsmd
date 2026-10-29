@@ -13,17 +13,17 @@ import {
   Stethoscope,
   UserPlus,
 } from "lucide-react";
-import { Footer } from "@/components/Footer";
+import { Footer } from "@/components/layout/Footer";
 import { SiteHeader } from "@/components/home/SiteHeader";
-import { BrandLogo } from "@/components/SiteContentProvider";
+import { BrandLogo } from "@/components/layout/SiteContentProvider";
 import { SiteNotices } from "@/components/home/SiteNotices";
 import { RosterBannerStrip } from "@/components/roster/RosterBannerStrip";
-import { CityStatusCard } from "@/components/CityStatusCard";
+import { CityStatusCard } from "@/components/home/CityStatusCard";
 import { TrainingCards } from "@/components/home/TrainingCards";
-import { getHomeSummary } from "@/lib/roster";
-import type { RosterViewer } from "@/lib/roster-shared";
+import { getHomeSummary } from "@/lib/roster/server";
+import type { RosterViewer } from "@/lib/roster";
 import { flagOf, textOf } from "@/lib/site-content";
-import { getSiteContentState } from "@/lib/site-content-server";
+import { getSiteContentState } from "@/lib/site-content/server";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { values } = await getSiteContentState();

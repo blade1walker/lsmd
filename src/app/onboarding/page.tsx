@@ -54,9 +54,9 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
-      <header className="border-b border-[#1e1e1e]">
+      <header className="border-b border-[#1e1e1e] pt-[env(safe-area-inset-top)]">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
-          <Link href="/" className="text-sm text-gray-400 hover:text-white">
+          <Link href="/" className="-mx-2 rounded-md px-2 py-2.5 text-sm text-gray-400 hover:text-white">
             ← Back to Home
           </Link>
           <span className="font-[family-name:var(--font-oswald)] text-white font-semibold text-sm">
@@ -97,7 +97,7 @@ export default function OnboardingPage() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label className="text-gray-400 text-sm">State ID *</Label>
               <Input

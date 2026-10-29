@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth, isDenied } from "@/lib/api-auth";
+import { requireAuth, isDenied } from "@/lib/auth/api";
 import { CONTENT_PERMISSIONS } from "@/lib/constants";
-import { PREVIEW_COOKIE } from "@/lib/site-content-server";
+import { PREVIEW_COOKIE } from "@/lib/site-content/server";
 
 /**
  * Turns preview on (?on=1) or off (?on=0) and opens the home page. In

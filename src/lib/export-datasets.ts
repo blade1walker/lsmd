@@ -1,6 +1,6 @@
-import { prisma } from "./prisma";
+import { prisma } from "./db/prisma";
 import { shiftSlotLabel } from "./shifts";
-import { stringList } from "./json-fields";
+import { stringList } from "./db/json-fields";
 import { log } from "./log";
 
 /**
@@ -302,8 +302,6 @@ export const DATASETS: DatasetDefinition[] = [
     fetch: () => prisma.deletionLog.findMany({ orderBy: { deletedAt: "desc" } }),
   },
 ];
-
-export const DATASET_KEYS = DATASETS.map((d) => d.key);
 
 /** Column order follows first appearance across the rows, so `id` stays first. */
 function columnsOf(rows: Record<string, unknown>[]): string[] {

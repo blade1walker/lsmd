@@ -173,7 +173,7 @@ export default function AdminLayout({
   const sidebarContent = (
     <>
       <div className="p-4 border-b border-[#1e1e28]">
-        <Link href="/" className="flex items-center gap-2 text-gray-400 hover:text-white text-sm">
+        <Link href="/" className="-my-1.5 flex items-center gap-2 py-1.5 text-gray-400 hover:text-white text-sm">
           <ChevronLeft className="w-4 h-4" />
           Back to Website
         </Link>
@@ -205,7 +205,7 @@ export default function AdminLayout({
               key={item.href}
               href={item.href}
               onClick={() => setSidebarOpen(false)}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors mb-1 ${
+              className={`flex items-center gap-3 px-3 py-2.5 lg:py-2 rounded-lg text-sm transition-colors mb-1 ${
                 isActive
                   ? "bg-[#dc2626]/10 text-[#dc2626]"
                   : "text-gray-400 hover:text-white hover:bg-white/5"
@@ -245,15 +245,18 @@ export default function AdminLayout({
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] flex">
-      {/* Mobile header bar */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-[#111118] border-b border-[#1e1e28] px-4 py-3 flex items-center">
+      {/* Phone and tablet header bar. The sidebar is fixed from lg up: on a
+          tablet in portrait it would take a third of the screen. */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-[#111118] border-b border-[#1e1e28] pl-[max(0.5rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[calc(0.25rem+env(safe-area-inset-top))] pb-1 flex items-center">
         <button
           onClick={() => setSidebarOpen(true)}
-          className="text-gray-400 hover:text-white"
+          aria-label="Open menu"
+          aria-expanded={sidebarOpen}
+          className="p-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5"
         >
           <Menu className="w-6 h-6" />
         </button>
-        <span className="ml-3 font-[family-name:var(--font-oswald)] text-white font-semibold">
+        <span className="ml-1.5 font-[family-name:var(--font-oswald)] text-white font-semibold">
           Admin Panel
         </span>
       </div>
@@ -261,14 +264,14 @@ export default function AdminLayout({
       {/* Backdrop */}
       {sidebarOpen && (
         <div
-          className="md:hidden fixed inset-0 z-40 bg-black/60"
+          className="lg:hidden fixed inset-0 z-40 bg-black/60"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar - mobile: slide-in overlay, desktop: fixed */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#111118] border-r border-[#1e1e28] flex flex-col transition-transform duration-200 ease-in-out md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 max-w-[85vw] bg-[#111118] border-r border-[#1e1e28] flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] transition-transform duration-200 ease-in-out lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -278,7 +281,7 @@ export default function AdminLayout({
       {/* min-w-0: a flex item will not shrink below its widest child, so
           without it one wide table pushes the whole page sideways on a phone
           instead of scrolling inside its own box. */}
-      <main className="flex-1 min-w-0 px-4 pb-8 pt-[4.5rem] sm:px-6 md:ml-64 md:p-8">{children}</main>
+      <main className="flex-1 min-w-0 px-4 pb-8 pt-[calc(4.5rem+env(safe-area-inset-top))] sm:px-6 lg:ml-64 lg:p-8 lg:pt-[calc(2rem+env(safe-area-inset-top))]">{children}</main>
     </div>
   );
 }

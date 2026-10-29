@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied, actorLabel, hasPermission } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied, actorLabel, hasPermission } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { CONTENT_PERMISSIONS } from "@/lib/constants";
 import { parseNoticeInput } from "@/lib/site-content";
-import { toNoticeView } from "@/lib/site-content-server";
+import { toNoticeView } from "@/lib/site-content/server";
 
 /**
  * Edits a notice, moves it, or publishes / unpublishes it. Editing a

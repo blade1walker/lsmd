@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { useNow, elapsedSeconds } from "@/components/roster/DutyStatus";
 import { fetchJson, errorMessage } from "@/lib/fetch-json";
-import { formatHours } from "@/lib/roster-shared";
+import { formatHours } from "@/lib/roster";
 import {
   UNIT_LIMITS,
   UNIT_STATUSES,

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied, actorLabel } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { CONTENT_PERMISSIONS } from "@/lib/constants";
-import { deleteImage, mediaUrl } from "@/lib/media-storage";
-import { findMediaUses } from "@/lib/media-server";
+import { deleteImage, mediaUrl } from "@/lib/media/storage";
+import { findMediaUses } from "@/lib/media/server";
 
 /**
  * Deletes an image. Refused while anything shows it — website content live

@@ -9,7 +9,7 @@
 # the repo to /opt/lsmd, and installs these systemd units:
 #   lsmd.service           the website (next start on 127.0.0.1:3000)
 #   lsmd-update.timer      every 2 minutes: deploy main if it has new commits
-#   lsmd-loa-expiry.timer  daily 08:00 UTC: the LOA expiry job (was a Vercel cron)
+#   lsmd-loa-expiry.timer  daily 08:00 UTC: the LOA expiry job
 #   lsmd-bot.service       the Discord bot — installed here, switched on once
 #                          its token is in /opt/lsmd/bot.env (see the end)
 #
@@ -106,11 +106,11 @@ if [ "$(tr -cd . <<<"$DOMAIN" | wc -c)" = 1 ]; then
 fi
 sudo systemctl reload caddy || sudo systemctl restart caddy
 
-# Until the required settings are filled in (deploy/check-env.mjs says which), stop here.
-if [ "${NEW_ENV:-}" = 1 ] || ! sudo -u lsmd node "$APP/repo/deploy/check-env.mjs" "$APP/.env" >/dev/null 2>&1; then
+# Until the required settings are filled in (deploy/oracle/check-env.mjs says which), stop here.
+if [ "${NEW_ENV:-}" = 1 ] || ! sudo -u lsmd node "$APP/repo/deploy/oracle/check-env.mjs" "$APP/.env" >/dev/null 2>&1; then
   say "Almost done — fill in the settings, then finish"
   cat <<EOF
-  1. Edit the settings (copy each value from Vercel -> Project -> Settings -> Environment Variables):
+  1. Fill in the settings (.env.example in the repo explains each one):
        sudo -u lsmd nano $APP/.env
      NEXTAUTH_URL is already set to https://$DOMAIN. To bring existing data across, copy the
      database URL too (DATABASE_URL or the NEON_... ones): the first start copies it into SQLite.

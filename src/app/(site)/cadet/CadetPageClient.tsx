@@ -1,8 +1,7 @@
 "use client";
 
-import { DiscordBar } from "@/components/DiscordBar";
-import { Footer } from "@/components/Footer";
-import { motion } from "framer-motion";
+import { DiscordBar } from "@/components/layout/DiscordBar";
+import { Footer } from "@/components/layout/Footer";
 import { CheckCircle2, Circle } from "lucide-react";
 import { EMS_TRAINING, overallProgress, parseEmsProgress, phaseProgress } from "@/lib/training";
 
@@ -90,12 +89,10 @@ export function CadetPageClient({ member }: { member: CadetMember | null }) {
           {EMS_TRAINING.map((phase, index) => {
             const stats = phaseProgress(phase, progress);
             return (
-              <motion.section
+              <section
                 key={phase.key}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="rounded-xl border border-[#1e1e1e] bg-[#111111] p-6"
+                style={{ animationDelay: `${index * 0.05}s` }}
+                className="rounded-xl border border-[#1e1e1e] bg-[#111111] p-6 animate-fade-up"
               >
                 <div className="mb-1 flex items-baseline justify-between gap-4">
                   <h2 className="font-[family-name:var(--font-oswald)] text-lg font-bold uppercase text-white">{phase.title}</h2>
@@ -155,7 +152,7 @@ export function CadetPageClient({ member }: { member: CadetMember | null }) {
                     );
                   })}
                 </div>
-              </motion.section>
+              </section>
             );
           })}
 

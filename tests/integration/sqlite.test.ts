@@ -4,8 +4,8 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import Database from "better-sqlite3";
-import { createPrismaClient } from "@/lib/prisma";
-import { applyMigrations, migrationNames } from "@/lib/migrations";
+import { createPrismaClient } from "@/lib/db/prisma";
+import { applyMigrations, migrationNames } from "@/lib/db/migrations";
 import type { PrismaClient } from "@/generated/prisma/client";
 
 /**

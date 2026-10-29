@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { requireAuth, isDenied } from "@/lib/api-auth";
+import { requireAuth, isDenied } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { ANNOUNCEMENT_PERMISSIONS } from "@/lib/constants";
-import { claimDueAnnouncements, nextDueAt } from "@/lib/announcements";
+import { claimDueAnnouncements, nextDueAt } from "@/lib/discord/announcements";
 
 /**
  * The bot's delivery loop: hands over every due post, each to one caller

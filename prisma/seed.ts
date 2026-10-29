@@ -1,6 +1,6 @@
 import "dotenv/config";
-import { createPrismaClient } from "../src/lib/prisma";
-import { ROLE_PRESETS } from "../src/lib/role-presets";
+import { createPrismaClient } from "../src/lib/db/prisma";
+import { ROLE_PRESETS } from "../src/lib/auth/role-presets";
 import { RADIO_CODES } from "../src/lib/radio-codes";
 
 const prisma = createPrismaClient();

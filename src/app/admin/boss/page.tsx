@@ -232,8 +232,8 @@ export default function BossMenuPage() {
       {tab === "media" && <MediaLibrary media={data.media} canDelete={data.canPublish} reload={load} />}
 
       {dirty && tab === "content" && (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#1e1e28] bg-[#0a0a0f]/95 backdrop-blur md:left-64">
-          <div className="flex max-w-4xl flex-wrap items-center gap-3 px-4 py-3 sm:px-6 md:box-content md:px-8">
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#1e1e28] bg-[#0a0a0f]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:left-64">
+          <div className="flex max-w-4xl flex-wrap items-center gap-3 px-4 py-3 sm:px-6 lg:box-content lg:px-8">
             <span className="mr-auto text-sm text-gray-300">
               {Object.keys(edits).length} unsaved edit{Object.keys(edits).length === 1 ? "" : "s"}
               {Object.keys(errors).length > 0 && <span className="text-red-400"> · fix the fields marked in red</span>}

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { postToAcceptWebhook, sendDiscordDM, getNotificationSettings, describeResult } from "@/lib/discord-webhook";
-import { requireAuth, isDenied } from "@/lib/api-auth";
+import { postToAcceptWebhook, sendDiscordDM, getNotificationSettings, describeResult } from "@/lib/discord/webhook";
+import { requireAuth, isDenied } from "@/lib/auth/api";
 
 export async function POST(req: NextRequest) {
   // Sends an arbitrary message to an arbitrary Discord ID through the bot.

@@ -1,8 +1,8 @@
 import "dotenv/config";
 import { existsSync, statSync } from "node:fs";
 import Database from "better-sqlite3";
-import { checkIntegrity, listBackups } from "../src/lib/backup";
-import { migrationNames } from "../src/lib/migrations";
+import { checkIntegrity, listBackups } from "../src/lib/db/backup";
+import { migrationNames } from "../src/lib/db/migrations";
 import { databaseFile } from "../src/lib/paths";
 
 /**

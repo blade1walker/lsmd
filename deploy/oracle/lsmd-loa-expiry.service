@@ -1,5 +1,5 @@
 [Unit]
-Description=LSMD nightly LOA expiry job (replaces the Vercel cron)
+Description=LSMD nightly LOA expiry job
 After=lsmd.service
 
 [Service]

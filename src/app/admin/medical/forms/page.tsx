@@ -643,7 +643,7 @@ export default function MedicalFormsPage() {
                   className="mt-1"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label>Sub-department</Label>
                   <Input
@@ -700,7 +700,7 @@ export default function MedicalFormsPage() {
                   className="mt-1"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label>Address</Label>
                   <Input
@@ -781,7 +781,7 @@ export default function MedicalFormsPage() {
                   className="mt-1"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label>Category</Label>
                   <Select

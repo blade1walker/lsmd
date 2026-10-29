@@ -1,4 +1,4 @@
-import { prisma } from "./prisma";
+import { prisma } from "./db/prisma";
 import { CALLSIGN_FLOOR, CALLSIGN_CEILING, CALLSIGN_MAX } from "./constants";
 
 /**

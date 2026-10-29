@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth, isDenied } from "@/lib/api-auth";
+import { prisma } from "@/lib/db/prisma";
+import { requireAuth, isDenied } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { cleanAnswers, isAnswered, parseQuestions } from "@/lib/tests";
-import { closeAttempt, isPastDeadline, isTimeUp } from "@/lib/tests-server";
+import { closeAttempt, isPastDeadline, isTimeUp } from "@/lib/tests/server";
 
 type Params = { params: Promise<{ id: string }> };
 

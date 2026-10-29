@@ -190,8 +190,8 @@ export interface TrainingSummaryRow {
   progress: EmsProgress;
 }
 
-export const ALL_CHECKPOINTS = EMS_TRAINING.flatMap((phase) => phase.checkpoints);
-export const ALL_COUNTERS = EMS_TRAINING.flatMap((phase) => phase.counters ?? []);
+const ALL_CHECKPOINTS = EMS_TRAINING.flatMap((phase) => phase.checkpoints);
+const ALL_COUNTERS = EMS_TRAINING.flatMap((phase) => phase.counters ?? []);
 
 export function findCheckpoint(key: unknown): TrainingCheckpoint | undefined {
   return typeof key === "string" ? ALL_CHECKPOINTS.find((c) => c.key === key) : undefined;

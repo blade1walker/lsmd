@@ -2,10 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Check, X, UserPlus } from "lucide-react";
-import { RANK_NAMES } from "@/lib/constants";
+import { RANK_LIST } from "@/lib/constants";
 
 interface OnboardingRequest {
   id: string;
@@ -129,7 +127,7 @@ export default function AdminOnboardingPage() {
                       {req.steamId && ` • Steam: ${req.steamId}`}
                     </div>
                     {req.reason && (
-                      <div className="text-xs text-gray-400 mt-2 italic">"{req.reason}"</div>
+                      <div className="text-xs text-gray-400 mt-2 italic">&ldquo;{req.reason}&rdquo;</div>
                     )}
                     <div className="text-xs text-gray-500 mt-1">
                       Applied {new Date(req.createdAt).toLocaleDateString()}
@@ -144,7 +142,7 @@ export default function AdminOnboardingPage() {
                           className="h-9 rounded-md border border-[#1e1e1e] bg-black text-white px-3 text-sm"
                           style={{ colorScheme: "dark" }}
                         >
-                          {RANK_NAMES.map((r) => (
+                          {RANK_LIST.map((r) => (
                             <option key={r} value={r} className="bg-black text-white">{r}</option>
                           ))}
                         </select>

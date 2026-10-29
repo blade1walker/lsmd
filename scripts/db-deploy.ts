@@ -2,15 +2,15 @@ import "dotenv/config";
 import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
-import { backupDatabase } from "../src/lib/backup";
-import { applyMigrations } from "../src/lib/migrations";
+import { backupDatabase } from "../src/lib/db/backup";
+import { applyMigrations } from "../src/lib/db/migrations";
 import { dataDir, databaseFile } from "../src/lib/paths";
 import { describeUrl, importFromPostgres, postgresSourceUrl, writeMovedMarker } from "./lib/postgres-transfer";
 
 /**
  * Gets the database ready for the release being deployed. Run by
- * scripts/deploy-schema.mjs on every deploy (deploy/oracle/deploy.sh,
- * deploy/start.sh), and by hand with `npm run db:migrate`.
+ * scripts/deploy-schema.mjs on every deploy (deploy/oracle/deploy.sh), and
+ * by hand with `npm run db:migrate`.
  *
  * 1. No database yet:
  *    - this server has moved to SQLite before → stop: the file has gone
