@@ -64,7 +64,7 @@ export default function AdminRestorePage() {
       <div>
         <div className="mb-8">
           <Skeleton className="h-8 w-56 mb-2" />
-          <Skeleton className="h-4 w-72" />
+          <Skeleton className="h-4 w-72 max-w-full" />
         </div>
         <div className="space-y-4">
           {[...Array(4)].map((_, i) => (

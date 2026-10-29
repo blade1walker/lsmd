@@ -144,7 +144,7 @@ export default function AdminShiftsPage() {
     return (
       <div>
         <Skeleton className="h-8 w-48 mb-2" />
-        <Skeleton className="h-4 w-80 mb-8" />
+        <Skeleton className="h-4 w-80 max-w-full mb-8" />
         <Skeleton className="h-96 rounded-xl" />
       </div>
     );

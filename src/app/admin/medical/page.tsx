@@ -101,7 +101,7 @@ export default function MedicalDocumentsPage() {
           placeholder="Search patient, State ID, document number…"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          className="w-72"
+          className="w-full sm:w-72"
         />
         <Select value={status} onChange={(e) => setStatus(e.target.value)} className="w-40">
           <option value="">All statuses</option>

@@ -158,7 +158,7 @@ export default function AdminHrPage() {
       <div>
         <div className="mb-8">
           <Skeleton className="h-8 w-48 mb-2" />
-          <Skeleton className="h-4 w-80" />
+          <Skeleton className="h-4 w-80 max-w-full" />
         </div>
         <div className="space-y-8">
           {[...Array(3)].map((_, i) => (

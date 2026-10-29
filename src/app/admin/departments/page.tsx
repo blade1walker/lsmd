@@ -375,7 +375,7 @@ export default function AdminDepartmentsPage() {
     return (
       <div>
         <Skeleton className="h-8 w-48 mb-2" />
-        <Skeleton className="h-4 w-80 mb-8" />
+        <Skeleton className="h-4 w-80 max-w-full mb-8" />
         <div className="grid grid-cols-1 lg:grid-cols-[16rem_1fr] gap-6">
           <Skeleton className="h-96 rounded-xl" />
           <Skeleton className="h-96 rounded-xl" />

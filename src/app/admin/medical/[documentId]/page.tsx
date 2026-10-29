@@ -241,7 +241,7 @@ export default function MedicalDocumentPage() {
   if (loading) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-8 w-72" />
+        <Skeleton className="h-8 w-72 max-w-full" />
         <Skeleton className="h-96 w-full" />
       </div>
     );

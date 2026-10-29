@@ -3,8 +3,18 @@
 import { useState, useEffect } from "react";
 import { Bell } from "lucide-react";
 
+/** A promotion announcement, as /api/user/notifications returns it. */
+interface PromotionNotice {
+  id: string;
+  memberName: string;
+  fromRank: string;
+  toRank: string;
+  promotedBy: string;
+  isRead: boolean;
+}
+
 export function UserNotificationBell() {
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<PromotionNotice[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
@@ -24,6 +34,8 @@ export function UserNotificationBell() {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
+        aria-label="Notifications"
+        aria-expanded={isOpen}
         className="relative p-2 text-gray-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
       >
         <Bell className="w-5 h-5" />
@@ -36,7 +48,7 @@ export function UserNotificationBell() {
 
         {isOpen && (
           <div
-            className="absolute right-0 top-full mt-2 w-80 bg-[#111111] border border-[#1e1e1e] rounded-xl shadow-xl overflow-hidden z-50 animate-fade-up [--fade-up-y:-10px]"
+            className="fixed inset-x-3 top-[calc(4.5rem+env(safe-area-inset-top))] sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80 bg-[#111111] border border-[#1e1e1e] rounded-xl shadow-xl overflow-hidden z-50 animate-fade-up [--fade-up-y:-10px]"
           >
             <div className="p-4 border-b border-[#1e1e1e] flex items-center justify-between">
               <h3 className="font-semibold text-white text-sm">Notifications</h3>

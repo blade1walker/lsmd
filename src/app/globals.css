@@ -116,3 +116,11 @@ body {
     animation: none;
   }
 }
+
+/* A select is as wide as its longest option (long department names); never
+   let a field push its row past the edge of a phone screen. */
+input,
+select,
+textarea {
+  max-width: 100%;
+}
