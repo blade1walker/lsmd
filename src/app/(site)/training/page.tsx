@@ -86,7 +86,7 @@ export default function TrainingPage() {
     <div className="flex min-h-screen flex-col">
       <DiscordBar />
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-12 sm:px-6 lg:px-8">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="font-[family-name:var(--font-oswald)] text-3xl font-bold uppercase text-white">Training Portal</h1>
@@ -117,9 +117,9 @@ export default function TrainingPage() {
             <div className="text-sm text-gray-600">Medical Interns, EMRs and EMTs appear here once they are on the roster.</div>
           </div>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid grid-cols-1 gap-4">
             {trainees.map(({ row, overall }) => (
-              <div key={row.memberId} className="rounded-xl border border-[#1e1e1e] bg-[#111111] p-6">
+              <div key={row.memberId} className="rounded-xl border border-[#1e1e1e] bg-[#111111] p-4 sm:p-6">
                 <div className="mb-5 flex flex-wrap items-center gap-4">
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#dc2626] to-[#b91c1c] text-sm font-bold text-black">
                     {row.member.name
@@ -151,14 +151,14 @@ export default function TrainingPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4">
                   {EMS_TRAINING.map((phase) => {
                     const stats = phaseProgress(phase, row.progress);
                     return (
                       <div key={phase.key}>
                         <div className="mb-1 flex items-center justify-between gap-2">
                           <span className="truncate text-xs text-gray-400">{phase.title}</span>
-                          <span className="text-xs text-gray-500">
+                          <span className="shrink-0 text-xs text-gray-500">
                             {stats.done}/{stats.total}
                           </span>
                         </div>

@@ -251,7 +251,7 @@ export default function NewMedicalDocumentPage() {
 
                 <div className="pt-2 border-t border-[#1e1e28]">
                   <div className="text-gray-500 text-xs mb-2">Not on the roster?</div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <Label className="text-xs">Patient name</Label>
                       <Input

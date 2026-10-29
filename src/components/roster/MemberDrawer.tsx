@@ -64,7 +64,7 @@ export function MemberDrawer({
       <aside
         role="dialog"
         aria-label={`${member.name} details`}
-        className="absolute right-0 top-0 h-full w-full max-w-md overflow-y-auto border-l border-[#1c1c24] bg-[#0e0e14] animate-slide-in-right"
+        className="absolute right-0 top-0 h-full w-full max-w-md overflow-y-auto border-l border-[#1c1c24] bg-[#0e0e14] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] animate-slide-in-right"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6">

@@ -369,7 +369,7 @@ export default function TestBuilderPage() {
       {tab === "results" && <ResultsPanel testId={testId} title={settings.title} passing={settings.passingScore} canManage={canManage} />}
 
       {canManage && (tab === "questions" || tab === "settings") && (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[#1e1e28] bg-[#0a0a0f]/95 backdrop-blur md:left-64">
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[#1e1e28] bg-[#0a0a0f]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:left-64">
           <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
             <p className="text-xs text-gray-500">
               {dirty ? (

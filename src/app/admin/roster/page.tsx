@@ -167,7 +167,7 @@ export default function AdminRosterPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
         <div>
           <h1 className="font-[family-name:var(--font-oswald)] text-2xl font-bold text-white uppercase">
             Roster Management
@@ -183,7 +183,7 @@ export default function AdminRosterPage() {
             placeholder="Search name, call sign, Discord / Steam / State ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-72"
+            className="w-full sm:w-72"
           />
           <select
             value={rankFilter}

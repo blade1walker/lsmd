@@ -6,9 +6,10 @@ import { cn } from "@/lib/utils";
 function Dialog({ open, onOpenChange, children }: { open: boolean; onOpenChange: (open: boolean) => void; children: React.ReactNode }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" onClick={() => onOpenChange(false)} />
-      <div className="relative z-50">{children}</div>
+      {/* Full width up to the content's max-width, with a margin on a phone. */}
+      <div className="relative z-50 flex w-full justify-center">{children}</div>
     </div>
   );
 }
@@ -17,7 +18,7 @@ function DialogContent({ className, children, ...props }: React.HTMLAttributes<H
   return (
     <div
       className={cn(
-        "w-full max-w-lg rounded-lg border bg-card p-6 shadow-lg max-h-[90vh] overflow-y-auto",
+        "w-full max-w-lg rounded-lg border bg-card p-4 shadow-lg max-h-[calc(100dvh-2rem)] overflow-y-auto sm:p-6",
         className
       )}
       {...props}

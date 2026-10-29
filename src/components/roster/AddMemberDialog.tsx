@@ -80,7 +80,7 @@ export default function AddMemberDialog({ open, onOpenChange, sections, departme
               required
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="rank">Rank</Label>
               <Select
@@ -103,7 +103,7 @@ export default function AddMemberDialog({ open, onOpenChange, sections, departme
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="section">Section</Label>
               <Select
@@ -130,7 +130,7 @@ export default function AddMemberDialog({ open, onOpenChange, sections, departme
               </Select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="dept">Department</Label>
               <Select
@@ -145,7 +145,7 @@ export default function AddMemberDialog({ open, onOpenChange, sections, departme
               </Select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="discordId">Discord ID</Label>
               <Input
@@ -164,7 +164,7 @@ export default function AddMemberDialog({ open, onOpenChange, sections, departme
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="stateId">State ID</Label>
               <Input
@@ -184,7 +184,7 @@ export default function AddMemberDialog({ open, onOpenChange, sections, departme
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="ftoRole">FTO Role</Label>
               <Select

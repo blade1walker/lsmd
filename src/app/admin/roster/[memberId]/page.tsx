@@ -151,7 +151,7 @@ export default function MemberProfilePage() {
         >
           <div className="flex items-center gap-4 mb-6">
             <div className="w-14 h-14 rounded-full bg-gradient-to-br from-red-600/80 to-red-600/40 flex items-center justify-center text-[#0a0a0a] font-bold text-lg">
-              {member.name.split(" ").map((n) => n[0]).join("")}
+              {member.name.split(" ").map((n) => n[0]).join("").slice(0, 3)}
             </div>
             <div>
               <h2 className="text-white font-bold text-lg">{member.name}</h2>

@@ -40,6 +40,9 @@ export const viewport: Viewport = {
   initialScale: 1,
   // Pinch-zoom stays on: blocking it locks people out of small text on phones.
   themeColor: "#0a0a0f",
+  // Fill the screen around a notch and the home indicator. The page keeps
+  // its content clear of them with the safe-area insets in globals.css.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

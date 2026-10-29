@@ -491,12 +491,12 @@ export default function AdminDepartmentsPage() {
                 </div>
               </div>
 
-              <div className="flex gap-1 mt-4">
+              <div className="flex gap-1 mt-4 -mx-1 px-1 overflow-x-auto">
                 {visibleTabs.map((t) => (
                   <button
                     key={t}
                     onClick={() => setTab(t)}
-                    className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                    className={`shrink-0 whitespace-nowrap px-3 py-1.5 rounded-lg text-sm transition-colors ${
                       tab === t
                         ? "bg-white/10 text-white"
                         : "text-gray-500 hover:text-white hover:bg-white/5"

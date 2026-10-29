@@ -350,19 +350,19 @@ export default function AdminRolesPage() {
                             type="button"
                             onClick={() => handleMoveRole(r.id, -1)}
                             disabled={i === 0}
-                            className="text-gray-500 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed"
+                            className="rounded p-1 text-gray-500 hover:text-white hover:bg-white/5 disabled:opacity-20 disabled:cursor-not-allowed"
                             aria-label={`Move ${r.name} up`}
                           >
-                            <ArrowUp className="w-3 h-3" />
+                            <ArrowUp className="w-3.5 h-3.5" />
                           </button>
                           <button
                             type="button"
                             onClick={() => handleMoveRole(r.id, 1)}
                             disabled={i === sortedRoles.length - 1}
-                            className="text-gray-500 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed"
+                            className="rounded p-1 text-gray-500 hover:text-white hover:bg-white/5 disabled:opacity-20 disabled:cursor-not-allowed"
                             aria-label={`Move ${r.name} down`}
                           >
-                            <ArrowDown className="w-3 h-3" />
+                            <ArrowDown className="w-3.5 h-3.5" />
                           </button>
                         </div>
                         <span className="text-white font-medium text-sm">{r.name}</span>
@@ -466,7 +466,7 @@ export default function AdminRolesPage() {
           if (!open) setEditingRoleId(null);
         }}
       >
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle>{editingRoleId ? "Edit Role" : "Add Role"}</DialogTitle></DialogHeader>
           <form onSubmit={handleSaveRole} className="space-y-4">
             <div><Label>Role Name</Label><Input value={roleForm.name} onChange={(e) => setRoleForm((p) => ({ ...p, name: e.target.value }))} required /></div>
@@ -500,7 +500,7 @@ export default function AdminRolesPage() {
       </Dialog>
 
       <Dialog open={showAddUser} onOpenChange={setShowAddUser}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogContent>
           <DialogHeader><DialogTitle>Add Admin User</DialogTitle></DialogHeader>
           <form onSubmit={handleAddUser} className="space-y-4">
             <div>
@@ -564,7 +564,7 @@ export default function AdminRolesPage() {
       </Dialog>
 
       <Dialog open={!!editingAccessUser} onOpenChange={(open) => !open && setEditingAccessUser(null)}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle>Edit Access — {editingAccessUser?.discordName}</DialogTitle></DialogHeader>
           <form onSubmit={handleSaveAccess} className="space-y-5">
             <div>

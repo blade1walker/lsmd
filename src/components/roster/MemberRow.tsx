@@ -238,9 +238,11 @@ export default function MemberRow({
       <td className="py-3 px-4">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-600/80 to-red-600/40 flex items-center justify-center text-[#0a0a0a] font-bold text-xs shrink-0">
-            {member.name.split(" ").map((n) => n[0]).join("")}
+            {member.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
           </div>
-          <span className="text-white font-medium text-sm">{member.name}</span>
+          {/* The table scrolls sideways on a small screen; this keeps a long
+              name from being squeezed into a column a word wide. */}
+          <span className="min-w-[10rem] text-white font-medium text-sm">{member.name}</span>
         </div>
       </td>
       <td className="py-3 px-4 font-[family-name:var(--font-mono)] text-gray-400 text-xs">
@@ -249,7 +251,7 @@ export default function MemberRow({
       <td className="py-3 px-4">
         <div className="flex items-center gap-2">
           <RankInsignia rank={member.rank} size={14} />
-          <span className="text-gray-300 text-xs">{member.rank}</span>
+          <span className="whitespace-nowrap text-gray-300 text-xs">{member.rank}</span>
         </div>
       </td>
       <td className="py-3 px-4">

@@ -299,7 +299,7 @@ export default function AdminRecruitPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="font-[family-name:var(--font-oswald)] text-2xl font-bold text-white uppercase">
             Recruit Management
@@ -308,7 +308,7 @@ export default function AdminRecruitPage() {
             Import, add, and manage recruitment applications
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" onChange={handleFileImport} className="hidden" />
           <Button onClick={() => fileRef.current?.click()} disabled={importing} className="bg-[#dc2626] text-black hover:bg-[#b91c1c]">
             {importing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
@@ -339,10 +339,10 @@ export default function AdminRecruitPage() {
 
       {/* Tabs */}
       <div className="flex items-center justify-between gap-4 mb-2 flex-wrap">
-        <div className="flex gap-1 bg-[#111111] border border-[#1e1e1e] rounded-xl p-1 w-fit">
+        <div className="flex gap-1 bg-[#111111] border border-[#1e1e1e] rounded-xl p-1 w-fit max-w-full overflow-x-auto">
           <button
             onClick={() => setActiveTab("pending")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               activeTab === "pending" ? "bg-[#dc2626] text-black" : "text-gray-400 hover:text-white"
             }`}
           >
@@ -350,7 +350,7 @@ export default function AdminRecruitPage() {
           </button>
           <button
             onClick={() => setActiveTab("log")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               activeTab === "log" ? "bg-[#dc2626] text-black" : "text-gray-400 hover:text-white"
             }`}
           >

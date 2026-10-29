@@ -22,11 +22,11 @@ export function SiteHeader({ viewer }: { viewer: RosterViewer }) {
   const nav = NAV.filter((item) => !("shownBy" in item) || flag(item.shownBy));
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-[#08080c]/85 backdrop-blur-md">
+    <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-[#08080c]/85 pt-[env(safe-area-inset-top)] backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
-        <Link href="/" className="flex items-center gap-3">
-          <BrandLogo className="h-9 w-9" />
-          <div className="leading-tight">
+        <Link href="/" className="flex min-w-0 items-center gap-3">
+          <BrandLogo className="h-9 w-9 shrink-0" />
+          <div className="min-w-0 whitespace-nowrap leading-tight">
             <div className="font-[family-name:var(--font-oswald)] text-base font-semibold uppercase tracking-[0.12em] text-white">
               {text("brand.name")}
             </div>
@@ -34,7 +34,7 @@ export function SiteHeader({ viewer }: { viewer: RosterViewer }) {
           </div>
         </Link>
 
-        <nav className="hidden items-center gap-1 md:flex">
+        <nav className="hidden items-center gap-1 lg:flex">
           {nav.map((item) => (
             <Link
               key={item.href}
@@ -46,7 +46,7 @@ export function SiteHeader({ viewer }: { viewer: RosterViewer }) {
           ))}
         </nav>
 
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="hidden items-center gap-2 lg:flex">
           <Account viewer={viewer} />
         </div>
 
@@ -55,21 +55,21 @@ export function SiteHeader({ viewer }: { viewer: RosterViewer }) {
           onClick={() => setOpen(!open)}
           aria-label={open ? "Close menu" : "Open menu"}
           aria-expanded={open}
-          className="rounded-md p-2 text-gray-400 hover:bg-white/5 hover:text-white md:hidden"
+          className="-mr-2 shrink-0 rounded-md p-2.5 text-gray-400 hover:bg-white/5 hover:text-white lg:hidden"
         >
           {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
       </div>
 
       {open && (
-        <div className="border-t border-white/[0.06] px-4 pb-4 pt-2 md:hidden">
+        <div className="max-h-[calc(100dvh-4rem)] overflow-y-auto border-t border-white/[0.06] px-4 pb-4 pt-2 sm:px-6 lg:hidden">
           <nav className="flex flex-col">
             {nav.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={() => setOpen(false)}
-                className="rounded-md px-3 py-2.5 text-sm font-medium text-gray-300 hover:bg-white/5 hover:text-white"
+                className="rounded-md px-3 py-3 text-base font-medium text-gray-300 hover:bg-white/5 hover:text-white"
               >
                 {item.label}
               </Link>

@@ -107,16 +107,16 @@ export default function AdminRestorePage() {
               <div
                 key={log.id}
                 style={{ animationDelay: `${index * 0.05}s` }}
-                className={`bg-[#111111] border border-[#1e1e1e] rounded-xl p-4 flex items-center gap-4 ${
+                className={`bg-[#111111] border border-[#1e1e1e] rounded-xl p-4 flex flex-wrap items-center gap-x-4 gap-y-2 ${
                   isExpired ? "opacity-50" : ""
                 } animate-fade-up [--fade-up-y:10px]`}
               >
-                <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center">
+                <div className="w-10 h-10 shrink-0 rounded-lg bg-red-500/10 flex items-center justify-center">
                   <Trash2 className="w-5 h-5 text-red-400" />
                 </div>
 
-                <div className="flex-1 min-w-0">
-                  <div className="text-white font-medium text-sm">
+                <div className="flex-1 min-w-[12rem]">
+                  <div className="text-white font-medium text-sm break-words">
                     {log.entityLabel}
                   </div>
                   <div className="text-xs text-gray-500">
@@ -134,7 +134,7 @@ export default function AdminRestorePage() {
                   )}
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex gap-2 ml-auto">
                   <Button
                     variant="ghost"
                     size="sm"

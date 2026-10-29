@@ -569,7 +569,7 @@ export default function CallLogPage() {
 
       {/* Log / edit */}
       <Dialog open={editing !== null} onOpenChange={(open) => !open && setEditing(null)}>
-        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{editing === "new" ? "Log a call" : `Edit ${(editing as EmsCallRecord | null)?.callNumber ?? ""}`}</DialogTitle>
           </DialogHeader>

@@ -471,7 +471,7 @@ export default function FormBuilderPage() {
                             </Select>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                               <Label className="text-xs">Display label</Label>
                               <Input
@@ -501,7 +501,7 @@ export default function FormBuilderPage() {
                           </div>
 
                           {!PRESENTATIONAL_TYPES.includes(field.type) && (
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               <div>
                                 <Label className="text-xs">Placeholder</Label>
                                 <Input
@@ -574,7 +574,7 @@ export default function FormBuilderPage() {
                           )}
 
                           {field.type === "number" && (
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               <div>
                                 <Label className="text-xs">Minimum</Label>
                                 <Input
@@ -839,7 +839,7 @@ export default function FormBuilderPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs">Document type</Label>
                 <Select
