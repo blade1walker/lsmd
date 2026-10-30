@@ -1,5 +1,6 @@
 import { prisma } from "../db/prisma";
 import { recordDirectMessage } from "./dm-threads";
+import { isDiscordId, safeMentions } from "./id";
 
 export async function getNotificationSettings() {
   try {
@@ -221,7 +222,7 @@ export function describeResult(result: SendResult): string {
     case "no-token":
       return "No bot token configured";
     case "no-target":
-      return "No Discord ID on this record";
+      return "No valid Discord ID on this record";
     default:
       return result.error || `Discord returned ${result.status ?? "an error"}`;
   }
@@ -316,7 +317,7 @@ async function postToWebhook(webhookUrl: string, embed: Embed, event = "webhook"
       embeds: [
         {
           title: embed.title,
-          description: embed.description,
+          description: safeMentions(embed.description),
           color: embed.color,
           fields: embed.fields,
           timestamp: new Date().toISOString(),
@@ -358,7 +359,7 @@ export async function postToWebhookContent(
     return result;
   }
 
-  const body: Record<string, unknown> = { username: "Nexus EMS HR", avatar_url: "", content };
+  const body: Record<string, unknown> = { username: "Nexus EMS HR", avatar_url: "", content: safeMentions(content) };
   if (imageUrl) body.embeds = [{ image: { url: imageUrl } }];
 
   const result = await send(webhookUrl, {
@@ -420,9 +421,9 @@ export async function sendDiscordDM(
   event = "dm",
   sentBy?: string
 ): Promise<SendResult> {
-  if (!discordId) {
+  if (!isDiscordId(discordId)) {
     const result: SendResult = { ok: false, skipped: "no-target" };
-    await logDelivery({ event, channel: "dm", content: message, result });
+    await logDelivery({ event, channel: "dm", target: discordId || undefined, content: message, result });
     return result;
   }
 

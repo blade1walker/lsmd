@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
+import { DISCORD_ID_HELP, parseDiscordId } from "@/lib/discord/id";
 import { logAudit } from "@/lib/audit";
 import { postToAcceptWebhook, sendDiscordDM, getNotificationSettings } from "@/lib/discord/webhook";
 
@@ -18,6 +19,16 @@ export async function PATCH(
     const { status, reviewNote, customMessage, discordId, discordUsername, steamId, characterName, user, rank } = body;
     const performedBy = actorLabel(auth.access);
 
+    // The edit modal resends the current ID too, so one already on an older
+    // record does not block other corrections; only a newly typed bad one is refused.
+    const parsedId = parseDiscordId(discordId);
+    if (discordId && !parsedId) {
+      const current = await prisma.recruitRequest.findUnique({ where: { id }, select: { discordId: true } });
+      if (current?.discordId !== discordId) {
+        return NextResponse.json({ error: `That is not a valid Discord ID. ${DISCORD_ID_HELP}` }, { status: 400 });
+      }
+    }
+
     // The admin edit modal resends the request's current status alongside
     // field corrections (discordId, steamId, ...), not just a fresh approval —
     // so "status is present" is not the same as "status is changing". The
@@ -28,7 +39,7 @@ export async function PATCH(
     // reading it first and writing second, as a sequential statusChanged
     // check would, leaves exactly that gap open.
     const commonData = {
-      ...(discordId && { discordId }),
+      ...(discordId && { discordId: parsedId ?? discordId }),
       ...(discordUsername !== undefined && { discordUsername: discordUsername || null }),
       ...(steamId && { steamId }),
       ...(characterName !== undefined && { characterName: characterName || null }),

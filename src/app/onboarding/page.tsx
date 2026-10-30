@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CheckCircle, UserPlus } from "lucide-react";
+import { DISCORD_ID_HELP, parseDiscordId } from "@/lib/discord/id";
 
 export default function OnboardingPage() {
   const [name, setName] = useState("");
@@ -14,9 +15,15 @@ export default function OnboardingPage() {
   const [steamId, setSteamId] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async () => {
     if (!name || !discordId || !stateId) return;
+    if (!parseDiscordId(discordId)) {
+      setError(`That is not a valid Discord ID. ${DISCORD_ID_HELP}`);
+      return;
+    }
+    setError(null);
     setLoading(true);
     try {
       const res = await fetch("/api/onboarding", {
@@ -25,8 +32,10 @@ export default function OnboardingPage() {
         body: JSON.stringify({ name, discordId, stateId, steamId }),
       });
       if (res.ok) setSubmitted(true);
+      else setError((await res.json().catch(() => null))?.error ?? "Could not submit your request. Please try again.");
     } catch (err) {
       console.error(err);
+      setError("Could not submit your request. Please try again.");
     }
     setLoading(false);
   };
@@ -92,9 +101,11 @@ export default function OnboardingPage() {
             <Input
               value={discordId}
               onChange={(e) => setDiscordId(e.target.value)}
-              placeholder="Your Discord user ID"
+              placeholder="e.g. 718689330071208078"
+              inputMode="numeric"
               className="mt-1 bg-[#0a0a0a] border-[#1e1e1e]"
             />
+            <p className={`mt-1 text-xs ${error ? "text-red-400" : "text-gray-500"}`}>{error ?? DISCORD_ID_HELP}</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

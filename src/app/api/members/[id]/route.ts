@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db/prisma";
 import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
+import { DISCORD_ID_HELP, parseDiscordId } from "@/lib/discord/id";
 import { SECTION_HINTS, getRankWeight } from "@/lib/constants";
 import { getNotificationSettings, postToPromotionWebhook, postToCallsignWebhook, renderTemplate } from "@/lib/discord/webhook";
 import { removeFtpDiscordRole } from "@/lib/discord/roles";
@@ -24,6 +25,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       where: { id },
       select: { rank: true, activity: true, callSign: true, category: true, discordId: true, sectionId: true },
     });
+
+    if (body.discordId && body.discordId !== before?.discordId) {
+      const discordId = parseDiscordId(body.discordId);
+      if (!discordId) return NextResponse.json({ error: `That is not a valid Discord ID. ${DISCORD_ID_HELP}` }, { status: 400 });
+      body.discordId = discordId;
+    }
 
     // A promotion candidate: any rank change to a strictly higher weight,
     // whether from the dedicated Promote button (which never sends callSign)

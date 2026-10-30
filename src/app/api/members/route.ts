@@ -5,6 +5,7 @@ import { apiError } from "@/lib/api-error";
 import { SECTION_HINTS } from "@/lib/constants";
 import { getNextCallSign } from "@/lib/callsign";
 import { cached } from "@/lib/db/cache";
+import { DISCORD_ID_HELP, parseDiscordId } from "@/lib/discord/id";
 
 /** Fields safe to expose to an anonymous caller — the same ones the public roster already shows. */
 const PUBLIC_MEMBER_FIELDS = {
@@ -80,6 +81,12 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
+
+    if (body.discordId) {
+      const discordId = parseDiscordId(body.discordId);
+      if (!discordId) return NextResponse.json({ error: `That is not a valid Discord ID. ${DISCORD_ID_HELP}` }, { status: 400 });
+      body.discordId = discordId;
+    }
 
     if (!body.callSign) {
       body.callSign = await getNextCallSign();

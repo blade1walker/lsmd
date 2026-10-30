@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { requireAuth, isDenied } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
+import { DISCORD_ID_HELP, parseDiscordId } from "@/lib/discord/id";
 
 export async function GET() {
   const auth = await requireAuth("onboarding.view");
@@ -45,9 +46,16 @@ export async function POST(req: NextRequest) {
 
       let created = 0;
       let updated = 0;
+      let invalid = 0;
 
       for (const r of body) {
         if (!r.discordId) continue;
+        const discordId = parseDiscordId(r.discordId);
+        if (!discordId) {
+          invalid++;
+          continue;
+        }
+        r.discordId = discordId;
 
         const existing = await prisma.recruitRequest.findFirst({
           where: { discordId: r.discordId },
@@ -80,7 +88,7 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      return NextResponse.json({ count: created, updated }, { status: 201 });
+      return NextResponse.json({ count: created, updated, invalid }, { status: 201 });
     }
 
     // Guarded because Prisma treats `discordId: undefined` as "no filter", not
@@ -92,6 +100,9 @@ export async function POST(req: NextRequest) {
     if (!body?.discordId) {
       return NextResponse.json({ error: "discordId is required" }, { status: 400 });
     }
+    const singleId = parseDiscordId(body.discordId);
+    if (!singleId) return NextResponse.json({ error: `That is not a valid Discord ID. ${DISCORD_ID_HELP}` }, { status: 400 });
+    body.discordId = singleId;
 
     const existing = await prisma.recruitRequest.findFirst({
       where: { discordId: body.discordId },

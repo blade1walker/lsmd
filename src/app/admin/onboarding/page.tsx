@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Check, X, UserPlus } from "lucide-react";
 import { RANK_LIST } from "@/lib/constants";
 import { useLoad } from "@/lib/use-load";
+import { parseDiscordId } from "@/lib/discord/id";
 
 interface OnboardingRequest {
   id: string;
@@ -124,6 +125,9 @@ export default function AdminOnboardingPage() {
                     <div className="text-white font-medium">{req.name}</div>
                     <div className="text-xs text-gray-500 mt-1">
                       Discord: {req.discordId}
+                      {!parseDiscordId(req.discordId) && (
+                        <span className="ml-1 text-amber-400">(not a valid Discord ID: they cannot be pinged or DM&apos;d)</span>
+                      )}
                       {req.stateId && ` • State ID: ${req.stateId}`}
                       {req.steamId && ` • Steam: ${req.steamId}`}
                     </div>

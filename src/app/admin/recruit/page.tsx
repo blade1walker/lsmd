@@ -8,6 +8,8 @@ import { CheckCircle, XCircle, Loader2, Upload, Eye, Trash2, Plus, Pencil, Send,
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { RANK_LIST } from "@/lib/constants";
 import { useLoad } from "@/lib/use-load";
+import { toast } from "sonner";
+import { DISCORD_ID_HELP, parseDiscordId } from "@/lib/discord/id";
 
 interface RecruitRequest {
   id: string;
@@ -149,6 +151,7 @@ export default function AdminRecruitPage() {
         const result = await res.json();
         setImportCount(result.count);
         setImportUpdated(result.updated || 0);
+        if (result.invalid) toast.error(`${result.invalid} row${result.invalid === 1 ? "" : "s"} skipped: the Discord ID was not valid`);
         fetchRequests();
       } else {
         // The route rejects an oversized import and anyone without
@@ -168,6 +171,10 @@ export default function AdminRecruitPage() {
   const handleAddManual = async () => {
     if (!form.discordId) {
       alert("Discord ID is required");
+      return;
+    }
+    if (!parseDiscordId(form.discordId)) {
+      alert(`That is not a valid Discord ID. ${DISCORD_ID_HELP}`);
       return;
     }
     setSaving(true);
@@ -213,6 +220,8 @@ export default function AdminRecruitPage() {
       if (res.ok) {
         setShowEditModal(null);
         fetchRequests();
+      } else {
+        toast.error((await res.json().catch(() => null))?.error ?? "Could not save this recruit");
       }
     } catch (err) {
       console.error(err);

@@ -29,6 +29,15 @@ export interface ChangelogEntry {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: "2026-10-30",
+    title: "Discord IDs",
+    changes: [
+      { type: "fix", text: "Discord posts no longer show a raw <@username> when a record holds a username instead of a Discord ID." },
+      { type: "improvement", text: "The enrollment form, Add Member, member Edit and recruit forms now refuse anything that is not a real Discord ID, and explain how to find yours. Recruit imports skip such rows and say how many." },
+      { type: "improvement", text: "Pending enrollment requests with an invalid Discord ID are flagged before approval." },
+    ],
+  },
+  {
+    date: "2026-10-30",
     title: "Move members between roster sections",
     changes: [
       { type: "feature", text: "Admin → Roster: drag a member by the handle next to their name onto another section. While dragging, a bar at the top lists every section. On a phone or tablet, use Section in the member's Edit form. Their rank stays the same." },

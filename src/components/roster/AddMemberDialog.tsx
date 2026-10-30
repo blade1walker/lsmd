@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { RANK_LIST, ACTIVITY_STATUSES, FTO_ROLES } from "@/lib/constants";
+import { toast } from "sonner";
 
 interface AddMemberDialogProps {
   open: boolean;
@@ -55,6 +56,8 @@ export default function AddMemberDialog({ open, onOpenChange, sections, departme
         onAdd(member);
         setForm(BLANK_FORM);
         onOpenChange(false);
+      } else {
+        toast.error((await res.json().catch(() => null))?.error ?? "Could not add this member");
       }
     } catch (err) {
       console.error("Failed to add member:", err);
