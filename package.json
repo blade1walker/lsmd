@@ -14,6 +14,7 @@
     "db:backfill-promotions": "npx tsx scripts/backfill-promotion-history.ts",
     "db:grant-permissions": "npx tsx scripts/grant-permissions.ts",
     "db:rename-ranks": "npx tsx scripts/rename-ranks.ts",
+    "db:ensure-sections": "npx tsx scripts/ensure-sections.ts",
     "db:check": "npx tsx scripts/db-check.ts",
     "db:copy": "npx tsx scripts/copy-database.ts",
     "db:radio-codes": "npx tsx scripts/update-radio-codes.ts",

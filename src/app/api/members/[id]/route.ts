@@ -22,7 +22,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     const before = await prisma.member.findUnique({
       where: { id },
-      select: { rank: true, activity: true, callSign: true, category: true, discordId: true },
+      select: { rank: true, activity: true, callSign: true, category: true, discordId: true, sectionId: true },
     });
 
     // A promotion candidate: any rank change to a strictly higher weight,
@@ -96,7 +96,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const member = await prisma.member.findUnique({ where: { id } });
     if (!member) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    if (body.rank) {
+    // A new rank brings its usual section. Only a real change: the edit form
+    // resends the rank on every save, which would undo a section picked by hand.
+    if (isRankChange && body.sectionId === undefined) {
       for (const [sectionName, ranks] of Object.entries(SECTION_HINTS)) {
         if (ranks.includes(body.rank)) {
           const section = await prisma.section.findFirst({ where: { name: sectionName } });
@@ -109,6 +111,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     const changedFields = Object.keys(body).filter((k) => k !== "dateOfJoining" && k !== "lastPromotion");
+    const movedSection = !!before && body.sectionId !== undefined && before.sectionId !== body.sectionId;
+    const sectionNames = movedSection
+      ? new Map(
+          (
+            await prisma.section.findMany({
+              where: { id: { in: [before.sectionId, body.sectionId].filter(Boolean) } },
+              select: { id: true, name: true },
+            })
+          ).map((s) => [s.id, s.name])
+        )
+      : null;
     await logAudit({
       action: "update",
       entityType: "Member",
@@ -118,6 +131,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         fields: changedFields.join(", "),
         rank: before && body.rank && before.rank !== body.rank ? `${before.rank} -> ${body.rank}` : null,
         activity: before && body.activity && before.activity !== body.activity ? `${before.activity} -> ${body.activity}` : null,
+        section: sectionNames ? `${sectionNames.get(before!.sectionId ?? "") ?? "none"} -> ${sectionNames.get(body.sectionId) ?? "none"}` : null,
         category: before && body.category !== undefined && before.category !== body.category ? `${before.category ?? "none"} -> ${body.category ?? "none"}` : null,
         callSign: before && body.callSign !== undefined && before.callSign !== body.callSign ? `${before.callSign ?? "none"} -> ${body.callSign ?? "none"}` : null,
       },

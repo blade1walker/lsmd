@@ -99,6 +99,7 @@ try {
   console.log("[deploy-schema] Schema is up to date.");
   grantNewPermissions();
   renameRanks();
+  ensureSections();
   backfillPromotionHistory();
 } catch {
   // `db push` without --accept-data-loss refuses destructive changes rather
@@ -146,6 +147,18 @@ function renameRanks() {
     run("npx tsx scripts/rename-ranks.ts", 60 * 1000);
   } catch {
     console.warn("[deploy-schema] Rank rename failed — run `npm run db:rename-ranks` by hand.");
+  }
+}
+
+/**
+ * Creates roster sections no rank leads to, such as FTP (scripts/ensure-sections.ts).
+ * Never fails the deploy; re-run by hand with `npm run db:ensure-sections`.
+ */
+function ensureSections() {
+  try {
+    run("npx tsx scripts/ensure-sections.ts", 60 * 1000);
+  } catch {
+    console.warn("[deploy-schema] Section setup failed — run `npm run db:ensure-sections` by hand.");
   }
 }
 

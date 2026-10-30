@@ -61,6 +61,8 @@ export default function AdminRosterPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -94,6 +96,57 @@ export default function AdminRosterPage() {
       toast.error(errorMessage(err));
     }
   };
+
+  /** Moves a member to another section. Their rank stays as it is. */
+  const moveMember = async (memberId: string, sectionId: string) => {
+    const from = sections.find((s) => s.members.some((m) => m.id === memberId));
+    const to = sections.find((s) => s.id === sectionId);
+    const member = from?.members.find((m) => m.id === memberId);
+    if (!from || !to || !member || from.id === to.id) return;
+
+    setSections((current) =>
+      current.map((s) => {
+        const others = s.members.filter((m) => m.id !== memberId);
+        return { ...s, members: s.id === sectionId ? [...others, { ...member, sectionId }] : others };
+      })
+    );
+    try {
+      await fetchJson(`/api/members/${memberId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sectionId }),
+      });
+      toast.success(`${member.name} moved to ${to.name}`);
+    } catch (err) {
+      toast.error(errorMessage(err));
+    }
+    fetchData();
+  };
+
+  // Deferred: changing the page during dragstart makes Chrome cancel the drag.
+  const beginDrag = (id: string) => {
+    setTimeout(() => setDraggingId(id), 0);
+  };
+  const endDrag = () => {
+    setDraggingId(null);
+    setDropTarget(null);
+  };
+  const dropZone = (sectionId: string) => ({
+    onDragOver: (e: React.DragEvent) => {
+      if (!draggingId) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      setDropTarget(sectionId);
+    },
+    onDragLeave: (e: React.DragEvent) => {
+      if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDropTarget(null);
+    },
+    onDrop: (e: React.DragEvent) => {
+      e.preventDefault();
+      if (draggingId) moveMember(draggingId, sectionId);
+      endDrag();
+    },
+  });
 
   const handleDelete = async (id: string) => {
     try {
@@ -159,6 +212,7 @@ export default function AdminRosterPage() {
   ];
 
   const allMembers = sections.flatMap((s) => s.members);
+  const draggingMember = allMembers.find((m) => m.id === draggingId);
   const filteredCount = filteredSections.reduce((n, s) => n + s.members.length, 0);
   // The dropdown always includes every managed department name (even ones no
   // member currently has) plus, defensively, any raw dept string already on
@@ -252,8 +306,17 @@ export default function AdminRosterPage() {
       ) : (
         <div className="space-y-8">
           {departmentOptions.length > 0 && <DepartmentMarkLegend />}
+          <p className="text-xs text-gray-500 [@media(pointer:coarse)]:hidden">
+            Drag a member by the handle next to their name to move them to another section. Their rank stays the same.
+          </p>
           {displaySections.map((section) => (
-            <div key={section.id}>
+            <div
+              key={section.id}
+              {...(section.id === LOA_SECTION_ID ? {} : dropZone(section.id))}
+              className={`rounded-xl transition-shadow ${
+                draggingId && dropTarget === section.id ? "ring-2 ring-red-500 ring-offset-4 ring-offset-[#0a0a0f]" : ""
+              }`}
+            >
               <h2 className="font-[family-name:var(--font-oswald)] text-lg font-semibold text-white uppercase mb-3">
                 {section.name} ({section.members.length})
               </h2>
@@ -304,6 +367,9 @@ export default function AdminRosterPage() {
                             onDelete={handleDelete}
                             onPromote={handlePromote}
                             onDemote={handleDemote}
+                            sections={sections}
+                            onDragBegin={beginDrag}
+                            onDragFinish={endDrag}
                           />
                         ))}
                       </React.Fragment>
@@ -313,6 +379,32 @@ export default function AdminRosterPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Every section at once, so a move does not depend on scrolling a long
+          roster or on the target section having anyone in it to show. */}
+      {draggingMember && (
+        <div className="fixed left-1/2 top-4 z-50 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-2 rounded-xl border border-[#1e1e28] bg-[#111118] p-3 shadow-2xl">
+          <span className="px-1 text-xs text-gray-400">Move {draggingMember.name} to</span>
+          {sections.map((s) => {
+            const current = s.members.some((m) => m.id === draggingMember.id);
+            return (
+              <div
+                key={s.id}
+                {...(current ? {} : dropZone(s.id))}
+                className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                  current
+                    ? "border-transparent text-gray-600"
+                    : dropTarget === s.id
+                      ? "border-red-500 bg-red-600 text-white"
+                      : "border-[#2a2a36] bg-white/5 text-white"
+                }`}
+              >
+                {s.name}
+              </div>
+            );
+          })}
         </div>
       )}
 

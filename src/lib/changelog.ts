@@ -28,6 +28,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: "2026-10-30",
+    title: "Move members between roster sections",
+    changes: [
+      { type: "feature", text: "Admin → Roster: drag a member by the handle next to their name onto another section. While dragging, a bar at the top lists every section. On a phone or tablet, use Section in the member's Edit form. Their rank stays the same." },
+      { type: "feature", text: "New FTP section on the roster. It appears on the public roster once it has members." },
+      { type: "fix", text: "Editing a member no longer moves them back to their rank's usual section; only a real rank change does." },
+    ],
+  },
+  {
     date: "2026-10-29",
     title: "Phones and tablets",
     changes: [

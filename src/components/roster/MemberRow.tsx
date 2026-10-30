@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { GripVertical } from "lucide-react";
 import RankInsignia from "@/components/roster/RankInsignia";
 import ActivityPill from "@/components/roster/ActivityPill";
 import { DepartmentMark } from "@/components/roster/DepartmentMark";
@@ -50,6 +51,10 @@ interface MemberRowProps {
   onDelete: (id: string) => void;
   onPromote: (id: string) => void;
   onDemote: (id: string) => void;
+  /** Sections the member can be moved to, from the edit form. */
+  sections?: { id: string; name: string }[];
+  onDragBegin?: (id: string) => void;
+  onDragFinish?: () => void;
 }
 
 export default function MemberRow({
@@ -60,6 +65,9 @@ export default function MemberRow({
   onDelete,
   onPromote,
   onDemote,
+  sections = [],
+  onDragBegin,
+  onDragFinish,
 }: MemberRowProps) {
   const [editing, setEditing] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -75,6 +83,7 @@ export default function MemberRow({
     discordId: member.discordId ?? "",
     stateId: member.stateId ?? "",
     steamId: member.steamId ?? "",
+    sectionId: member.sectionId ?? "",
   });
 
   const standing = new Map(
@@ -101,6 +110,8 @@ export default function MemberRow({
       discordId: editForm.discordId.trim() || null,
       stateId: editForm.stateId.trim() || null,
       steamId: editForm.steamId.trim() || null,
+      // Only when changed: sending it means "keep this section" even if the rank moved.
+      ...(editForm.sectionId !== (member.sectionId ?? "") ? { sectionId: editForm.sectionId || null } : {}),
     });
     setEditing(false);
   };
@@ -198,6 +209,21 @@ export default function MemberRow({
       <tr className="border-b border-[#1e1e1e]/50 bg-red-600/5">
         <td className="pb-3 px-4" colSpan={editColSpan}>
           <div className="flex flex-wrap items-end gap-3">
+            {sections.length > 0 && (
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-gray-500">Section</span>
+                <Select
+                  value={editForm.sectionId}
+                  onChange={(e) => setEditForm((p) => ({ ...p, sectionId: e.target.value }))}
+                  className="h-9 text-sm w-44"
+                >
+                  {!editForm.sectionId && <option value="">No section</option>}
+                  {sections.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </Select>
+              </label>
+            )}
             <label className="flex flex-col gap-1">
               <span className="text-xs text-gray-500">Discord ID</span>
               <Input
@@ -237,6 +263,25 @@ export default function MemberRow({
     <tr className="border-b border-[#1e1e1e]/50 hover:bg-white/5 transition-colors">
       <td className="py-3 px-4">
         <div className="flex items-center gap-3">
+          {/* Only the handle drags, so names and IDs stay selectable. Touch
+              screens have no drag and drop: they use Section in the edit form. */}
+          {onDragBegin && (
+            <span
+              draggable
+              title="Drag to another section"
+              onDragStart={(e) => {
+                e.dataTransfer.effectAllowed = "move";
+                e.dataTransfer.setData("text/plain", member.name);
+                const row = e.currentTarget.closest("tr");
+                if (row) e.dataTransfer.setDragImage(row, 16, 16);
+                onDragBegin(member.id);
+              }}
+              onDragEnd={onDragFinish}
+              className="shrink-0 cursor-grab text-gray-600 hover:text-gray-300 active:cursor-grabbing [@media(pointer:coarse)]:hidden"
+            >
+              <GripVertical className="w-4 h-4" />
+            </span>
+          )}
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-600/80 to-red-600/40 flex items-center justify-center text-[#0a0a0a] font-bold text-xs shrink-0">
             {member.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
           </div>
