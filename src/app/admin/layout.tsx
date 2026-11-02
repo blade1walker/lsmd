@@ -42,6 +42,7 @@ import {
   Award,
   CalendarOff,
   Crown,
+  GitCommit,
 } from "lucide-react";
 import {
   DEPARTMENT_SECTION_PERMISSIONS,
@@ -106,6 +107,7 @@ const navItems: {
   { href: "/admin/messaging", label: "Bot Messaging", icon: MessageSquare, permission: "notifications" },
   { href: "/admin/bot-permissions", label: "Bot Permissions", icon: ShieldCheck, permission: BOT_PERMISSION_SECTION_PERMISSIONS },
   { href: "/admin/audit", label: "Audit Log", icon: ScrollText, permission: "audit.view" },
+  { href: "/admin/deployment", label: "Deployment & Commit", icon: GitCommit, permission: "audit.view" },
   { href: "/admin/changelog", label: "Changelog", icon: History, permission: "changelog.view" },
   { href: "/admin/export", label: "Export", icon: Download, permission: EXPORT_SECTION_PERMISSIONS },
 ];
