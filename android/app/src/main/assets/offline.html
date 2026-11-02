@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <title>Nexus EMS - Offline</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: #0a0a0f;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+      text-align: center;
+    }
+    .badge {
+      width: 72px;
+      height: 72px;
+      background: rgba(220, 38, 38, 0.15);
+      border: 1px solid rgba(220, 38, 38, 0.3);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+    .cross {
+      font-size: 36px;
+      color: #dc2626;
+      font-weight: bold;
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    p {
+      color: #9ca3af;
+      font-size: 14px;
+      max-width: 320px;
+      line-height: 1.5;
+      margin-bottom: 28px;
+    }
+    button {
+      background: #dc2626;
+      color: #ffffff;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:active {
+      background: #b91c1c;
+    }
+  </style>
+</head>
+<body>
+  <div class="badge">
+    <div class="cross">+</div>
+  </div>
+  <h1>Connection Required</h1>
+  <p>The app needs an active internet connection to synchronize with the live Nexus EMS systems.</p>
+  <button onclick="window.location.reload()">Retry Connection</button>
+</body>
+</html>

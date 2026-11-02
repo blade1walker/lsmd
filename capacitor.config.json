@@ -1,0 +1,15 @@
+{
+  "appId": "com.nexus.ems",
+  "appName": "Nexus EMS",
+  "webDir": "public",
+  "server": {
+    "url": "https://nexus-ems.vercel.app",
+    "cleartext": false,
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": true,
+    "backgroundColor": "#0a0a0f"
+  }
+}

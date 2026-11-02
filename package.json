@@ -25,7 +25,10 @@
     "db:migrate-ftp-departments": "npx tsx scripts/migrate-ftp-departments.ts",
     "db:reset": "npx prisma db push --force-reset && npm run db:seed",
     "postinstall": "prisma generate && node scripts/deploy-schema.mjs",
-    "test": "node --import tsx --test \"tests/**/*.test.ts\""
+    "test": "node --import tsx --test \"tests/**/*.test.ts\"",
+    "android:build": "cd android && ./gradlew assembleRelease",
+    "android:bundle": "cd android && ./gradlew bundleRelease",
+    "android:apk": "cd android && ./gradlew assembleDebug"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

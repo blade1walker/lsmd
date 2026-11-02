@@ -1,12 +1,14 @@
 {
-  "name": "EMS Roster",
-  "short_name": "EMS Roster",
-  "description": "Official Personnel Roster of the Emergency Medical Services - Nexus Universe RP",
+  "name": "Nexus EMS",
+  "short_name": "Nexus EMS",
+  "description": "Official Management & Personnel System of the Emergency Medical Services - Nexus Universe RP",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a0a0a",
-  "theme_color": "#0a0a0a",
-  "orientation": "portrait-primary",
+  "display_override": ["standalone", "window-controls-overlay"],
+  "background_color": "#0a0a0f",
+  "theme_color": "#0a0a0f",
+  "orientation": "any",
+  "categories": ["medical", "productivity", "utilities"],
   "icons": [
     {
       "src": "/icon-192.png",

@@ -1,0 +1,81 @@
+name: Build & Release Android App
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "deploy/**"
+      - "bot/**"
+      - "fivem/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-build
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: 17
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Grant Execute Permissions
+        run: chmod +x android/gradlew || true
+
+      - name: Build Android Packages (APK & Google Play Bundle)
+        working-directory: android
+        run: |
+          gradle assembleRelease assembleDebug bundleRelease --no-daemon --stacktrace
+
+      - name: Locate Output Artifacts
+        id: find-artifacts
+        run: |
+          mkdir -p artifacts
+          cp android/app/build/outputs/apk/debug/app-debug.apk artifacts/nexus-ems-debug.apk || true
+          cp android/app/build/outputs/apk/release/app-release-unsigned.apk artifacts/nexus-ems-release.apk || cp android/app/build/outputs/apk/release/app-release.apk artifacts/nexus-ems-release.apk || true
+          cp android/app/build/outputs/bundle/release/app-release.aab artifacts/nexus-ems-playstore.aab || true
+          ls -lh artifacts/
+
+      - name: Upload APKs & AAB as Workflow Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexus-ems-android-builds
+          path: artifacts/
+
+      - name: Publish to GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          short="${GITHUB_SHA::7}"
+          gh release view android-latest >/dev/null 2>&1 || \
+            gh release create android-latest --title "Nexus EMS Android App (Latest)" \
+              --notes "Automated Android APK and Google Play AAB build. Updated automatically on every website push."
+          
+          if [ -f artifacts/nexus-ems-debug.apk ]; then
+            gh release upload android-latest artifacts/nexus-ems-debug.apk --clobber
+          fi
+          if [ -f artifacts/nexus-ems-release.apk ]; then
+            gh release upload android-latest artifacts/nexus-ems-release.apk --clobber
+          fi
+          if [ -f artifacts/nexus-ems-playstore.aab ]; then
+            gh release upload android-latest artifacts/nexus-ems-playstore.aab --clobber
+          fi

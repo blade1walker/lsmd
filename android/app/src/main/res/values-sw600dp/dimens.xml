@@ -1,0 +1,6 @@
+<resources>
+    <!-- Tablet-specific dimensions (sw >= 600dp) -->
+    <dimen name="tablet_padding">24dp</dimen>
+    <dimen name="tablet_sidebar_width">280dp</dimen>
+    <bool name="is_tablet">true</bool>
+</resources>

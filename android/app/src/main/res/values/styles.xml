@@ -1,0 +1,17 @@
+<resources>
+    <!-- Base application theme -->
+    <style name="Theme.NexusEMS" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryDark">@color/background</item>
+        <item name="colorAccent">@color/accent</item>
+        <item name="android:windowBackground">@color/background</item>
+        <item name="android:statusBarColor">@color/background</item>
+        <item name="android:navigationBarColor">@color/background</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+
+    <!-- Splash screen theme shown while WebView initializes -->
+    <style name="Theme.NexusEMS.Splash" parent="Theme.NexusEMS">
+        <item name="android:windowBackground">@drawable/splash_background</item>
+    </style>
+</resources>
