@@ -96,7 +96,10 @@ export async function PATCH(
 
       if (settings.onboardingDM) {
         const inviteLink = settings.botSettings?.stateInvite || process.env.DISCORD_STATE_INVITE || "https://discord.gg/YOUR_INVITE";
-        const welcomeMessage = settings.onboardingDMApprove
+        const template =
+          settings.onboardingDMApprove?.trim() ||
+          "Congratulations, {name}! 🎉\n\nYou have been accepted into the Emergency Medical Services!\n\n**Your Details:**\n• Rank: {rank}\n• Call Sign: {callSign}\n• State ID: {stateId}\n\nJoin our state Discord server to get started:\n{inviteLink}\n\nWelcome aboard! 🚑🚀";
+        const welcomeMessage = template
           .replace(/{name}/g, request.name)
           .replace(/{rank}/g, assignedRank)
           .replace(/{callSign}/g, callSign || "N/A")

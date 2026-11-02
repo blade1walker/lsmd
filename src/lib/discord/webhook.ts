@@ -135,11 +135,16 @@ const WEBHOOK_FALLBACK: Partial<Record<WebhookKind, WebhookKind>> = {
   // Department join applications grew out of the FTP form, so a deployment
   // that only ever configured the FTP webhook keeps posting where it always did.
   department: "ftp",
+  // Onboarding follows recruitment; fallback to recruit channel if not set
+  onboarding: "recruit",
 };
 
 function ownUrl(kind: WebhookKind, settings: NotificationSettings): string {
-  const configured = settings.webhookUrls?.[kind] || (kind === "recruit" ? settings.webhookUrls?.accept : undefined);
-  return (configured || WEBHOOK_ENV[kind] || "").trim();
+  const configured =
+    settings.webhookUrls?.[kind] ||
+    (kind === "recruit" ? settings.webhookUrls?.accept : undefined) ||
+    (kind === "onboarding" ? settings.webhookUrls?.enroll : undefined);
+  return (configured || WEBHOOK_ENV[kind] || process.env.DISCORD_WEBHOOK_URL || "").trim();
 }
 
 /**
@@ -148,12 +153,8 @@ function ownUrl(kind: WebhookKind, settings: NotificationSettings): string {
  * working with nothing filled in — but the settings page is no longer decorative.
  */
 async function resolveWebhookUrl(kind: WebhookKind, settings?: NotificationSettings): Promise<string> {
-  const s = settings ?? (await getNotificationSettings());
-  const own = ownUrl(kind, s);
-  if (own) return own;
-
-  const fallback = WEBHOOK_FALLBACK[kind];
-  return fallback ? ownUrl(fallback, s) : "";
+  const source = await resolveWebhookSource(kind, settings);
+  return source.url;
 }
 
 /** The channel a kind will actually post to, for telling the admin where a test went. */
@@ -166,8 +167,16 @@ export async function resolveWebhookSource(
   if (own) return { url: own, kind };
 
   const fallback = WEBHOOK_FALLBACK[kind];
-  const borrowed = fallback ? ownUrl(fallback, s) : "";
-  return { url: borrowed, kind: borrowed ? fallback! : null };
+  if (fallback) {
+    const borrowed = ownUrl(fallback, s);
+    if (borrowed) return { url: borrowed, kind: fallback };
+  }
+
+  // Fallback to recruit webhook if configured on any channel
+  const recruitFallback = ownUrl("recruit", s);
+  if (recruitFallback) return { url: recruitFallback, kind: "recruit" };
+
+  return { url: "", kind: null };
 }
 
 /**
@@ -313,7 +322,6 @@ async function postToWebhook(webhookUrl: string, embed: Embed, event = "webhook"
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       username: "Nexus EMS HR",
-      avatar_url: "",
       embeds: [
         {
           title: embed.title,
@@ -359,7 +367,7 @@ export async function postToWebhookContent(
     return result;
   }
 
-  const body: Record<string, unknown> = { username: "Nexus EMS HR", avatar_url: "", content: safeMentions(content) };
+  const body: Record<string, unknown> = { username: "Nexus EMS HR", content: safeMentions(content) };
   if (imageUrl) body.embeds = [{ image: { url: imageUrl } }];
 
   const result = await send(webhookUrl, {
@@ -424,6 +432,12 @@ export async function sendDiscordDM(
   if (!isDiscordId(discordId)) {
     const result: SendResult = { ok: false, skipped: "no-target" };
     await logDelivery({ event, channel: "dm", target: discordId || undefined, content: message, result });
+    return result;
+  }
+
+  if (!message || !message.trim()) {
+    const result: SendResult = { ok: false, error: "Cannot send an empty message" };
+    await logDelivery({ event, channel: "dm", target: discordId, content: message, result });
     return result;
   }
 

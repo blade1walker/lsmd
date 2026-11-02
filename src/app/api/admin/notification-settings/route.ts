@@ -122,6 +122,11 @@ export async function PATCH(req: NextRequest) {
       data.botSettings = { ...(settings.botSettings as Record<string, unknown>), ...(data.botSettings as Record<string, unknown>) };
     }
 
+    // Merge webhookUrls so saving one channel from the bot or panel never wipes previously configured webhook URLs
+    if (data.webhookUrls && typeof data.webhookUrls === "object" && settings?.webhookUrls && typeof settings.webhookUrls === "object") {
+      data.webhookUrls = { ...(settings.webhookUrls as Record<string, unknown>), ...(data.webhookUrls as Record<string, unknown>) };
+    }
+
     if (!settings) {
       settings = await prisma.notificationSettings.create({
         data: { id: "singleton", ...data },
