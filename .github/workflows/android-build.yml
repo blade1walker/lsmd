@@ -32,11 +32,14 @@ jobs:
           distribution: "temurin"
           java-version: 17
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.5
+
+      - name: Accept Android SDK Licenses
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Setup Release Keystore
         id: setup-keystore
@@ -57,9 +60,6 @@ jobs:
               -keypass "${{ secrets.ANDROID_KEY_PASSWORD || 'nexus_ems_2026' }}" \
               -dname "CN=Nexus EMS, OU=Medical, O=Nexus Universe RP, L=Los Santos, ST=San Andreas, C=US"
           fi
-
-      - name: Grant Execute Permissions
-        run: chmod +x android/gradlew || true
 
       - name: Build Android Packages (Signed Release APK & Google Play Bundle)
         working-directory: android
