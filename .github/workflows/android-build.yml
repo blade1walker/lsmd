@@ -38,11 +38,36 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
+      - name: Setup Release Keystore
+        id: setup-keystore
+        run: |
+          mkdir -p android/app
+          if [ -n "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
+            echo "Using keystore from GitHub Secret ANDROID_KEYSTORE_BASE64..."
+            echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/release-upload.jks
+          else
+            echo "Generating production upload keystore for Google Play Store..."
+            keytool -genkeypair -v \
+              -keystore android/app/release-upload.jks \
+              -alias "${{ secrets.ANDROID_KEY_ALIAS || 'nexus-ems' }}" \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD || 'nexus_ems_2026' }}" \
+              -keypass "${{ secrets.ANDROID_KEY_PASSWORD || 'nexus_ems_2026' }}" \
+              -dname "CN=Nexus EMS, OU=Medical, O=Nexus Universe RP, L=Los Santos, ST=San Andreas, C=US"
+          fi
+
       - name: Grant Execute Permissions
         run: chmod +x android/gradlew || true
 
-      - name: Build Android Packages (APK & Google Play Bundle)
+      - name: Build Android Packages (Signed Release APK & Google Play Bundle)
         working-directory: android
+        env:
+          KEYSTORE_PATH: "release-upload.jks"
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD || 'nexus_ems_2026' }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS || 'nexus-ems' }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || 'nexus_ems_2026' }}
         run: |
           gradle assembleRelease assembleDebug bundleRelease --no-daemon --stacktrace
 
@@ -51,7 +76,7 @@ jobs:
         run: |
           mkdir -p artifacts
           cp android/app/build/outputs/apk/debug/app-debug.apk artifacts/nexus-ems-debug.apk || true
-          cp android/app/build/outputs/apk/release/app-release-unsigned.apk artifacts/nexus-ems-release.apk || cp android/app/build/outputs/apk/release/app-release.apk artifacts/nexus-ems-release.apk || true
+          cp android/app/build/outputs/apk/release/app-release.apk artifacts/nexus-ems-release.apk || cp android/app/build/outputs/apk/release/app-release-unsigned.apk artifacts/nexus-ems-release.apk || true
           cp android/app/build/outputs/bundle/release/app-release.aab artifacts/nexus-ems-playstore.aab || true
           ls -lh artifacts/
 
@@ -65,7 +90,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          short="${GITHUB_SHA::7}"
           gh release view android-latest >/dev/null 2>&1 || \
             gh release create android-latest --title "Nexus EMS Android App (Latest)" \
               --notes "Automated Android APK and Google Play AAB build. Updated automatically on every website push."
@@ -79,3 +103,15 @@ jobs:
           if [ -f artifacts/nexus-ems-playstore.aab ]; then
             gh release upload android-latest artifacts/nexus-ems-playstore.aab --clobber
           fi
+
+      - name: Publish Directly to Google Play Store (Internal Track)
+        if: ${{ env.HAVE_PLAY_KEY == 'true' }}
+        env:
+          HAVE_PLAY_KEY: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != '' }}
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.nexus.ems
+          releaseFiles: artifacts/nexus-ems-playstore.aab
+          track: internal
+          status: completed

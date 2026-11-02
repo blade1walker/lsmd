@@ -14,15 +14,30 @@ android {
         versionName "1.0.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-
-        // Expose build time & production URL
         buildConfigField "String", "DEFAULT_SERVER_URL", "\"https://nexus-ems.vercel.app\""
+    }
+
+    signingConfigs {
+        release {
+            def keystorePath = System.getenv("KEYSTORE_PATH") ?: "release-upload.jks"
+            def keystoreFile = file(keystorePath)
+            if (keystoreFile.exists()) {
+                storeFile keystoreFile
+                storePassword System.getenv("KEYSTORE_PASSWORD") ?: "nexus_ems_2026"
+                keyAlias System.getenv("KEY_ALIAS") ?: "nexus-ems"
+                keyPassword System.getenv("KEY_PASSWORD") ?: "nexus_ems_2026"
+            }
+        }
     }
 
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            def keystorePath = System.getenv("KEYSTORE_PATH") ?: "release-upload.jks"
+            if (file(keystorePath).exists()) {
+                signingConfig signingConfigs.release
+            }
         }
         debug {
             applicationIdSuffix ".debug"
