@@ -1,0 +1,93 @@
+# Builds the Discord bot on every push to main affecting bot/ and publishes
+# the pre-compiled bundle and version metadata to the `bot-latest` release tag.
+# Any running bot instance with auto-update enabled automatically detects the new
+# release, pulls it, and restarts without manual intervention.
+name: Release Bot
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "bot/**"
+      - ".github/workflows/bot-release.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bot-release
+  cancel-in-progress: true
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: bot/package-lock.json
+
+      - name: Install dependencies
+        working-directory: bot
+        run: npm ci --no-audit --no-fund
+
+      - name: Build TypeScript source
+        working-directory: bot
+        run: npm run build
+
+      - name: Package release bundle & metadata
+        id: pkg
+        run: |
+          mkdir -p "$RUNNER_TEMP/bot-pkg"
+          cp -r bot/dist "$RUNNER_TEMP/bot-pkg/"
+          cp bot/package.json "$RUNNER_TEMP/bot-pkg/"
+          cp bot/package-lock.json "$RUNNER_TEMP/bot-pkg/"
+          cp bot/index.js "$RUNNER_TEMP/bot-pkg/"
+          cp bot/update.bat "$RUNNER_TEMP/bot-pkg/" || true
+          cp bot/update.sh "$RUNNER_TEMP/bot-pkg/" || true
+          cp bot/Dockerfile "$RUNNER_TEMP/bot-pkg/" || true
+          cp bot/.env.example "$RUNNER_TEMP/bot-pkg/" || true
+
+          short="${GITHUB_SHA::7}"
+          RAW_MSG=$(cat << 'EOF'
+          ${{ github.event.head_commit.message }}
+          EOF
+          )
+          CLEAN_MSG=$(echo "$RAW_MSG" | head -n 1 | tr -d '"\r\n' | sed 's/^[ \t]*//;s/[ \t]*$//')
+          if [ -z "$CLEAN_MSG" ]; then CLEAN_MSG="Manual release dispatch"; fi
+
+          AUTHOR="${{ github.event.head_commit.author.name }}"
+          if [ -z "$AUTHOR" ]; then AUTHOR="GitHub Actions"; fi
+
+          cat <<EOF > "$RUNNER_TEMP/bot-pkg/bot-version.json"
+          {
+            "version": "1.2.0",
+            "commit": "$GITHUB_SHA",
+            "shortSha": "$short",
+            "message": "$CLEAN_MSG",
+            "author": "$AUTHOR",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "branch": "main"
+          }
+          EOF
+
+          cp "$RUNNER_TEMP/bot-pkg/bot-version.json" "$RUNNER_TEMP/bot-version.json"
+          echo "$short" > "$RUNNER_TEMP/sha.txt"
+          tar -czf "$RUNNER_TEMP/bot-bundle.tar.gz" -C "$RUNNER_TEMP/bot-pkg" .
+          ls -lh "$RUNNER_TEMP/bot-bundle.tar.gz" "$RUNNER_TEMP/bot-version.json"
+
+      - name: Publish to bot-latest Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view bot-latest >/dev/null 2>&1 ||
+            gh release create bot-latest --prerelease --title "Nexus EMS Bot (Latest)" \
+              --notes "Latest pre-compiled release package of Nexus EMS Discord Bot. Automatically built on every push to main affecting bot/."
+          gh release upload bot-latest "$RUNNER_TEMP/bot-bundle.tar.gz" --clobber
+          gh release upload bot-latest "$RUNNER_TEMP/bot-version.json" --clobber
+          gh release upload bot-latest "$RUNNER_TEMP/sha.txt" --clobber

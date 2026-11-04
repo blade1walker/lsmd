@@ -1,11 +1,11 @@
-// Nexus EMS Bot — entry point.
+// Nexus EMS Bot — entry point & process supervisor.
 //
 // Builds the TypeScript source when there is no compiled copy yet (or the
-// source is newer), then starts the bot — so `npm start` works straight after
-// `npm install`. On the Oracle VM the build is made in advance
-// (deploy/oracle/deploy-bot.sh) and this only starts it.
+// source is newer), then starts the bot. If the bot requests a restart
+// (e.g. after an automatic update) by exiting cleanly with code 0, this supervisor
+// rebuilds if necessary and relaunches automatically.
 import { existsSync, readdirSync, statSync } from "node:fs";
-import { execFileSync } from "node:child_process";
+import { execFileSync, fork } from "node:child_process";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -22,33 +22,75 @@ function newestSource(dir) {
   return newest;
 }
 
-const stale = !existsSync(entry) || (existsSync(join(here, "src")) && newestSource(join(here, "src")) > statSync(entry).mtimeMs);
+function ensureBuild() {
+  const canBuild = existsSync(join(here, "node_modules", "typescript"));
+  const stale = !existsSync(entry) || (existsSync(join(here, "src")) && newestSource(join(here, "src")) > statSync(entry).mtimeMs);
 
-const canBuild = existsSync(join(here, "node_modules", "typescript"));
-
-if (!existsSync(join(here, "node_modules", "discord.js"))) {
-  console.error("\n  Dependencies are not installed. Run `npm install` in this folder first, then `npm start`.\n");
-  process.exit(1);
-}
-
-if (stale && !canBuild && existsSync(entry)) {
-  // An install without the compiler (production dependencies only) runs the built copy.
-  console.warn("[start] src/ looks newer than dist/, but TypeScript is not installed here — running the built copy.");
-} else if (stale) {
-  if (!canBuild) {
-    console.error("\n  The bot has not been built. Run `npm install` (it includes the compiler), then `npm start`.\n");
+  if (!existsSync(join(here, "node_modules", "discord.js"))) {
+    console.error("\n  Dependencies are not installed. Run `npm install` in this folder first, then `npm start`.\n");
     process.exit(1);
   }
-  console.log("Building Nexus EMS Bot…");
-  try {
-    execFileSync(process.execPath, [join(here, "node_modules", "typescript", "bin", "tsc"), "-p", here], { stdio: "inherit" });
-  } catch {
-    console.error("\n  The build failed — see the errors above.\n");
-    process.exit(1);
+
+  if (stale && !canBuild && existsSync(entry)) {
+    console.warn("[start] src/ looks newer than dist/, but TypeScript is not installed here — running the built copy.");
+  } else if (stale) {
+    if (!canBuild) {
+      console.error("\n  The bot has not been built. Run `npm install` (it includes the compiler), then `npm start`.\n");
+      process.exit(1);
+    }
+    console.log("Building Nexus EMS Bot…");
+    try {
+      execFileSync(process.execPath, [join(here, "node_modules", "typescript", "bin", "tsc"), "-p", here], { stdio: "inherit" });
+    } catch {
+      console.error("\n  The build failed — see the errors above.\n");
+      process.exit(1);
+    }
   }
 }
 
-// dotenv reads .env from the working directory; start from the bot's folder
-// so it is found even when started from somewhere else.
 process.chdir(here);
-await import("./dist/index.js");
+
+let activeChild = null;
+let shuttingDown = false;
+
+function launch() {
+  ensureBuild();
+
+  activeChild = fork(entry, {
+    cwd: here,
+    stdio: "inherit",
+    env: process.env,
+  });
+
+  activeChild.on("exit", (code, signal) => {
+    if (shuttingDown) return;
+
+    if (code === 0) {
+      console.log("\n[supervisor] Bot exited cleanly (code 0: update or restart requested). Relaunching in 2s...\n");
+      setTimeout(() => {
+        launch();
+      }, 2000);
+      return;
+    }
+
+    if (signal) {
+      console.log(`\n[supervisor] Bot terminated by signal ${signal}.\n`);
+      process.exit(0);
+    }
+
+    console.error(`\n[supervisor] Bot exited with error code ${code}.\n`);
+    process.exit(code ?? 1);
+  });
+}
+
+for (const sig of ["SIGINT", "SIGTERM"]) {
+  process.on(sig, () => {
+    shuttingDown = true;
+    if (activeChild) {
+      activeChild.kill(sig);
+    }
+    process.exit(0);
+  });
+}
+
+launch();

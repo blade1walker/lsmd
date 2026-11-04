@@ -76,6 +76,13 @@ try {
 const logChannelId = read("LOG_CHANNEL_ID");
 if (logChannelId && !/^\d{15,22}$/.test(logChannelId)) warnings.push(`LOG_CHANNEL_ID "${logChannelId}" is not a channel ID — staff logging is off.`);
 
+const autoUpdate = read("BOT_AUTO_UPDATE").toLowerCase() !== "false";
+const rawInterval = parseInt(read("BOT_AUTO_UPDATE_MINUTES") || "5", 10);
+const autoUpdateIntervalMinutes = isNaN(rawInterval) ? 5 : Math.max(1, Math.min(60, rawInterval));
+const githubRepo = read("GITHUB_REPO") || "blade1walker/lsmd";
+const githubBranch = read("GITHUB_BRANCH") || "main";
+const githubToken = read("GITHUB_TOKEN") || undefined;
+
 export const config = {
   token,
   /** Null means "every server the bot is in". */
@@ -88,6 +95,11 @@ export const config = {
   brandName: read("BOT_BRAND_NAME") || "Los Santos EMS",
   logoUrl: /^https:\/\//.test(read("BOT_LOGO_URL")) ? read("BOT_LOGO_URL") : undefined,
   logChannelId: /^\d{15,22}$/.test(logChannelId) ? logChannelId : undefined,
+  autoUpdate,
+  autoUpdateIntervalMinutes,
+  githubRepo,
+  githubBranch,
+  githubToken,
 };
 
 export const configWarnings = warnings;

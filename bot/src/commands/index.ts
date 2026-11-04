@@ -6,7 +6,21 @@ import { configCommand } from "./config.js";
 import { banner, city, dm, duty, ems } from "./misc.js";
 import { joinlink } from "./joinlink.js";
 import { permissions } from "./permissions.js";
+import { botCommand } from "./bot.js";
 
-export const commands: Command[] = [ems, announce, ...applicationCommands, member, configCommand, joinlink, banner, dm, permissions, duty, city];
+export const commands: Command[] = [
+  ems,
+  botCommand,
+  announce,
+  ...applicationCommands,
+  member,
+  configCommand,
+  joinlink,
+  banner,
+  dm,
+  permissions,
+  duty,
+  city,
+];
 
 export const commandMap = new Map(commands.map((c) => [c.data.name, c]));

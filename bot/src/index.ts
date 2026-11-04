@@ -8,6 +8,7 @@ import { startJoinLink } from "./joinlink.js";
 import { api } from "./api.js";
 import { EPHEMERAL, failure, respondError } from "./ui.js";
 import { canUse, canUseFresh, grantsProblem, startPermissions } from "./permissions.js";
+import { checkPostUpdate, startAutoUpdater } from "./updater.js";
 
 /**
  * Nexus EMS Bot.
@@ -88,6 +89,11 @@ function createClient(withMembers: boolean) {
     if (!config.websiteProblem) startScheduler(ready);
     if (!config.websiteProblem) startPermissions(ready);
     await startJoinLink(ready);
+
+    // Auto-update checking and post-restart notifications
+    await checkPostUpdate(ready);
+    startAutoUpdater(ready);
+
     console.log("[ready] Nexus EMS Bot is running.");
   });
 
