@@ -15,7 +15,7 @@ import {
 import { api } from "../api.js";
 import { customId, type Command } from "../command.js";
 import { RANKS, invalidateRoster } from "../data.js";
-import { discordTime } from "../time.js";
+import { discordTime, formatIST } from "../time.js";
 import { COLORS, EPHEMERAL, actorOf, clip, embed, failure, respondError, statusBadge, success } from "../ui.js";
 import { staffLog } from "../log.js";
 
@@ -131,7 +131,7 @@ function detailEmbed(q: Queue, row: Row): EmbedBuilder {
     .setTitle(`${q.label} · ${clip(q.title(row), 200)}`)
     .addFields(
       { name: "Status", value: statusBadge(row.status), inline: true },
-      { name: "Submitted", value: discordTime(row.createdAt, "R"), inline: true },
+      { name: "Submitted", value: `${discordTime(row.createdAt, "R")}\n\`${formatIST(row.createdAt)}\``, inline: true },
       ...q.fields(row)
     )
     .setFooter({ text: `ID ${row.id}` });

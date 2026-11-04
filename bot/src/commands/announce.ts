@@ -23,7 +23,7 @@ import {
   mentionText,
   type Announcement,
 } from "../announcements.js";
-import { discordTime, parseWhen } from "../time.js";
+import { discordTime, formatIST, parseWhen } from "../time.js";
 import { COLORS, EPHEMERAL, actorOf, clip, embed, failure, respondError, statusBadge, success } from "../ui.js";
 import { staffLog } from "../log.js";
 import { wakeScheduler } from "../scheduler.js";
@@ -191,7 +191,7 @@ function describe(a: Announcement) {
       { name: "Ping", value: mentionText(a.mention) || "None", inline: true },
       {
         name: a.status === "Sent" ? "Sent" : "Scheduled for",
-        value: `${discordTime(a.sentAt ?? a.scheduledFor)} (${discordTime(a.sentAt ?? a.scheduledFor, "R")})`,
+        value: `${discordTime(a.sentAt ?? a.scheduledFor)} (${discordTime(a.sentAt ?? a.scheduledFor, "R")})\n\`${formatIST(a.sentAt ?? a.scheduledFor)}\``,
         inline: true,
       },
       { name: "Repeats", value: REPEAT_LABEL[a.repeat], inline: true },

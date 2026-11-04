@@ -98,3 +98,18 @@ export function parseWhen(input: string, timeZone = config.timezone): Date | nul
 export function discordTime(date: Date | string, style: "F" | "f" | "R" | "d" | "t" = "F") {
   return `<t:${Math.floor(new Date(date).getTime() / 1000)}:${style}>`;
 }
+
+/** Formats an instant into a clean human-readable Indian Standard Time (IST) string. */
+export function formatIST(date: Date | string): string {
+  return (
+    new Intl.DateTimeFormat("en-IN", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    }).format(new Date(date)) + " IST"
+  );
+}

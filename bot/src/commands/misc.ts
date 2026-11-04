@@ -3,7 +3,7 @@ import { api } from "../api.js";
 import { config } from "../config.js";
 import type { Command } from "../command.js";
 import { members } from "../data.js";
-import { discordTime } from "../time.js";
+import { discordTime, formatIST } from "../time.js";
 import { COLORS, EPHEMERAL, actorOf, clip, embed, failure, respondError, success } from "../ui.js";
 import { staffLog } from "../log.js";
 import { pendingCounts } from "./applications.js";
@@ -140,7 +140,7 @@ export const duty: Command = {
         .setTitle(status.isClockedIn ? "🟢  On duty" : "⚫  Off duty")
         .setDescription(`${me.callSign ? `**[${me.callSign}]** ` : ""}${me.name} · ${me.rank}`)
         .addFields(
-          ...(status.isClockedIn && status.clockInAt ? [{ name: "Since", value: discordTime(status.clockInAt, "R"), inline: true }] : []),
+          ...(status.isClockedIn && status.clockInAt ? [{ name: "Since", value: `${discordTime(status.clockInAt, "R")}\n\`${formatIST(status.clockInAt)}\``, inline: true }] : []),
           { name: "Today", value: hours(status.todayTotal ?? 0), inline: true }
         );
       await interaction.editReply({ embeds: [e] });
@@ -278,7 +278,7 @@ export const ems: Command = {
               .addFields(
                 { name: "Discord gateway", value: `${Math.round(interaction.client.ws.ping)} ms`, inline: true },
                 { name: "Website API", value: site, inline: true },
-                { name: "Online since", value: discordTime(new Date(Date.now() - (interaction.client.uptime ?? 0)), "R"), inline: true }
+                { name: "Online since", value: `${discordTime(new Date(Date.now() - (interaction.client.uptime ?? 0)), "R")}\n\`${formatIST(new Date(Date.now() - (interaction.client.uptime ?? 0)))}\``, inline: true }
               ),
           ],
         });
