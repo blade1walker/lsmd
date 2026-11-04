@@ -134,7 +134,7 @@ function createClient(withMembers: boolean) {
         else await command.select?.(interaction, action, payload);
       }
     } catch (err) {
-      if (interaction.isRepliable()) await respondError(interaction, err);
+      if (interaction.isRepliable() && !interaction.replied) await respondError(interaction, err);
       else console.error(err);
     }
   });

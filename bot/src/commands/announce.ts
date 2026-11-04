@@ -206,7 +206,7 @@ function describe(a: Announcement) {
 
 async function checkChannel(interaction: ChatInputCommandInteraction, mention: string) {
   const channel = interaction.options.getChannel("channel", true);
-  const resolved = (await interaction.guild?.channels.fetch(channel.id).catch(() => null)) as GuildBasedChannel | null;
+  const resolved = (interaction.guild?.channels.cache.get(channel.id) ?? (await interaction.guild?.channels.fetch(channel.id).catch(() => null))) as GuildBasedChannel | null;
   if (!resolved) return { error: "The bot cannot see that channel." };
   const blocked = cannotPost(resolved, mention);
   return blocked ? { error: blocked } : { channelId: channel.id };
