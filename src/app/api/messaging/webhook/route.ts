@@ -43,7 +43,7 @@ const KIND_LABELS: Record<WebhookKind, string> = {
  * name a target the send route can resolve for itself.
  */
 export async function GET() {
-  const auth = await requireAuth("notifications");
+  const auth = await requireAuth(["notifications", "bot.permissions.view", "bot.permissions.manage"]);
   if (isDenied(auth)) return auth.error;
 
   try {
@@ -120,7 +120,7 @@ async function resolveTarget(
  * automated posts use, so it lands in the delivery log alongside them.
  */
 export async function POST(req: NextRequest) {
-  const auth = await requireAuth("notifications");
+  const auth = await requireAuth(["notifications", "bot.permissions.manage"]);
   if (isDenied(auth)) return auth.error;
 
   try {

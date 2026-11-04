@@ -3,7 +3,7 @@
   "appName": "Nexus EMS",
   "webDir": "public",
   "server": {
-    "url": "https://nexus-ems.vercel.app",
+    "url": "https://lsmd.tech",
     "cleartext": false,
     "androidScheme": "https"
   },

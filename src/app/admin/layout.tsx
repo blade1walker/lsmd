@@ -104,7 +104,7 @@ const navItems: {
   { href: "/admin/signoffs", label: "Sign-offs", icon: GraduationCap, permission: "training.signoff.manage" },
   { href: "/admin/notification-settings", label: "Notify Settings", icon: Settings, permission: "notifications" },
   { href: "/admin/notifications", label: "Notifications", icon: Bell, permission: "notifications" },
-  { href: "/admin/messaging", label: "Bot Messaging", icon: MessageSquare, permission: "notifications" },
+  { href: "/admin/messaging", label: "Bot Messaging", icon: MessageSquare, permission: ["notifications", ...BOT_PERMISSION_SECTION_PERMISSIONS] },
   { href: "/admin/bot-permissions", label: "Bot Permissions", icon: ShieldCheck, permission: BOT_PERMISSION_SECTION_PERMISSIONS },
   { href: "/admin/audit", label: "Audit Log", icon: ScrollText, permission: "audit.view" },
   { href: "/admin/deployment", label: "Deployment & Commit", icon: GitCommit, permission: "audit.view" },

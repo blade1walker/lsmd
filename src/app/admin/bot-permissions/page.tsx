@@ -30,6 +30,11 @@ export default function BotPermissionsPage() {
   const canManage =
     !!session?.user &&
     (session.user.isSuperAdmin || (session.user.permissions ?? []).includes("bot.permissions.manage"));
+  const canView =
+    !!session?.user &&
+    (session.user.isSuperAdmin ||
+      (session.user.permissions ?? []).includes("bot.permissions.view") ||
+      (session.user.permissions ?? []).includes("bot.permissions.manage"));
 
   const [grants, setGrants] = useState<Grant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -113,6 +118,16 @@ export default function BotPermissionsPage() {
       </div>
     );
   }
+  if (!loading && !canView) {
+    return (
+      <div className="rounded-xl border border-[#1e1e28] bg-card p-8 text-center text-gray-400">
+        <ShieldCheck className="mx-auto mb-3 h-8 w-8 text-gray-500" />
+        <h2 className="text-lg font-semibold text-white">Access Denied</h2>
+        <p className="mt-1 text-sm text-gray-500">You need the &quot;bot.permissions.view&quot; or &quot;bot.permissions.manage&quot; permission to view this page.</p>
+      </div>
+    );
+  }
+
   if (error) return <ErrorState title="Failed to load bot permissions" message={error} onRetry={load} />;
 
   return (

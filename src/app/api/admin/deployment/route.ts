@@ -41,17 +41,20 @@ function getLocalGitCommit() {
     const branch = execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf8", timeout: 1500 }).trim();
     return { sha, shortSha, message, author, date, branch };
   } catch {
-    try {
-      const sha = execSync("git --git-dir=D:/lsmd/.git log -1 --pretty=%H", { encoding: "utf8", timeout: 1500 }).trim();
-      const shortSha = sha.slice(0, 7);
-      const message = execSync("git --git-dir=D:/lsmd/.git log -1 --pretty=%s", { encoding: "utf8", timeout: 1500 }).trim();
-      const author = execSync("git --git-dir=D:/lsmd/.git log -1 --pretty=%an", { encoding: "utf8", timeout: 1500 }).trim();
-      const date = execSync("git --git-dir=D:/lsmd/.git log -1 --pretty=%cd --date=iso", { encoding: "utf8", timeout: 1500 }).trim();
-      const branch = "main";
-      return { sha, shortSha, message, author, date, branch };
-    } catch {
-      return null;
+    for (const dir of ["/opt/lsmd/repo", "D:/lsmd"]) {
+      try {
+        const sha = execSync(`git -C ${dir} rev-parse HEAD`, { encoding: "utf8", timeout: 1500 }).trim();
+        const shortSha = sha.slice(0, 7);
+        const message = execSync(`git -C ${dir} log -1 --pretty=%s`, { encoding: "utf8", timeout: 1500 }).trim();
+        const author = execSync(`git -C ${dir} log -1 --pretty=%an`, { encoding: "utf8", timeout: 1500 }).trim();
+        const date = execSync(`git -C ${dir} log -1 --pretty=%cd --date=iso`, { encoding: "utf8", timeout: 1500 }).trim();
+        const branch = execSync(`git -C ${dir} rev-parse --abbrev-ref HEAD`, { encoding: "utf8", timeout: 1500 }).trim();
+        return { sha, shortSha, message, author, date, branch };
+      } catch {
+        // try next
+      }
     }
+    return null;
   }
 }
 

@@ -50,6 +50,12 @@ const PERMISSION_GROUP_LABELS: Record<string, string> = {
   interviews: "Promotion & Interview",
   tests: "Tests & Quizzes",
   ranks: "Ranks & Insignia",
+  bot: "Discord Bot Permissions",
+  announcements: "Bot Announcements",
+  fivem: "FiveM City Link",
+  duty: "Duty Board",
+  activity: "Activity Tracking",
+  loa: "Leave of Absence (LOA)",
 };
 
 /**

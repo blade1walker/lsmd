@@ -62,6 +62,11 @@ export const ROLE_PRESETS: RolePreset[] = [
       // The LOA section: who is on leave, placing members on leave by hand.
       "loa.view",
       "loa.manage",
+      "bot.permissions.view",
+      "bot.permissions.manage",
+      "announcements.view",
+      "announcements.manage",
+      "notifications",
     ],
     aliases: ["HR Assistant"],
   },
@@ -101,6 +106,11 @@ export const ROLE_PRESETS: RolePreset[] = [
       "tests.grade",
       "loa.view",
       "loa.manage",
+      "bot.permissions.view",
+      "bot.permissions.manage",
+      "announcements.view",
+      "announcements.manage",
+      "notifications",
     ],
   },
   {

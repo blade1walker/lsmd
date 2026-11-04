@@ -13,7 +13,7 @@ import { upsertThread } from "@/lib/discord/dm-threads";
  * "what has the bot been sending, and to whom".
  */
 export async function GET(req: NextRequest) {
-  const auth = await requireAuth("notifications");
+  const auth = await requireAuth(["notifications", "bot.permissions.view", "bot.permissions.manage"]);
   if (isDenied(auth)) return auth.error;
 
   try {
@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
 
 /** Opens a conversation with someone the bot has never written to yet. */
 export async function POST(req: NextRequest) {
-  const auth = await requireAuth("notifications");
+  const auth = await requireAuth(["notifications", "bot.permissions.manage"]);
   if (isDenied(auth)) return auth.error;
 
   try {

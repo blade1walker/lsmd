@@ -41,7 +41,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean isTablet = false;
 
     // The live production URL of the Nexus EMS website
-    private String serverUrl = "https://nexus-ems.vercel.app";
+    private String serverUrl = "https://lsmd.tech";
     private static final String OFFLINE_URL = "file:///android_asset/offline.html";
 
     @Override
@@ -204,7 +204,7 @@ public class MainActivity extends AppCompatActivity {
             String host = uri.getHost();
 
             // Keep internal app navigation within WebView
-            if (host != null && (host.contains("vercel.app") || host.contains("nexus") || host.contains("localhost"))) {
+            if (host != null && (host.contains("lsmd.tech") || host.contains("nexus") || host.contains("localhost") || host.contains("vercel.app"))) {
                 return false;
             }
 

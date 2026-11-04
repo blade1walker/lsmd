@@ -20,7 +20,7 @@ const BATCH = 20;
  * them, so refreshing on demand is the honest version of "check for replies".
  */
 export async function POST() {
-  const auth = await requireAuth("notifications");
+  const auth = await requireAuth(["notifications", "bot.permissions.manage"]);
   if (isDenied(auth)) return auth.error;
 
   try {

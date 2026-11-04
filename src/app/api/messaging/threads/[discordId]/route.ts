@@ -23,7 +23,7 @@ async function loadThread(discordId: string) {
  * showing when Discord is unreachable or the bot token is missing.
  */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ discordId: string }> }) {
-  const auth = await requireAuth("notifications");
+  const auth = await requireAuth(["notifications", "bot.permissions.view", "bot.permissions.manage"]);
   if (isDenied(auth)) return auth.error;
 
   try {
@@ -57,7 +57,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ disc
 
 /** Sends a DM as the bot and appends it to the transcript. */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ discordId: string }> }) {
-  const auth = await requireAuth("notifications");
+  const auth = await requireAuth(["notifications", "bot.permissions.manage"]);
   if (isDenied(auth)) return auth.error;
 
   try {
