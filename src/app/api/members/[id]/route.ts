@@ -7,7 +7,8 @@ import { DISCORD_ID_HELP, parseDiscordId } from "@/lib/discord/id";
 import { SECTION_HINTS, getRankWeight } from "@/lib/constants";
 import { getNotificationSettings, postToPromotionWebhook, postToCallsignWebhook, renderTemplate } from "@/lib/discord/webhook";
 import { removeFtpDiscordRole } from "@/lib/discord/roles";
-import { setLoaRole } from "@/lib/loa/role";
+import { setLoaRole, setLoaNickname } from "@/lib/loa/role";
+import { applyLoaPrefix, removeLoaPrefix } from "@/lib/loa";
 import { RUNNING_LOA } from "@/lib/loa/server";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -157,13 +158,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     // whatever leave was still running, so the LOA section does not go on
     // listing them; moving them onto it gives the EMS LOA role straight away.
     if (before && before.activity !== member.activity && (before.activity === "LOA" || member.activity === "LOA")) {
+      const onLeave = member.activity === "LOA";
       if (before.activity === "LOA") {
         await prisma.lOA.updateMany({
           where: { memberId: id, status: { in: [...RUNNING_LOA] } },
           data: { status: "Ended", endedAt: new Date(), endedBy: actorLabel(auth.access) },
         });
       }
-      await setLoaRole(member.discordId, member.activity === "LOA");
+      const currentName = member.name;
+      if (onLeave && !/^loa\s+/i.test(currentName)) {
+        await prisma.member.update({ where: { id }, data: { name: applyLoaPrefix(currentName) } });
+      } else if (!onLeave && /^loa\s+/i.test(currentName)) {
+        await prisma.member.update({ where: { id }, data: { name: removeLoaPrefix(currentName) } });
+      }
+      await setLoaNickname(member.discordId, onLeave);
+      await setLoaRole(member.discordId, onLeave);
     }
 
     // Promotion History. Written for every rank change this request won — up

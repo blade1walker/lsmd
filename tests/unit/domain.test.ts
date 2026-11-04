@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { parseCallInput } from "@/lib/calls";
 import { parseUnitStatus } from "@/lib/duty-board";
 import { parseActivityPeriod } from "@/lib/activity";
-import { dayCount, daysBetween } from "@/lib/loa";
+import { dayCount, daysBetween, applyLoaPrefix, removeLoaPrefix } from "@/lib/loa";
 import { groupByRank, matchesFilters, parseRosterFilters, EMPTY_FILTERS, type RosterMember } from "@/lib/roster";
 
 const validCall = {
@@ -45,6 +45,17 @@ test("leave day counts", () => {
   assert.equal(daysBetween("2026-01-01T00:00:00Z", "2026-01-04T12:00:00Z"), 3);
   assert.equal(dayCount(0), "today");
   assert.equal(dayCount(1), "1 day");
+});
+
+test("LOA name prefix addition and restoration", () => {
+  assert.equal(applyLoaPrefix("John Doe"), "loa John Doe");
+  assert.equal(applyLoaPrefix("loa John Doe"), "loa John Doe");
+  assert.equal(applyLoaPrefix("LOA John Doe"), "LOA John Doe");
+  assert.equal(applyLoaPrefix("[101] John"), "loa [101] John");
+  assert.equal(removeLoaPrefix("loa John Doe"), "John Doe");
+  assert.equal(removeLoaPrefix("LOA John Doe"), "John Doe");
+  assert.equal(removeLoaPrefix("loa [101] John"), "[101] John");
+  assert.equal(removeLoaPrefix("John Doe"), "John Doe");
 });
 
 test("roster filters drop anything they do not recognise", () => {

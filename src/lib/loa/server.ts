@@ -1,7 +1,8 @@
 import { prisma } from "../db/prisma";
 import type { LOA, Member } from "@/generated/prisma/client";
 import { getNotificationSettings, postToLOAWebhook, sendDiscordDM } from "../discord/webhook";
-import { setLoaRole, type RoleChange } from "./role";
+import { setLoaRole, setLoaNickname, type RoleChange } from "./role";
+import { applyLoaPrefix, removeLoaPrefix } from "./index";
 
 /**
  * Leave of Absence lifecycle, shared by every way a member goes on or comes
@@ -62,13 +63,26 @@ export async function announceLoaApproved(loa: LoaWithMember, title = "LOA Appro
   }
 }
 
-/** Puts the member on leave on the roster and gives them the EMS LOA role. */
+/** Puts the member on leave on the roster, adds "loa " prefix to their name, and gives them the EMS LOA role. */
 export async function beginLeave(memberId: string): Promise<RoleChange> {
+  const current = await prisma.member.findUnique({
+    where: { id: memberId },
+    select: { name: true, discordId: true },
+  });
+  if (!current) return { ok: true, skipped: "not-in-server" };
+
+  const newName = applyLoaPrefix(current.name);
+
   const member = await prisma.member.update({
     where: { id: memberId },
-    data: { activity: "LOA" },
+    data: {
+      activity: "LOA",
+      name: newName,
+    },
     select: { discordId: true },
   });
+
+  await setLoaNickname(member.discordId, true);
   return setLoaRole(member.discordId, true);
 }
 
@@ -86,16 +100,28 @@ export async function endLeave(loaId: string, ending: LoaEnding, endedBy: string
   return returnFromLeave(loa.memberId);
 }
 
-/** Back from leave, if no other leave is still running for them. */
+/** Back from leave, if no other leave is still running for them. Restores original name (removes "loa " prefix). */
 export async function returnFromLeave(memberId: string): Promise<RoleChange> {
   const stillRunning = await prisma.lOA.count({ where: { memberId, status: { in: [...RUNNING_LOA] } } });
   if (stillRunning > 0) return { ok: true };
 
-  const member = await prisma.member.findUnique({ where: { id: memberId }, select: { activity: true, discordId: true } });
+  const member = await prisma.member.findUnique({
+    where: { id: memberId },
+    select: { activity: true, name: true, discordId: true },
+  });
   if (!member) return { ok: true };
-  if (member.activity === "LOA") {
-    await prisma.member.update({ where: { id: memberId }, data: { activity: "Active" } });
-  }
+
+  const originalName = removeLoaPrefix(member.name);
+
+  await prisma.member.update({
+    where: { id: memberId },
+    data: {
+      ...(member.activity === "LOA" ? { activity: "Active" } : {}),
+      name: originalName,
+    },
+  });
+
+  await setLoaNickname(member.discordId, false);
   return setLoaRole(member.discordId, false);
 }
 

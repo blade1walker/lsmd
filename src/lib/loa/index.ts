@@ -74,3 +74,18 @@ export function dayCount(days: number): string {
 }
 
 export const LOA_LIMITS = { reason: 500, notes: 1000 } as const;
+
+/** Adds the "loa " prefix to a member's name or nickname if not already prefixed. */
+export function applyLoaPrefix(name: string): string {
+  const trimmed = (name ?? "").trim();
+  if (!trimmed) return "loa";
+  if (/^loa\s+/i.test(trimmed)) return trimmed;
+  return `loa ${trimmed}`;
+}
+
+/** Removes the "loa " prefix from a member's name or nickname, restoring the original name. */
+export function removeLoaPrefix(name: string): string {
+  const trimmed = (name ?? "").trim();
+  if (!trimmed) return "";
+  return trimmed.replace(/^loa\s+/i, "").trim();
+}

@@ -2,6 +2,7 @@ import { prisma } from "../db/prisma";
 import type { LoaSettings, Prisma } from "@/generated/prisma/client";
 import { discordRest } from "../discord/roles";
 import { resolveBotToken } from "../discord/webhook";
+import { applyLoaPrefix, removeLoaPrefix } from "./index";
 
 /**
  * The "EMS LOA" Discord role: held by every member while they are on leave.
@@ -144,6 +145,53 @@ export async function setLoaRole(discordId: string | null | undefined, onLeave: 
   }
 }
 
+/**
+ * Updates member's Discord server nickname with "loa " prefix when going on leave,
+ * and strips "loa " prefix restoring the original nickname when leave ends.
+ */
+export async function setLoaNickname(discordId: string | null | undefined, onLeave: boolean): Promise<boolean> {
+  try {
+    if (!snowflake(discordId)) return false;
+    const settings = await ensureLoaSettings();
+    const guildId = loaGuildId(settings);
+    if (!guildId || !(await resolveBotToken())) return false;
+
+    // Fetch guild member from Discord to inspect current nickname
+    const res = await discordRest<{ nick?: string | null; user?: { username?: string; global_name?: string } }>(
+      `/guilds/${guildId}/members/${discordId}`
+    );
+    if (!res.ok || !res.data) return false;
+
+    const currentNick = res.data.nick || "";
+    const baseName = currentNick || res.data.user?.global_name || res.data.user?.username || "";
+    if (!baseName) return false;
+
+    if (onLeave) {
+      if (!/^loa\s+/i.test(baseName)) {
+        const targetNick = applyLoaPrefix(baseName).slice(0, 32);
+        await discordRest(`/guilds/${guildId}/members/${discordId}`, {
+          method: "PATCH",
+          body: { nick: targetNick },
+          reason: AUDIT_REASON,
+        });
+      }
+    } else {
+      if (/^loa\s+/i.test(currentNick)) {
+        const restoredNick = removeLoaPrefix(currentNick);
+        await discordRest(`/guilds/${guildId}/members/${discordId}`, {
+          method: "PATCH",
+          body: { nick: restoredNick || null },
+          reason: AUDIT_REASON,
+        });
+      }
+    }
+    return true;
+  } catch (err) {
+    console.warn("[loa] nickname update warning:", err);
+    return false;
+  }
+}
+
 export interface LoaRoleSyncSummary {
   ranAt: string;
   ranBy: string;
@@ -252,13 +300,24 @@ export async function syncAllLoaRoles(ranBy: string): Promise<LoaRoleSyncSummary
       method: give ? "PUT" : "DELETE",
       reason: AUDIT_REASON,
     });
-    if (res.ok) (give ? summary.added : summary.removed).push(label(m));
+    if (res.ok) {
+      (give ? summary.added : summary.removed).push(label(m));
+      await setLoaNickname(m.discordId, give);
+    }
     else if (res.code === 10007) summary.skipped.push({ name: label(m), reason: "Not in the Discord server" });
     else summary.failed.push({ name: label(m), reason: res.error ?? "Discord refused" });
   };
 
   for (const m of members) {
     if (m.activity === "LOA" && !snowflake(m.discordId)) summary.skipped.push({ name: label(m), reason: "No Discord ID on the roster" });
+    
+    // Also sync the database member name prefix
+    const onLeave = m.activity === "LOA";
+    if (onLeave && !/^loa\s+/i.test(m.name)) {
+      await prisma.member.update({ where: { id: m.id }, data: { name: applyLoaPrefix(m.name) } });
+    } else if (!onLeave && /^loa\s+/i.test(m.name)) {
+      await prisma.member.update({ where: { id: m.id }, data: { name: removeLoaPrefix(m.name) } });
+    }
   }
 
   const holders = await roleHolders(role.guildId, role.roleId);
