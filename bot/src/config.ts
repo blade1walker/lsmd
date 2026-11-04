@@ -1,6 +1,7 @@
-import "dotenv/config";
+import dotenv from "dotenv";
 import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 /**
  * Settings, read once from the environment (or a .env file beside package.json).
@@ -11,6 +12,30 @@ import { join } from "node:path";
  * bot refusing to run.
  */
 
+const here = dirname(fileURLToPath(import.meta.url));
+
+// Load .env from multiple candidate paths (cwd, bot root, parent dir, Pterodactyl/CloudLaag /home/container, Oracle VM)
+const envCandidates = [
+  join(process.cwd(), ".env"),
+  join(here, ".env"),
+  join(here, "..", ".env"),
+  join(here, "..", "..", ".env"),
+  join(process.cwd(), "bot.env"),
+  join(here, "bot.env"),
+  join(here, "..", "bot.env"),
+  "/home/container/.env",
+  "/home/container/bot/.env",
+  "/opt/lsmd/bot.env",
+];
+
+let loadedEnvPath: string | null = null;
+for (const p of envCandidates) {
+  if (existsSync(p)) {
+    dotenv.config({ path: p });
+    if (!loadedEnvPath) loadedEnvPath = p;
+  }
+}
+
 function read(name: string): string {
   return (process.env[name] ?? "").trim().replace(/^["']|["']$/g, "").trim();
 }
@@ -20,21 +45,43 @@ function cleanToken(raw: string) {
   return raw.replace(/^Bot\s+/i, "").trim();
 }
 
-const token = cleanToken(read("DISCORD_TOKEN"));
+// Support DISCORD_TOKEN, DISCORD_BOT_TOKEN, BOT_TOKEN, or TOKEN (standard across hosting panels)
+const rawToken =
+  read("DISCORD_TOKEN") ||
+  read("DISCORD_BOT_TOKEN") ||
+  read("BOT_TOKEN") ||
+  read("TOKEN") ||
+  read("APPLICATION_TOKEN");
+
+const token = cleanToken(rawToken);
 if (!token) {
-  const envPath = join(process.cwd(), ".env");
-  const where = existsSync(envPath)
-    ? `  ${envPath} exists, but DISCORD_TOKEN in it is empty.`
-    : `  There is no .env file in ${process.cwd()}, and DISCORD_TOKEN is not in the environment.`;
   console.error(
     [
       "",
+      "==================================================================",
       "  Nexus EMS Bot cannot start: DISCORD_TOKEN is not set.",
-      where,
+      "==================================================================",
+      loadedEnvPath
+        ? `  Found env file at: ${loadedEnvPath}, but DISCORD_TOKEN is empty.`
+        : `  No .env file found in ${process.cwd()} or candidate directories.`,
       "",
-      "  On the Oracle VM: sudo -u lsmd nano /opt/lsmd/bot.env, then sudo systemctl restart lsmd-bot.",
-      "  Elsewhere: copy .env.example to .env (next to package.json) and paste the token after DISCORD_TOKEN=",
-      "  (Developer Portal → your application → Bot → Reset Token).",
+      "  HOW TO FIX ON CLOUDLAAG / PTERODACTYL PANEL:",
+      "  Option 1 (Create .env file via File Manager):",
+      "    1. Open CloudLaag panel -> File Manager.",
+      "    2. Click 'New File' and name it '.env' (in the same folder as package.json).",
+      "    3. Paste your configuration:",
+      "       DISCORD_TOKEN=your_token_here",
+      "       WEBSITE_URL=https://lsmd.tech",
+      "       TIMEZONE=Asia/Kolkata",
+      "    4. Save Content and restart the server.",
+      "",
+      "  Option 2 (Set Startup Variables):",
+      "    1. Open CloudLaag panel -> Startup tab.",
+      "    2. Find the DISCORD_TOKEN or BOT_TOKEN variable.",
+      "    3. Paste your token, then restart the server.",
+      "",
+      "  Get your token at: https://discord.com/developers/applications",
+      "==================================================================",
       "",
     ].join("\n")
   );
@@ -43,25 +90,36 @@ if (!token) {
 
 const warnings: string[] = [];
 
-const guildId = read("DISCORD_GUILD_ID");
-if (guildId && !/^\d{15,22}$/.test(guildId)) {
-  warnings.push(`DISCORD_GUILD_ID "${guildId}" is not a server ID — ignoring it and using every server the bot is in.`);
+const rawGuildId =
+  read("DISCORD_GUILD_ID") ||
+  read("GUILD_ID") ||
+  read("SERVER_ID");
+
+if (rawGuildId && !/^\d{15,22}$/.test(rawGuildId)) {
+  warnings.push(`DISCORD_GUILD_ID "${rawGuildId}" is not a server ID — ignoring it and using every server the bot is in.`);
+}
+const guildId = /^\d{15,22}$/.test(rawGuildId) ? rawGuildId : null;
+
+// Default to https://lsmd.tech so CloudLaag deployments connect to live production out of the box
+let websiteUrl = (
+  read("WEBSITE_URL") ||
+  read("SITE_URL") ||
+  "https://lsmd.tech"
+).replace(/\/+$/, "");
+
+if (websiteUrl && !/^https?:\/\//.test(websiteUrl)) {
+  websiteUrl = `https://${websiteUrl}`;
 }
 
-let websiteUrl = read("WEBSITE_URL").replace(/\/+$/, "");
-if (websiteUrl && !/^https?:\/\//.test(websiteUrl)) websiteUrl = `https://${websiteUrl}`;
 const apiKey = read("NEXUS_BOT_API_KEY");
 
-// The bot proves itself to the website with its own Discord token (the site
-// checks it belongs to the same application), so only the URL is needed.
-// NEXUS_BOT_API_KEY is an optional extra way in.
 let websiteProblem: string | null = null;
 if (!websiteUrl) {
   websiteProblem = "Set WEBSITE_URL (e.g. https://lsmd.tech) to connect the bot to the website.";
 } else if (!/^https:\/\//.test(websiteUrl) && !/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(websiteUrl)) {
-  // The bot's token travels with every request, so only over HTTPS.
   websiteProblem = "WEBSITE_URL must start with https:// — the bot's credentials are sent with every request.";
 }
+
 if (apiKey && apiKey.length < 32) warnings.push("NEXUS_BOT_API_KEY is shorter than 32 characters and will be ignored by the website; the bot's token is used instead.");
 if (websiteProblem) warnings.push(`${websiteProblem} Until then, commands that use the website are unavailable.`);
 
@@ -86,7 +144,7 @@ const githubToken = read("GITHUB_TOKEN") || undefined;
 export const config = {
   token,
   /** Null means "every server the bot is in". */
-  guildId: /^\d{15,22}$/.test(guildId) ? guildId : null,
+  guildId,
   websiteUrl,
   apiKey,
   /** Why the website cannot be used, or null when it is configured. */

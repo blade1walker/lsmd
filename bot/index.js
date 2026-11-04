@@ -12,6 +12,26 @@ import { fileURLToPath } from "node:url";
 const here = dirname(fileURLToPath(import.meta.url));
 const entry = join(here, "dist", "index.js");
 
+// Pre-load .env so supervisor and child environment variables match
+try {
+  const dotenv = await import("dotenv");
+  const envCandidates = [
+    join(process.cwd(), ".env"),
+    join(here, ".env"),
+    join(here, "..", ".env"),
+    join(process.cwd(), "bot.env"),
+    join(here, "bot.env"),
+    "/home/container/.env",
+    "/home/container/bot/.env",
+    "/opt/lsmd/bot.env",
+  ];
+  for (const p of envCandidates) {
+    if (existsSync(p)) {
+      dotenv.config({ path: p });
+    }
+  }
+} catch {}
+
 function newestSource(dir) {
   let newest = 0;
   for (const name of readdirSync(dir)) {
