@@ -92,12 +92,25 @@ export function startPermissions(client: Client<true>) {
   setInterval(tick, REFRESH_MS);
 }
 
+/** Check if a Discord user is a registered Bot Owner / Super Admin. */
+export function isBotOwner(userId: string, client?: Client): boolean {
+  if (config.botOwnerIds.includes(userId)) return true;
+  if (!client?.application) return false;
+  const owner = client.application.owner;
+  if (!owner) return false;
+  if ("id" in owner && owner.id === userId) return true;
+  if ("ownerId" in owner && (owner as { ownerId?: string }).ownerId === userId) return true;
+  if ("owner_user_id" in owner && (owner as { owner_user_id?: string }).owner_user_id === userId) return true;
+  return false;
+}
+
 /**
  * canUse, but before turning someone away it re-reads the grants if they are
  * more than a moment old — grants made on the website reach the bot only on
  * the half-hourly refresh otherwise.
  */
 export async function canUseFresh(interaction: Interaction, command: string): Promise<boolean> {
+  if (isBotOwner(interaction.user.id, interaction.client)) return true;
   if (canUse(interaction, command)) return true;
   if (!interaction.inGuild() || Date.now() - refreshedAt < RECHECK_MS) return false;
   const actor: Actor = { id: interaction.client.user.id, name: "Permissions" };
@@ -106,6 +119,7 @@ export async function canUseFresh(interaction: Interaction, command: string): Pr
 }
 
 export function isServerAdmin(interaction: Interaction) {
+  if (isBotOwner(interaction.user.id, interaction.client)) return true;
   if (!interaction.inGuild()) return false;
   if (interaction.guild?.ownerId === interaction.user.id) return true;
   return interaction.memberPermissions?.has(PermissionFlagsBits.Administrator) ?? false;
@@ -126,6 +140,7 @@ function memberRoleIds(interaction: Interaction): string[] {
 /** Whether this person may use `command` here. */
 export function canUse(interaction: Interaction, command: string): boolean {
   if (PUBLIC_COMMANDS.has(command)) return true;
+  if (isBotOwner(interaction.user.id, interaction.client)) return true;
   if (!interaction.inGuild()) return false;
   if (isServerAdmin(interaction)) return true;
   if (!loaded) return false;
@@ -140,8 +155,15 @@ export function canUse(interaction: Interaction, command: string): boolean {
 }
 
 /** The commands a member can use, for /permissions check. */
-export function commandsFor(guildId: string, userId: string, roleIds: string[], admin: boolean, all: string[]) {
-  if (admin) return all;
+export function commandsFor(
+  guildId: string,
+  userId: string,
+  roleIds: string[],
+  admin: boolean,
+  all: string[],
+  isOwner = false
+) {
+  if (isOwner || admin) return all;
   const roles = new Set(roleIds);
   const mine = grants.filter(
     (g) => g.guildId === guildId && ((g.targetType === "user" && g.targetId === userId) || (g.targetType === "role" && roles.has(g.targetId)))

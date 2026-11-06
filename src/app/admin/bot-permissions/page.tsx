@@ -143,7 +143,7 @@ export default function BotPermissionsPage() {
       <div className="grid gap-3 rounded-xl border border-[#1e1e28] bg-card p-5 text-sm text-gray-400 sm:grid-cols-3">
         <div>
           <p className="font-semibold text-white">Always allowed</p>
-          <p className="mt-1">Server administrators and the owner can use every command, with no grant needed.</p>
+          <p className="mt-1">Bot owners (Super Admins), server administrators, and the server owner can use every command, with no grant needed.</p>
         </div>
         <div>
           <p className="font-semibold text-white">Open to everyone</p>
@@ -153,7 +153,7 @@ export default function BotPermissionsPage() {
           <p className="font-semibold text-white">Everything else</p>
           <p className="mt-1">
             Needs a grant below. <span className="text-gray-300">All commands</span> covers every command except{" "}
-            <code className="rounded bg-white/5 px-1">/permissions</code>, which is granted on its own.
+            <code className="rounded bg-white/5 px-1">/permissions</code> and <code className="rounded bg-white/5 px-1">/bot</code>, which are granted on their own.
           </p>
         </div>
       </div>

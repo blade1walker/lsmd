@@ -141,6 +141,11 @@ const githubRepo = read("GITHUB_REPO") || "blade1walker/lsmd";
 const githubBranch = read("GITHUB_BRANCH") || "main";
 const githubToken = read("GITHUB_TOKEN") || undefined;
 
+const botOwnerIds = (read("BOT_OWNER_IDS") || read("SUPER_ADMIN_IDS") || "")
+  .split(/[,;\s]+/)
+  .map((s) => s.trim())
+  .filter((s) => /^\d{15,22}$/.test(s));
+
 export const config = {
   token,
   /** Null means "every server the bot is in". */
@@ -158,6 +163,7 @@ export const config = {
   githubRepo,
   githubBranch,
   githubToken,
+  botOwnerIds,
 };
 
 export const configWarnings = warnings;

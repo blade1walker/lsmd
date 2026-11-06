@@ -75,6 +75,7 @@ function createClient(withMembers: boolean) {
 
   client.once(Events.ClientReady, async (ready) => {
     console.log(`[ready] signed in as ${ready.user.tag}`);
+    await ready.application.fetch().catch(() => {});
 
     const guildIds = config.guildId ? [config.guildId] : [...ready.guilds.cache.keys()];
     if (guildIds.length === 0) {

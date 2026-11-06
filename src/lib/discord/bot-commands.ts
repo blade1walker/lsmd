@@ -1,8 +1,8 @@
 /**
  * The Nexus EMS Bot's slash commands that can be granted — kept in step with
  * bot/src/commands. Public commands (/ems, /duty, /city) are open to everyone and
- * are not listed. "*" grants every command here except /permissions, which
- * hands out access and so is only ever granted on its own.
+ * are not listed. "*" grants every command here except /permissions and /bot,
+ * which manage access and the bot process and so are granted on their own.
  */
 export const BOT_COMMANDS = [
   { name: "announce", label: "/announce", description: "Post and schedule announcements" },
@@ -16,6 +16,7 @@ export const BOT_COMMANDS = [
   { name: "banner", label: "/banner", description: "The website banner" },
   { name: "dm", label: "/dm", description: "Message members as the bot" },
   { name: "permissions", label: "/permissions", description: "Grant and revoke bot access" },
+  { name: "bot", label: "/bot", description: "Bot status, update control, and restart" },
 ] as const;
 
 export const ALL_COMMANDS = "*";

@@ -1,7 +1,7 @@
 import { GuildMember, InteractionContextType, Role, SlashCommandBuilder, User } from "discord.js";
 import { api } from "../api.js";
 import type { Command } from "../command.js";
-import { ALL, PUBLIC_COMMANDS, commandsFor, grantsFor, grantsProblem, isServerAdmin, refreshGrants, type Grant } from "../permissions.js";
+import { ALL, PUBLIC_COMMANDS, commandsFor, grantsFor, grantsProblem, isBotOwner, isServerAdmin, refreshGrants, type Grant } from "../permissions.js";
 import { COLORS, EPHEMERAL, actorOf, clip, embed, failure, respondError, success } from "../ui.js";
 import { staffLog } from "../log.js";
 
@@ -23,6 +23,7 @@ export const GRANTABLE = [
   { name: "banner", about: "Website banner" },
   { name: "dm", about: "Message members as the bot" },
   { name: "permissions", about: "Give and remove bot access" },
+  { name: "bot", about: "Bot status, update control, and restart" },
 ] as const;
 
 const label = (command: string) => (command === ALL ? "All commands" : `/${command}`);
@@ -33,7 +34,7 @@ const commandOption = (o: import("discord.js").SlashCommandStringOption) =>
     .setDescription("Which command")
     .setRequired(true)
     .addChoices(
-      { name: "All commands (everything except /permissions)", value: ALL },
+      { name: "All commands (everything except /permissions and /bot)", value: ALL },
       ...GRANTABLE.map((c) => ({ name: `/${c.name} — ${c.about}`, value: c.name }))
     );
 
@@ -88,7 +89,7 @@ function overview(guildId: string) {
   const e = embed(COLORS.info)
     .setTitle("🛡️  Bot permissions")
     .setDescription(
-      "**Always allowed:** server administrators and the owner.\n" +
+      "**Always allowed:** Bot owners, server administrators, and the server owner.\n" +
         `**Open to everyone:** ${[...PUBLIC_COMMANDS].map((c) => `/${c}`).join(", ")}.\n` +
         "**Everything else:** needs a grant — `/permissions grant`.\n" +
         "Also editable on the website: Admin → Bot Permissions."
@@ -109,7 +110,7 @@ function overview(guildId: string) {
     .map((gs) => {
       const who = gs[0].targetType === "role" ? `<@&${gs[0].targetId}>` : `<@${gs[0].targetId}>`;
       const cmds = gs.some((g) => g.command === ALL)
-        ? `**All commands**${gs.some((g) => g.command === "permissions") ? " + /permissions" : ""}`
+        ? `**All commands**${gs.some((g) => g.command === "permissions") ? " + /permissions" : ""}${gs.some((g) => g.command === "bot") ? " + /bot" : ""}`
         : gs.map((g) => `\`/${g.command}\``).join(" ");
       return `${who} → ${cmds}`;
     });
@@ -142,13 +143,20 @@ export const permissions: Command = {
           await interaction.editReply({ embeds: [failure("Not in this server", `<@${user.id}> is not a member here.`)] });
           return;
         }
-        const admin = member.permissions.has("Administrator") || interaction.guild?.ownerId === member.id;
+        const isOwner = isBotOwner(user.id, interaction.client);
+        const admin = isOwner || member.permissions.has("Administrator") || interaction.guild?.ownerId === member.id;
         const all = [...PUBLIC_COMMANDS, ...GRANTABLE.map((c) => c.name)];
-        const allowed = commandsFor(guildId, member.id, [...member.roles.cache.keys()], admin, all);
+        const allowed = commandsFor(guildId, member.id, [...member.roles.cache.keys()], admin, all, isOwner);
         const problem = grantsProblem();
         const result = embed(COLORS.info)
           .setTitle(`🔎  ${member.displayName}`)
-          .setDescription(admin ? "Server administrator — can use every command." : "Can use:")
+          .setDescription(
+            isOwner
+              ? "👑 Bot Owner / Super Administrator — full access to every command."
+              : admin
+              ? "Server administrator — can use every command."
+              : "Can use:"
+          )
           .addFields({ name: `${allowed.length} of ${all.length} commands`, value: allowed.map((c) => `\`/${c}\``).join(" ") || "None" });
         if (problem) result.addFields({ name: "⚠️  Not in effect", value: clip(problem, 1024) });
         await interaction.editReply({ embeds: [result] });
