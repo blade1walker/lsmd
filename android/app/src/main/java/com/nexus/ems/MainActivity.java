@@ -179,6 +179,21 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
+    private boolean isInternalHost(String host) {
+        if (host == null) return false;
+        try {
+            Uri configuredUri = Uri.parse(serverUrl);
+            String configuredHost = configuredUri.getHost();
+            if (configuredHost != null && (host.equalsIgnoreCase(configuredHost) || host.toLowerCase().endsWith("." + configuredHost.toLowerCase()))) {
+                return true;
+            }
+        } catch (Exception ignored) {}
+
+        return host.equals("lsmd.tech") || host.endsWith(".lsmd.tech")
+            || host.equals("nexus-ems.vercel.app")
+            || host.equals("localhost") || host.equals("127.0.0.1") || host.equals("10.0.2.2");
+    }
+
     private class CustomWebViewClient extends WebViewClient {
         @Override
         public void onPageStarted(WebView view, String url, Bitmap favicon) {
@@ -204,7 +219,7 @@ public class MainActivity extends AppCompatActivity {
             String host = uri.getHost();
 
             // Keep internal app navigation within WebView
-            if (host != null && (host.contains("lsmd.tech") || host.contains("nexus") || host.contains("localhost") || host.contains("vercel.app"))) {
+            if (host != null && isInternalHost(host)) {
                 return false;
             }
 

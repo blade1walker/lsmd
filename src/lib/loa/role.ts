@@ -169,20 +169,33 @@ export async function setLoaNickname(discordId: string | null | undefined, onLea
     if (onLeave) {
       if (!/^loa\s+/i.test(baseName)) {
         const targetNick = applyLoaPrefix(baseName).slice(0, 32);
-        await discordRest(`/guilds/${guildId}/members/${discordId}`, {
+        const patch = await discordRest(`/guilds/${guildId}/members/${discordId}`, {
           method: "PATCH",
           body: { nick: targetNick },
           reason: AUDIT_REASON,
         });
+        if (!patch.ok) {
+          console.warn("[loa] nickname update refused:", patch.error);
+          return false;
+        }
       }
     } else {
       if (/^loa\s+/i.test(currentNick)) {
         const restoredNick = removeLoaPrefix(currentNick);
-        await discordRest(`/guilds/${guildId}/members/${discordId}`, {
+        const defaultName = res.data.user?.global_name || res.data.user?.username || "";
+        const finalNick =
+          !restoredNick || (defaultName && restoredNick.toLowerCase() === defaultName.toLowerCase())
+            ? null
+            : restoredNick;
+        const patch = await discordRest(`/guilds/${guildId}/members/${discordId}`, {
           method: "PATCH",
-          body: { nick: restoredNick || null },
+          body: { nick: finalNick },
           reason: AUDIT_REASON,
         });
+        if (!patch.ok) {
+          console.warn("[loa] nickname update refused:", patch.error);
+          return false;
+        }
       }
     }
     return true;

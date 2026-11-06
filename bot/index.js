@@ -72,10 +72,13 @@ process.chdir(here);
 
 let activeChild = null;
 let shuttingDown = false;
+let consecutiveRapidRestarts = 0;
+let lastLaunchTime = 0;
 
 function launch() {
   ensureBuild();
 
+  lastLaunchTime = Date.now();
   activeChild = fork(entry, {
     cwd: here,
     stdio: "inherit",
@@ -84,6 +87,18 @@ function launch() {
 
   activeChild.on("exit", (code, signal) => {
     if (shuttingDown) return;
+
+    const runtime = Date.now() - lastLaunchTime;
+    if (runtime < 5000) {
+      consecutiveRapidRestarts++;
+    } else {
+      consecutiveRapidRestarts = 0;
+    }
+
+    if (consecutiveRapidRestarts >= 5) {
+      console.error("\n[supervisor] Bot exited repeatedly within 5s. Aborting relaunch to prevent loop.\n");
+      process.exit(1);
+    }
 
     if (code === 0) {
       console.log("\n[supervisor] Bot exited cleanly (code 0: update or restart requested). Relaunching in 2s...\n");
@@ -94,8 +109,8 @@ function launch() {
     }
 
     if (signal) {
-      console.log(`\n[supervisor] Bot terminated by signal ${signal}.\n`);
-      process.exit(0);
+      console.error(`\n[supervisor] Bot terminated by signal ${signal}.\n`);
+      process.exit(1);
     }
 
     console.error(`\n[supervisor] Bot exited with error code ${code}.\n`);
@@ -107,9 +122,20 @@ for (const sig of ["SIGINT", "SIGTERM"]) {
   process.on(sig, () => {
     shuttingDown = true;
     if (activeChild) {
+      const forceTimer = setTimeout(() => {
+        try {
+          activeChild.kill("SIGKILL");
+        } catch {}
+        process.exit(0);
+      }, 5000);
+      activeChild.once("exit", () => {
+        clearTimeout(forceTimer);
+        process.exit(0);
+      });
       activeChild.kill(sig);
+    } else {
+      process.exit(0);
     }
-    process.exit(0);
   });
 }
 

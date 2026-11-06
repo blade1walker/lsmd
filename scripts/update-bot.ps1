@@ -10,4 +10,5 @@ sudo -u lsmd FORCE=1 bash /opt/lsmd/repo/deploy/oracle/deploy-bot.sh
 sudo systemctl status lsmd-bot --no-pager
 "@
 
-ssh -i ~/.ssh/lsmd_oracle -o StrictHostKeyChecking=no ubuntu@130.210.47.31 $remoteCmd
+$cleanCmd = $remoteCmd -replace "`r", ""
+ssh -i ~/.ssh/lsmd_oracle -o StrictHostKeyChecking=accept-new ubuntu@130.210.47.31 $cleanCmd

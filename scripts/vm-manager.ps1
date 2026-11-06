@@ -8,7 +8,7 @@ $vmHost = "ubuntu@130.210.47.31"
 
 function Invoke-Remote {
     param([string]$Cmd)
-    ssh -i $sshKey -o StrictHostKeyChecking=no -o ConnectTimeout=5 $vmHost $Cmd
+    ssh -i $sshKey -o StrictHostKeyChecking=accept-new -o ConnectTimeout=5 $vmHost $Cmd
 }
 
 if ($Target -ne "") {
