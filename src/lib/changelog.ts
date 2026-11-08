@@ -37,6 +37,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       { type: "fix", text: "Test pass/fail is no longer shown before a test releases its results; shift picks for someone else need shifts.manage; anyone who manages leave can file it for others; LOA announcements no longer show a broken mention; saving notification settings no longer wipes the bot's join link." },
       { type: "fix", text: "HR no longer offers LOA buttons, and Bot Messaging no longer shows the Delivery Log, to staff whose role cannot use them (they only ever got an error)." },
       { type: "security", text: "Removed unused API endpoints that could wipe a member's clock hours without an audit entry, overwrite any field on a sign-off type, or attach training remarks to the wrong record." },
+      { type: "fix", text: "Android app: \"Sign in with Discord\" now finishes inside the app. It used to open Discord in the browser, where the sign-in came back without the app's session and failed. Each app build now also carries a higher version number." },
     ],
   },
   {

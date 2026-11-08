@@ -68,6 +68,7 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD || 'nexus_ems_2026' }}
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS || 'nexus-ems' }}
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || 'nexus_ems_2026' }}
+          VERSION_CODE: ${{ github.run_number }}
         run: |
           gradle assembleRelease assembleDebug bundleRelease --no-daemon --stacktrace
 

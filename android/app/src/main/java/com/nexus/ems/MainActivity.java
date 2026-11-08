@@ -193,6 +193,23 @@ public class MainActivity extends AppCompatActivity {
             || host.equals("localhost") || host.equals("127.0.0.1") || host.equals("10.0.2.2");
     }
 
+    /**
+     * Discord's sign-in pages. "Sign in with Discord" must finish in this
+     * WebView: the site's OAuth state cookie lives in the WebView's cookie jar,
+     * so a callback that lands in Chrome or the Discord app fails, and even a
+     * successful one would sign in the browser, not the app.
+     */
+    private boolean isDiscordSignIn(Uri uri) {
+        String host = uri.getHost();
+        String path = uri.getPath();
+        if (host == null || path == null) return false;
+        host = host.toLowerCase();
+        boolean discord = host.equals("discord.com") || host.endsWith(".discord.com")
+            || host.equals("discordapp.com") || host.endsWith(".discordapp.com");
+        return discord && (path.startsWith("/oauth2") || path.startsWith("/api/oauth2")
+            || path.startsWith("/login") || path.startsWith("/register"));
+    }
+
     private class CustomWebViewClient extends WebViewClient {
         @Override
         public void onPageStarted(WebView view, String url, Bitmap favicon) {
@@ -219,6 +236,9 @@ public class MainActivity extends AppCompatActivity {
 
             // Keep internal app navigation within WebView
             if (host != null && isInternalHost(host)) {
+                return false;
+            }
+            if (isDiscordSignIn(uri)) {
                 return false;
             }
 
