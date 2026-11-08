@@ -7,7 +7,7 @@ This directory contains the full-fledged native Android application for the Nexu
 ## 🚀 Key Features & How It Works
 
 ### 1. Instant Live Sync (Zero-Delay Web-to-App Updates)
-* **Automatic Live Updates:** When you push updates to your website repository and deploy to production (e.g. Vercel / server), **all mobile and tablet users automatically see the new features, UI, and data immediately inside the installed Android application**.
+* **Automatic Live Updates:** When you push updates to your website repository and deploy to production (https://lsmd.tech), **all mobile and tablet users automatically see the new features, UI, and data immediately inside the installed Android application**.
 * You do **not** need to submit a new app update to the Google Play Store every time you fix a bug, update forms, adjust rosters, or add new features on the website.
 
 ### 2. Full-Fledged Native Android Application

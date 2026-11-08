@@ -23,7 +23,7 @@ interface DeploymentInfo {
   status: "active" | "unknown";
   environment: string;
   deployedAt: string;
-  source: "vercel" | "git" | "fallback";
+  source: "git" | "fallback";
   commit: {
     sha: string;
     shortSha: string;
@@ -33,11 +33,6 @@ interface DeploymentInfo {
     branch?: string;
     repo?: string;
     url?: string;
-  };
-  vercel?: {
-    deploymentId?: string;
-    url?: string;
-    target?: string;
   };
   system: {
     nodeVersion: string;
@@ -101,7 +96,7 @@ export default function DeploymentStatusPage() {
     );
   }
 
-  const { commit, vercel, system, environment, status, source } = data;
+  const { commit, system, environment, status, source } = data;
 
   return (
     <div className="space-y-6 max-w-6xl">
@@ -223,7 +218,7 @@ export default function DeploymentStatusPage() {
                 <ShieldCheck className="w-3.5 h-3.5 text-gray-400" /> Source Telemetry
               </div>
               <div className="text-gray-200 font-medium capitalize">
-                {source === "vercel" ? "Vercel System Environment" : source === "git" ? "Local Git Head" : "Repository Baseline"}
+                {source === "git" ? "Local Git Head" : "Repository Baseline"}
               </div>
             </div>
           </div>
@@ -239,7 +234,7 @@ export default function DeploymentStatusPage() {
 
       {/* System & Host Telemetry */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Vercel Host Details */}
+        {/* Host Details */}
         <div className="bg-[#111118] border border-[#1e1e28] rounded-xl p-6">
           <h2 className="font-[family-name:var(--font-oswald)] text-lg font-bold text-white uppercase mb-4 flex items-center gap-2">
             <Server className="w-5 h-5 text-blue-400" />
@@ -249,31 +244,12 @@ export default function DeploymentStatusPage() {
           <div className="bg-[#0a0a0f] border border-[#1e1e28] rounded-lg p-4 space-y-3 text-sm">
             <div className="flex justify-between py-1 border-b border-[#1e1e28]/60">
               <span className="text-gray-400">Platform</span>
-              <span className="text-white font-medium">{vercel ? "Vercel Serverless" : "Node Server"}</span>
+              <span className="text-white font-medium">Node Server</span>
             </div>
-            <div className="flex justify-between py-1 border-b border-[#1e1e28]/60">
+            <div className="flex justify-between py-1">
               <span className="text-gray-400">Environment Target</span>
-              <span className="text-emerald-400 font-medium uppercase text-xs">{vercel?.target || environment}</span>
+              <span className="text-emerald-400 font-medium uppercase text-xs">{environment}</span>
             </div>
-            {vercel?.url && (
-              <div className="flex justify-between py-1 border-b border-[#1e1e28]/60">
-                <span className="text-gray-400">Deployment URL</span>
-                <a
-                  href={vercel.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-blue-400 hover:underline text-xs truncate max-w-[220px]"
-                >
-                  {vercel.url}
-                </a>
-              </div>
-            )}
-            {vercel?.deploymentId && (
-              <div className="flex justify-between py-1">
-                <span className="text-gray-400">Deployment ID</span>
-                <span className="text-gray-300 font-mono text-xs">{vercel.deploymentId}</span>
-              </div>
-            )}
           </div>
         </div>
 

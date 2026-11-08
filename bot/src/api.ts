@@ -56,7 +56,7 @@ export async function apiWithHeaders<T = unknown>(
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: AbortSignal.timeout(TIMEOUT_MS),
       // Never follow a redirect: fetch would forward the bot's token to
-      // wherever it points (Vercel's login page, another domain).
+      // wherever it points (a login page, another domain).
       redirect: "manual",
     });
   } catch (err) {
@@ -71,12 +71,6 @@ export async function apiWithHeaders<T = unknown>(
       target = new URL(location, config.websiteUrl).origin;
     } catch {
       // keep the raw value
-    }
-    if (/vercel\.com\/(sso|login)/.test(location)) {
-      throw new ApiError(
-        `WEBSITE_URL (${config.websiteUrl}) is a protected Vercel deployment address that asks for a Vercel login. Set WEBSITE_URL to the site's public address — the one visitors open.`,
-        res.status
-      );
     }
     throw new ApiError(`WEBSITE_URL (${config.websiteUrl}) redirects to ${target}. Set WEBSITE_URL=${target} and restart the bot.`, res.status);
   }
@@ -103,8 +97,8 @@ export async function apiWithHeaders<T = unknown>(
     } else if (res.status === 404 && data === null) {
       message = `Nothing answered at ${config.websiteUrl}${path.split("?")[0]} — check WEBSITE_URL, and that the website has been redeployed with the bot's API.`;
     } else if (data === null && /<html/i.test(text)) {
-      // Vercel Deployment Protection (or a login wall) answers with an HTML page.
-      message = `The website answered ${res.status} with a web page instead of the API — if Vercel Deployment Protection is on, use the production domain in WEBSITE_URL.`;
+      // A login wall or a proxy error page answers with HTML.
+      message = `The website answered ${res.status} with a web page instead of the API — check that WEBSITE_URL is the site's public address (https://lsmd.tech).`;
     }
     throw new ApiError(message, res.status);
   }

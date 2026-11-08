@@ -190,7 +190,6 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception ignored) {}
 
         return host.equals("lsmd.tech") || host.endsWith(".lsmd.tech")
-            || host.equals("nexus-ems.vercel.app")
             || host.equals("localhost") || host.equals("127.0.0.1") || host.equals("10.0.2.2");
     }
 

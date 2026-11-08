@@ -28,6 +28,12 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: "2026-11-08",
+    changes: [
+      { type: "improvement", text: "Removed the leftover links to the old Vercel hosting: the Deployment page no longer shows Vercel details, the Android app no longer treats the old vercel.app address as part of the site, and bot error messages point to lsmd.tech." },
+    ],
+  },
+  {
     date: "2026-10-30",
     title: "Discord IDs",
     changes: [

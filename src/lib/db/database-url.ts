@@ -1,15 +1,14 @@
 /**
  * Which database the site uses.
  *
- * Production uses a Neon database connected through Vercel → Storage with the
- * prefix NEON (the name DATABASE_URL was taken when it was connected), so its
- * variables are NEON_*. When they exist they win.
+ * Production uses a Neon database whose variables carry the prefix NEON
+ * (NEON_*). When they exist they win.
  *
  * Without NEON_* this is plain DATABASE_URL — local development and scripts. Keep the lists in
  * step with scripts/deploy-schema.mjs, which cannot import this file.
  */
 
-/** Pooled addresses, for the app. The names Vercel's Neon connection may use with the NEON prefix. */
+/** Pooled addresses, for the app. The names a Neon connection may use with the NEON prefix. */
 const NEON_POOLED = ["NEON_URL", "NEON_DATABASE_URL", "NEON_POSTGRES_PRISMA_URL", "NEON_POSTGRES_URL"];
 /** Direct addresses, for schema changes — those can stall on a pooled connection. */
 const NEON_DIRECT = ["NEON_URL_UNPOOLED", "NEON_DATABASE_URL_UNPOOLED", "NEON_POSTGRES_URL_NON_POOLING"];
