@@ -13,8 +13,8 @@ const HINTS: Record<string, string> = {
  *
  * Routes that returned a bare `{ error }` made failures undiagnosable from the
  * UI: a missing table and a bad connection string both surfaced as "Failed to
- * fetch X". Including the Prisma code and message means the page can say which
- * one it is.
+ * fetch X". Including the Prisma code and a fixed hint means the page can say
+ * which one it is.
  */
 /**
  * The database host refusing every query because the plan's monthly limit
@@ -29,11 +29,11 @@ export function apiError(message: string, error: unknown, status = 500) {
   const hint = detail && /exceeded the .*quota|Code: `53000`/i.test(detail) ? QUOTA_HINT : code ? HINTS[code] : undefined;
   console.error(`${message}${code ? ` [${code}]` : ""}:`, error);
 
+  // The raw message stays in the server log: it can name tables, columns and the database host.
   return NextResponse.json(
     {
       error: message,
       ...(code ? { code } : {}),
-      ...(detail ? { detail } : {}),
       ...(hint ? { hint } : {}),
     },
     { status }

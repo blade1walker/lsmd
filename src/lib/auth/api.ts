@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
+import { headers } from "next/headers";
 import { authOptions } from "./";
 import { resolveAccess, hasPermission, type Access } from "./access";
 import { resolveBotAccess } from "./bot";
@@ -9,6 +10,16 @@ export type AuthResult = { access: Access } | { error: NextResponse };
 
 export function isDenied(result: AuthResult): result is { error: NextResponse } {
   return "error" in result;
+}
+
+/** True when there is no Origin header (same-origin GET, non-browser client) or it names this site's host. */
+export function isSameOrigin(origin: string | null, host: string | null): boolean {
+  if (!origin) return true;
+  try {
+    return new URL(origin).host === host;
+  } catch {
+    return false; // includes the literal "null" origin of sandboxed frames
+  }
 }
 
 /**
@@ -41,6 +52,14 @@ async function checkAuth(permission?: string | readonly string[]): Promise<AuthR
     return { error: NextResponse.json({ error: "Unauthorized", detail: bot.denied, bot: true }, { status: 401 }) };
   }
 
+  // CSRF: the session cookie rides along on requests other sites trigger, so a
+  // browser request that names another origin is refused before it is read.
+  const list = await headers();
+  if (!isSameOrigin(list.get("origin"), list.get("host"))) {
+    console.warn(`Refused a cross-site request from origin ${list.get("origin")}`);
+    return { error: NextResponse.json({ error: "Forbidden", detail: "Cross-site request refused." }, { status: 403 }) };
+  }
+
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.discordId) {
@@ -50,6 +69,7 @@ async function checkAuth(permission?: string | readonly string[]): Promise<AuthR
   const access = await resolveAccess(session.user.discordId);
 
   if (!access.allowed) {
+    console.warn(`Access denied for Discord ID ${session.user.discordId}: not on the roster`);
     return {
       error: NextResponse.json(
         { error: "Forbidden", detail: "This account is not on the roster." },
@@ -63,6 +83,7 @@ async function checkAuth(permission?: string | readonly string[]): Promise<AuthR
   // A list is any-of, not all-of: it is how a route accepts either its own
   // dedicated permission or the older, broader one it used to be guarded by.
   if (required.length > 0 && !required.some((p) => hasPermission(access, p))) {
+    console.warn(`Permission denied for ${access.discordId}: needs ${required.join(" or ")}`);
     return {
       error: NextResponse.json(
         {

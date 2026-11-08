@@ -4,6 +4,9 @@ import { requireAuth, isDenied } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 
 export async function GET() {
+  const auth = await requireAuth();
+  if (isDenied(auth)) return auth.error;
+
   try {
     const categories = await prisma.categoryTemplate.findMany({
       orderBy: { order: "asc" },
