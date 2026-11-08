@@ -32,6 +32,11 @@ export const CHANGELOG: ChangelogEntry[] = [
     changes: [
       { type: "improvement", text: "Removed the leftover links to the old Vercel hosting: the Deployment page no longer shows Vercel details, the Android app no longer treats the old vercel.app address as part of the site, and bot error messages point to lsmd.tech." },
       { type: "security", text: "Security hardening: updated Next.js to fix critical vulnerabilities, added browser security headers, refused cross-site form submissions, stopped showing raw database errors, and limited how often the public onboarding form can be sent." },
+      { type: "improvement", text: "The admin sidebar is now organised into categories — Overview, Personnel, Recruitment & Career, Operations, Content & Docs, Communications and System — each of which can be folded away, with a search box and highlighting that stays on the right item inside sub-pages." },
+      { type: "fix", text: "Roster Promote and Demote moved members the wrong way on the rank ladder; they now go up and down as labelled, never jump an unrecognised rank to the top, and only say \"Promoted\" when the change was saved." },
+      { type: "fix", text: "Test pass/fail is no longer shown before a test releases its results; shift picks for someone else need shifts.manage; anyone who manages leave can file it for others; LOA announcements no longer show a broken mention; saving notification settings no longer wipes the bot's join link." },
+      { type: "fix", text: "HR no longer offers LOA buttons, and Bot Messaging no longer shows the Delivery Log, to staff whose role cannot use them (they only ever got an error)." },
+      { type: "security", text: "Removed unused API endpoints that could wipe a member's clock hours without an audit entry, overwrite any field on a sign-off type, or attach training remarks to the wrong record." },
     ],
   },
   {

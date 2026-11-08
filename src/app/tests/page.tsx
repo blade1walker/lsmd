@@ -24,7 +24,7 @@ interface TestCard {
   eligible: boolean;
   attemptsUsed: number;
   inProgress: boolean;
-  passed: boolean;
+  passed: boolean | null;
   latest: { status: string; score: number | null; passed: boolean | null } | null;
 }
 

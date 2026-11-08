@@ -3,12 +3,13 @@ import { prisma } from "@/lib/db/prisma";
 import { apiError } from "@/lib/api-error";
 import { requireAuth, isDenied, hasPermission, actorLabel } from "@/lib/auth/api";
 import { postToLOAWebhook } from "@/lib/discord/webhook";
+import { LOA_PERMISSIONS } from "@/lib/constants";
 
 /**
  * A member asks for leave. Signed-in roster members only, and only for
  * themselves — this route used to accept any memberId from anyone, so a
- * stranger could file (and announce in Discord) leave for any member. HR
- * (hr.loa) may still file on someone else's behalf.
+ * stranger could file (and announce in Discord) leave for any member. Anyone who
+ * manages leave (LOA_PERMISSIONS.manage) may still file on someone else's behalf.
  */
 export async function POST(req: NextRequest) {
   const auth = await requireAuth();
@@ -22,7 +23,7 @@ export async function POST(req: NextRequest) {
   if (!memberId) {
     return NextResponse.json({ error: "Your account is not linked to a roster member" }, { status: 403 });
   }
-  if (memberId !== access.memberId && !hasPermission(access, "hr.loa")) {
+  if (memberId !== access.memberId && !LOA_PERMISSIONS.manage.some((p) => hasPermission(access, p))) {
     return NextResponse.json({ error: "You can only request leave for yourself" }, { status: 403 });
   }
 
@@ -56,7 +57,7 @@ export async function POST(req: NextRequest) {
 
     await postToLOAWebhook({
       title: "LOA Requested",
-      description: `<@${loa.member.discordId}> **${loa.member.name}** has requested a Leave of Absence.`,
+      description: `${loa.member.discordId ? `<@${loa.member.discordId}> ` : ""}**${loa.member.name}** has requested a Leave of Absence.`,
       color: 0xf59e0b,
       fields: [
         { name: "Member", value: loa.member.name, inline: true },

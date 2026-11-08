@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
-import { requireAuth, isDenied, actorLabel } from "@/lib/auth/api";
+import { requireAuth, isDenied, actorLabel, hasPermission } from "@/lib/auth/api";
 import { apiError } from "@/lib/api-error";
 import { logAudit } from "@/lib/audit";
 import { SHIFT_PERMISSIONS } from "@/lib/constants";
@@ -44,6 +44,10 @@ export async function POST(req: NextRequest) {
 
     if (!memberId) {
       return NextResponse.json({ error: "Select your name from the roster" }, { status: 400 });
+    }
+    // memberId comes from the body: picking a shift for someone else needs shifts.manage.
+    if (memberId !== auth.access.memberId && !SHIFT_PERMISSIONS.manage.some((p) => hasPermission(auth.access, p))) {
+      return NextResponse.json({ error: "You can only pick your own shift" }, { status: 403 });
     }
     if (!isValidShiftSlot(body.primarySlot)) {
       return NextResponse.json({ error: "Select a valid primary shift" }, { status: 400 });

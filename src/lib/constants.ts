@@ -94,6 +94,16 @@ const rankStore: NonNullable<typeof globalThis.__lsmdRanks> = (globalThis.__lsmd
 export const RANKS: readonly RankDef[] = rankStore.ranks;
 export const RANK_LIST: readonly string[] = rankStore.names;
 
+/**
+ * The rank one step up or down the ladder; null at the top, the bottom, or for
+ * a rank not on it. RANK_LIST is highest first, so "up" is the lower index.
+ */
+export function rankStep(rank: string, direction: "up" | "down", list: readonly string[] = RANK_LIST): string | null {
+  const idx = list.indexOf(rank);
+  if (idx < 0) return null;
+  return list[direction === "up" ? idx - 1 : idx + 1] ?? null;
+}
+
 /** Puts admin rank changes into effect in this process (server) or page (browser). */
 export function applyRankOverrides(overrides: readonly RankOverride[]) {
   const next = buildRanks(overrides);

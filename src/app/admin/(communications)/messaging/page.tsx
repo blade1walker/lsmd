@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
 import { useLoad } from "@/lib/use-load";
+import { useCan } from "@/lib/use-can";
 
 const MAX_LENGTH = 2000;
 
@@ -106,6 +107,9 @@ function threadName(thread: { username: string | null; memberName: string | null
 
 export default function MessagingPage() {
   const [tab, setTab] = useState<Tab>("conversations");
+  // The delivery log reads /api/admin/notification-settings/deliveries, which needs `notifications`.
+  const canSeeLog = useCan()("notifications");
+  const tabs = canSeeLog ? TABS : TABS.filter((t) => t !== "log");
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -120,7 +124,7 @@ export default function MessagingPage() {
       </div>
 
       <div className="flex gap-1 mb-6 bg-[#111111] border border-[#1e1e1e] rounded-xl p-1 w-fit max-w-full overflow-x-auto">
-        {TABS.map((t) => {
+        {tabs.map((t) => {
           const Icon = TAB_ICONS[t];
           return (
             <button
@@ -139,7 +143,7 @@ export default function MessagingPage() {
 
       {tab === "conversations" && <ConversationsTab />}
       {tab === "channel" && <ChannelTab />}
-      {tab === "log" && <DeliveryLogTab />}
+      {tab === "log" && canSeeLog && <DeliveryLogTab />}
     </div>
   );
 }

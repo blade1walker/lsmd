@@ -7,7 +7,7 @@ import AddMemberDialog from "@/components/roster/AddMemberDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Download } from "lucide-react";
-import { RANK_LIST, ACTIVITY_STATUSES } from "@/lib/constants";
+import { RANK_LIST, ACTIVITY_STATUSES, rankStep } from "@/lib/constants";
 import { departmentTag } from "@/lib/departments";
 import { groupByRank } from "@/lib/roster";
 import { DepartmentMarkLegend } from "@/components/roster/DepartmentMark";
@@ -84,6 +84,7 @@ export default function AdminRosterPage() {
 
   useLoad(fetchData);
 
+  /** True when the change was saved; a failure has already been shown as a toast. */
   const handleUpdate = async (id: string, data: Record<string, unknown>) => {
     try {
       await fetchJson(`/api/members/${id}`, {
@@ -92,8 +93,10 @@ export default function AdminRosterPage() {
         body: JSON.stringify(data),
       });
       fetchData();
+      return true;
     } catch (err) {
       toast.error(errorMessage(err));
+      return false;
     }
   };
 
@@ -158,25 +161,21 @@ export default function AdminRosterPage() {
     }
   };
 
-  const handlePromote = async (id: string) => {
+  const changeRank = async (id: string, direction: "up" | "down") => {
     const member = sections.flatMap((s) => s.members).find((m) => m.id === id);
     if (!member) return;
-    const idx = RANK_LIST.indexOf(member.rank as typeof RANK_LIST[number]);
-    if (idx < RANK_LIST.length - 1) {
-      await handleUpdate(id, { rank: RANK_LIST[idx + 1], lastPromotion: new Date().toISOString() });
-      toast.success(`Promoted to ${RANK_LIST[idx + 1]}`);
+    const rank = rankStep(member.rank, direction);
+    if (!rank) {
+      toast.error(direction === "up" ? `${member.rank} cannot be promoted further` : `${member.rank} cannot be demoted further`);
+      return;
+    }
+    if (await handleUpdate(id, { rank, lastPromotion: new Date().toISOString() })) {
+      toast.success(`${direction === "up" ? "Promoted" : "Demoted"} to ${rank}`);
     }
   };
 
-  const handleDemote = async (id: string) => {
-    const member = sections.flatMap((s) => s.members).find((m) => m.id === id);
-    if (!member) return;
-    const idx = RANK_LIST.indexOf(member.rank as typeof RANK_LIST[number]);
-    if (idx > 0) {
-      await handleUpdate(id, { rank: RANK_LIST[idx - 1], lastPromotion: new Date().toISOString() });
-      toast.success(`Demoted to ${RANK_LIST[idx - 1]}`);
-    }
-  };
+  const handlePromote = (id: string) => changeRank(id, "up");
+  const handleDemote = (id: string) => changeRank(id, "down");
 
   const filteredSections = sections
     .map((s) => ({

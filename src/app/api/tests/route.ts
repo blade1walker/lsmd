@@ -43,7 +43,8 @@ export async function GET() {
           eligible: canTakeTest(t, auth.access),
           attemptsUsed: submitted.length,
           inProgress: mine.some((a) => a.status === "In Progress"),
-          passed: submitted.some((a) => a.passed === true),
+          // Withheld like latest.passed below until the test releases results.
+          passed: t.showResults ? submitted.some((a) => a.passed === true) : null,
           latest: latest
             ? {
                 status: latest.status,

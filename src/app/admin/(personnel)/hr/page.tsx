@@ -9,6 +9,8 @@ import { toast } from "sonner";
 import { ErrorState } from "@/components/ui/error-state";
 import { fetchJson, fetchList, errorMessage } from "@/lib/fetch-json";
 import { useLoad } from "@/lib/use-load";
+import { useCan } from "@/lib/use-can";
+import { LOA_PERMISSIONS } from "@/lib/constants";
 
 interface LOA {
   id: string;
@@ -48,6 +50,8 @@ interface InactivityRequest {
 }
 
 export default function AdminHrPage() {
+  // The LOA list is open to hr.view, but approving or ending leave goes through /api/loa/[id], which needs LOA_PERMISSIONS.manage.
+  const canManageLoa = useCan()(LOA_PERMISSIONS.manage);
   const [loas, setLoas] = useState<LOA[]>([]);
   const [removals, setRemovals] = useState<RemovalRequest[]>([]);
   const [inactivities, setInactivities] = useState<InactivityRequest[]>([]);
@@ -225,7 +229,7 @@ export default function AdminHrPage() {
                       {loa.createdBy && loa.createdBy !== "self" && ` • Requested by ${loa.createdBy}`}
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  {canManageLoa && <div className="flex gap-2">
                     <Button
                       size="sm"
                       onClick={() => handleLoaAction(loa.id, "Approved")}
@@ -243,7 +247,7 @@ export default function AdminHrPage() {
                     >
                       <X className="w-4 h-4 mr-1" /> Decline
                     </Button>
-                  </div>
+                  </div>}
                 </div>
               ))
             )}
@@ -275,14 +279,14 @@ export default function AdminHrPage() {
                     </div>
                   </div>
                   <span className={`px-2 py-0.5 rounded-full text-xs ${statusColor(loa.status)}`}>{loa.status}</span>
-                  <div className="flex gap-2">
+                  {canManageLoa && <div className="flex gap-2">
                     <Button variant="ghost" size="sm" onClick={() => handleLoaAction(loa.id, "Expired")} disabled={processingId === loa.id} className="text-gray-400 hover:text-yellow-400">
                       <Clock className="w-4 h-4" />
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => handleLoaAction(loa.id, "Cancelled")} disabled={processingId === loa.id} className="text-gray-400 hover:text-red-400">
                       <X className="w-4 h-4" />
                     </Button>
-                  </div>
+                  </div>}
                 </div>
               ))
             )}

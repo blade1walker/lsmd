@@ -119,7 +119,12 @@ export async function PATCH(req: NextRequest) {
     // saves its join link. Merge instead of replacing, so a panel save made
     // from a page loaded earlier cannot wipe what the bot stored since.
     if (data.botSettings && typeof data.botSettings === "object" && settings?.botSettings && typeof settings.botSettings === "object") {
-      data.botSettings = { ...(settings.botSettings as Record<string, unknown>), ...(data.botSettings as Record<string, unknown>) };
+      const stored = settings.botSettings as Record<string, unknown>;
+      data.botSettings = { ...stored, ...(data.botSettings as Record<string, unknown>) };
+      // The join link belongs to the bot; the panel only echoes back the copy it loaded, which may be stale.
+      if (auth.access.roleName !== "Nexus EMS Bot" && "joinLink" in stored) {
+        (data.botSettings as Record<string, unknown>).joinLink = stored.joinLink;
+      }
     }
 
     // Merge webhookUrls so saving one channel from the bot or panel never wipes previously configured webhook URLs
