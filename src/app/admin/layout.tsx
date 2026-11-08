@@ -4,113 +4,19 @@ import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import {
-  LayoutDashboard,
-  Users,
-  UserPlus,
-  GraduationCap,
-  FileText,
-  Radio,
-  Settings,
-  Trash2,
-  Shield,
-  Clock,
-  Heart,
-  Bell,
-  LogOut,
-  Mail,
-  ChevronLeft,
-  MessageSquare,
-  ScrollText,
-  Menu,
-  Hash,
-  Building2,
-  CalendarClock,
-  Download,
-  Stethoscope,
-  LayoutTemplate,
-  Megaphone,
-  History,
-  Ambulance,
-  TrendingUp,
-  ClipboardCheck,
-  ShieldCheck,
-  Siren,
-  Activity,
-  Gamepad2,
-  ClipboardList,
-  Award,
-  CalendarOff,
-  Crown,
-  GitCommit,
-} from "lucide-react";
-import {
-  DEPARTMENT_SECTION_PERMISSIONS,
-  EXPORT_SECTION_PERMISSIONS,
-  SHIFT_SECTION_PERMISSIONS,
-  MEDICAL_SECTION_PERMISSIONS,
-  MEDICAL_ADMIN_PERMISSIONS,
-  CALL_SECTION_PERMISSIONS,
-  INTERVIEW_SECTION_PERMISSIONS,
-  BOT_PERMISSION_SECTION_PERMISSIONS,
-  FIVEM_SECTION_PERMISSIONS,
-  ACTIVITY_SECTION_PERMISSIONS,
-  DUTY_BOARD_PERMISSIONS,
-  TEST_SECTION_PERMISSIONS,
-  RANK_PERMISSIONS,
-  LOA_SECTION_PERMISSIONS,
-  CONTENT_SECTION_PERMISSIONS,
-} from "@/lib/constants";
+import { ChevronDown, ChevronLeft, LogOut, Menu, Search, X } from "lucide-react";
+import { activeHref, visibleSections } from "./nav";
 
-// `permission` mirrors the check on the matching API route, so a section is
-// only offered when the calls behind it will actually succeed. An array means
-// any one of them is enough — the departments console accepts either its own
-// permissions or the older ones its routes still honour.
-const navItems: {
-  href: string;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  permission: string | string[];
-}[] = [
-  { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, permission: "roster.view" },
-  { href: "/admin/roster", label: "Roster", icon: Users, permission: "roster.view" },
-  { href: "/admin/duty-board", label: "Duty Board", icon: Siren, permission: [...DUTY_BOARD_PERMISSIONS.view] },
-  { href: "/admin/fivem", label: "City Link", icon: Gamepad2, permission: FIVEM_SECTION_PERMISSIONS },
-  { href: "/admin/boss", label: "Boss Menu", icon: Crown, permission: CONTENT_SECTION_PERMISSIONS },
-  { href: "/admin/roster-banner", label: "Roster Banner", icon: Megaphone, permission: "roster.announce" },
-  { href: "/admin/callsigns", label: "Call Signs", icon: Hash, permission: "roster.edit" },
-  { href: "/admin/ranks", label: "Ranks & Insignia", icon: Award, permission: [...RANK_PERMISSIONS.manage] },
-  { href: "/admin/trainees", label: "Trainees", icon: GraduationCap, permission: "trainees.view" },
-  { href: "/admin/interviews", label: "Promotions & Interviews", icon: ClipboardCheck, permission: INTERVIEW_SECTION_PERMISSIONS },
-  { href: "/admin/promotions", label: "Promotion History", icon: TrendingUp, permission: "promotions.view" },
-  { href: "/admin/onboarding", label: "Onboarding", icon: UserPlus, permission: "onboarding.view" },
-  { href: "/admin/recruit", label: "Recruit", icon: Mail, permission: "onboarding.view" },
-  { href: "/admin/departments", label: "Departments", icon: Building2, permission: DEPARTMENT_SECTION_PERMISSIONS },
-  { href: "/admin/shifts", label: "Shifts", icon: CalendarClock, permission: SHIFT_SECTION_PERMISSIONS },
-  { href: "/admin/calls", label: "Call Log", icon: Ambulance, permission: CALL_SECTION_PERMISSIONS },
-  { href: "/admin/medical", label: "Medical Docs", icon: Stethoscope, permission: MEDICAL_SECTION_PERMISSIONS },
-  { href: "/admin/medical/forms", label: "Form Builder", icon: LayoutTemplate, permission: MEDICAL_ADMIN_PERMISSIONS },
-  { href: "/admin/training", label: "Training", icon: GraduationCap, permission: "training.view" },
-  { href: "/admin/tests", label: "Tests & Quizzes", icon: ClipboardList, permission: TEST_SECTION_PERMISSIONS },
-  { href: "/admin/sop", label: "SOP", icon: FileText, permission: "sop.edit" },
-  { href: "/admin/radio-codes", label: "Radio Codes", icon: Radio, permission: "radio.edit" },
-  { href: "/admin/templates", label: "Templates", icon: Settings, permission: "templates" },
-  { href: "/admin/restore", label: "Restore", icon: Trash2, permission: "roster.delete" },
-  { href: "/admin/roles", label: "Roles", icon: Shield, permission: "roles.manage" },
-  { href: "/admin/clock-log", label: "Clock Log", icon: Clock, permission: "clock.view" },
-  { href: "/admin/activity", label: "Activity", icon: Activity, permission: ACTIVITY_SECTION_PERMISSIONS },
-  { href: "/admin/hr", label: "HR", icon: Heart, permission: "hr.view" },
-  { href: "/admin/loa", label: "LOA", icon: CalendarOff, permission: LOA_SECTION_PERMISSIONS },
-  { href: "/admin/signoffs", label: "Sign-offs", icon: GraduationCap, permission: "training.signoff.manage" },
-  { href: "/admin/notification-settings", label: "Notify Settings", icon: Settings, permission: "notifications" },
-  { href: "/admin/notifications", label: "Notifications", icon: Bell, permission: "notifications" },
-  { href: "/admin/messaging", label: "Bot Messaging", icon: MessageSquare, permission: ["notifications", ...BOT_PERMISSION_SECTION_PERMISSIONS] },
-  { href: "/admin/bot-permissions", label: "Bot Permissions", icon: ShieldCheck, permission: BOT_PERMISSION_SECTION_PERMISSIONS },
-  { href: "/admin/audit", label: "Audit Log", icon: ScrollText, permission: "audit.view" },
-  { href: "/admin/deployment", label: "Deployment & Commit", icon: GitCommit, permission: "audit.view" },
-  { href: "/admin/changelog", label: "Changelog", icon: History, permission: "changelog.view" },
-  { href: "/admin/export", label: "Export", icon: Download, permission: EXPORT_SECTION_PERMISSIONS },
-];
+const COLLAPSED_KEY = "admin-nav-collapsed";
+
+/** Which sidebar categories this browser has folded away. A convenience only, so any storage error just means none. */
+function readCollapsed(): Record<string, boolean> {
+  try {
+    return typeof window === "undefined" ? {} : JSON.parse(localStorage.getItem(COLLAPSED_KEY) ?? "{}");
+  } catch {
+    return {};
+  }
+}
 
 export default function AdminLayout({
   children,
@@ -121,6 +27,18 @@ export default function AdminLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [collapsed, setCollapsed] = useState(readCollapsed);
+
+  function toggleSection(id: string) {
+    const next = { ...collapsed, [id]: !collapsed[id] };
+    setCollapsed(next);
+    try {
+      localStorage.setItem(COLLAPSED_KEY, JSON.stringify(next));
+    } catch {
+      // Not remembered across visits; the toggle still works.
+    }
+  }
 
   const isLoginPage = pathname === "/admin/login";
 
@@ -143,16 +61,19 @@ export default function AdminLayout({
 
   // UX only — the real boundary is the permission check on each API route.
   // These pages are static shells that hold no data until those calls return.
-  const permissions = session.user.permissions ?? [];
-  const visibleNav = session.user.isSuperAdmin
-    ? navItems
-    : navItems.filter((item) =>
-        (Array.isArray(item.permission) ? item.permission : [item.permission]).some((p) =>
-          permissions.includes(p)
-        )
-      );
+  const sections = visibleSections(!!session.user.isSuperAdmin, session.user.permissions ?? []);
+  const active = activeHref(pathname, sections);
+  const needle = query.trim().toLowerCase();
+  const shown = needle
+    ? sections
+        .map((s) => ({
+          ...s,
+          items: s.label.toLowerCase().includes(needle) ? s.items : s.items.filter((i) => i.label.toLowerCase().includes(needle)),
+        }))
+        .filter((s) => s.items.length > 0)
+    : sections;
 
-  if (visibleNav.length === 0) {
+  if (sections.length === 0) {
     return (
       <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-6">
         <div className="text-center max-w-sm">
@@ -199,23 +120,67 @@ export default function AdminLayout({
         </div>
       </div>
 
-      <nav className="flex-1 p-2 overflow-y-auto">
-        {visibleNav.map((item) => {
-          const isActive = pathname === item.href;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setSidebarOpen(false)}
-              className={`flex items-center gap-3 px-3 py-2.5 lg:py-2 rounded-lg text-sm transition-colors mb-1 ${
-                isActive
-                  ? "bg-[#dc2626]/10 text-[#dc2626]"
-                  : "text-gray-400 hover:text-white hover:bg-white/5"
-              }`}
+      <div className="px-3 pt-3">
+        <label className="relative block">
+          <span className="sr-only">Search the admin menu</span>
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search menu…"
+            className="w-full rounded-lg bg-[#0a0a0f] border border-[#1e1e28] pl-8 pr-8 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-[#dc2626]/60"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              aria-label="Clear search"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-white"
             >
-              <item.icon className="w-4 h-4" />
-              {item.label}
-            </Link>
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </label>
+      </div>
+
+      <nav className="flex-1 p-2 overflow-y-auto" aria-label="Admin sections">
+        {shown.length === 0 && <p className="px-3 py-4 text-sm text-gray-500">Nothing matches “{query}”.</p>}
+        {shown.map((section) => {
+          // A search shows every match; otherwise a folded section stays folded unless it holds the open page.
+          const open = !!needle || !collapsed[section.id] || section.items.some((i) => i.href === active);
+          return (
+            <div key={section.id} className="mb-2">
+              <button
+                type="button"
+                onClick={() => toggleSection(section.id)}
+                aria-expanded={open}
+                className="w-full flex items-center justify-between px-3 pt-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-500 hover:text-gray-300"
+              >
+                <span>{section.label}</span>
+                <span className="flex items-center gap-1.5">
+                  {!open && <span className="text-gray-600 normal-case tracking-normal">{section.items.length}</span>}
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${open ? "" : "-rotate-90"}`} />
+                </span>
+              </button>
+              {open &&
+                section.items.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setSidebarOpen(false)}
+                    aria-current={item.href === active ? "page" : undefined}
+                    className={`flex items-center gap-3 px-3 py-2.5 lg:py-2 rounded-lg text-sm transition-colors mb-0.5 ${
+                      item.href === active
+                        ? "bg-[#dc2626]/10 text-[#dc2626]"
+                        : "text-gray-400 hover:text-white hover:bg-white/5"
+                    }`}
+                  >
+                    <item.icon className="w-4 h-4 shrink-0" />
+                    {item.label}
+                  </Link>
+                ))}
+            </div>
           );
         })}
       </nav>
